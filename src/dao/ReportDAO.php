@@ -21,14 +21,16 @@ class ReportDAO
 
     /**
      * Map category to hazard weight (Wcat)
-     * Critical Safety = 10, Operational = 7, Aesthetic = 4
+     * Critical Safety = 10.0, Major Blockage = 7.0, Minor Defect = 4.0, Aesthetic = 2.0
      */
     public static function getCategoryWeight(string $category): float
     {
         return match (strtoupper($category)) {
             'CRITICAL_SAFETY' => 10.0,
-            'OPERATIONAL'     => 7.0,
-            'AESTHETIC'       => 4.0,
+            'MAJOR_BLOCKAGE'  => 7.0,
+            'OPERATIONAL'     => 7.0, // Backward compatibility alias
+            'MINOR_DEFECT'    => 4.0,
+            'AESTHETIC'       => 2.0,
             default           => 1.0,
         };
     }
@@ -81,14 +83,18 @@ class ReportDAO
     public function createReport(DamageReport $report): ?string
     {
         try {
-            // 1. Calculate local hotspot density (Dzone within 200m)
+            // 1. Ensure initial upvote is 1 (representing creator)
+            $initialUpvotes = max(1, $report->getUpvoteCount());
+            $report->setUpvoteCount($initialUpvotes);
+
+            // 2. Calculate local hotspot density (Dzone within 200m)
             $dZone = $this->countNearbyUnresolvedReports($report->getLatitude(), $report->getLongitude(), 200.0);
 
-            // 2. Compute initial Pscore
+            // 3. Compute initial Pscore
             $pScore = self::computePScore(
                 $report->getCategory()->value,
                 $dZone,
-                $report->getUpvoteCount()
+                $initialUpvotes
             );
             $report->setPriorityScore($pScore);
 
@@ -107,7 +113,7 @@ class ReportDAO
                 'lng'            => $report->getLongitude(),
                 'photo_url'      => $report->getPhotoUrl(),
                 'exif_time'      => $report->getExifTimestamp(),
-                'upvotes'        => $report->getUpvoteCount(),
+                'upvotes'        => $initialUpvotes,
                 'pscore'         => $pScore,
                 'status'         => $report->getStatus()->value,
                 'district'       => $report->getDistrict()
@@ -210,55 +216,71 @@ class ReportDAO
         try {
             $this->db->beginTransaction();
 
-            // 1. Check if already upvoted
+            // 1. Fetch current report data and check if author is attempting to upvote
+            $checkStmt = $this->db->prepare("SELECT user_id, category, latitude, longitude, upvote_count FROM damage_reports WHERE report_id = :id");
+            $checkStmt->execute(['id' => $reportId]);
+            $reportData = $checkStmt->fetch();
+
+            if (!$reportData) {
+                $this->db->rollBack();
+                return ['success' => false, 'error' => 'Report not found'];
+            }
+
+            if ($reportData['user_id'] === $userId) {
+                $this->db->rollBack();
+                return ['success' => false, 'error' => 'You are the creator of this report and already counted as 1 upvote.'];
+            }
+
+            // 2. Check if already upvoted
             if ($this->hasUserUpvoted($reportId, $userId)) {
                 $this->db->rollBack();
                 return ['success' => false, 'error' => 'User has already upvoted this incident'];
             }
 
-            // 2. Insert into report_upvotes
+            // 3. Insert into report_upvotes
             $insertUpvote = "INSERT INTO report_upvotes (report_id, user_id) VALUES (:report_id, :user_id)";
             $stmt = $this->db->prepare($insertUpvote);
             $stmt->execute(['report_id' => $reportId, 'user_id' => $userId]);
 
-            // 3. Increment upvote count & fetch current data
+            // 4. Increment upvote count & fetch updated count
             $updateCount = "UPDATE damage_reports 
                             SET upvote_count = upvote_count + 1 
                             WHERE report_id = :report_id 
                             RETURNING category, latitude, longitude, upvote_count";
             $stmt = $this->db->prepare($updateCount);
             $stmt->execute(['report_id' => $reportId]);
-            $reportData = $stmt->fetch();
+            $updatedData = $stmt->fetch();
 
-            if (!$reportData) {
-                throw new Exception("Report not found");
+            if (!$updatedData) {
+                throw new Exception("Report update failed");
             }
 
-            // 4. Recalculate Dzone & Pscore
+            // 5. Recalculate Dzone & Pscore
             $dZone = $this->countNearbyUnresolvedReports(
-                (float)$reportData['latitude'],
-                (float)$reportData['longitude'],
+                (float)$updatedData['latitude'],
+                (float)$updatedData['longitude'],
                 200.0,
                 $reportId
             );
 
             $newPScore = self::computePScore(
-                $reportData['category'],
+                $updatedData['category'],
                 $dZone,
-                (int)$reportData['upvote_count']
+                (int)$updatedData['upvote_count']
             );
 
-            // 5. Update priority_score
             $updateScore = "UPDATE damage_reports SET priority_score = :pscore WHERE report_id = :report_id";
             $stmt = $this->db->prepare($updateScore);
-            $stmt->execute(['pscore' => $newPScore, 'report_id' => $reportId]);
+            $stmt->execute([
+                'pscore'    => $newPScore,
+                'report_id' => $reportId
+            ]);
 
             $this->db->commit();
 
             return [
                 'success'        => true,
-                'report_id'      => $reportId,
-                'upvote_count'   => (int)$reportData['upvote_count'],
+                'upvote_count'   => (int)$updatedData['upvote_count'],
                 'priority_score' => $newPScore
             ];
         } catch (Exception $e) {

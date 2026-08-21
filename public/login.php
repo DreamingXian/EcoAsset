@@ -1149,9 +1149,9 @@
           localStorage.setItem('ecoasset_token', result.data.token);
           localStorage.setItem('ecoasset_user', JSON.stringify(result.data.user));
 
-          showGeneralAlert(`Welcome back, ${result.data.user.full_name}!`, 'success');
+          showGeneralAlert(`Welcome back, ${result.data.user.full_name}! Redirecting...`, 'success');
           setTimeout(() => {
-            alert(`Logged in successfully as ${result.data.user.role}! Token saved.`);
+            redirectByRole(result.data.user.role);
           }, 600);
 
         } else {
@@ -1176,6 +1176,23 @@
         setLoginLoading(false);
       }
     });
+
+    function redirectByRole(role) {
+      switch (role) {
+        case 'TOURIST':
+          window.location.href = 'module1/index.html';
+          break;
+        case 'SITE_RANGER':
+          window.location.href = 'module1/index.html?role=ranger';
+          break;
+        case 'MAINTENANCE_CREW':
+          window.location.href = 'module3/index.html';
+          break;
+        default:
+          window.location.href = 'module1/index.html';
+          break;
+      }
+    }
 
     function setLoginLoading(isLoading) {
       loginBtn.disabled = isLoading;
@@ -1257,9 +1274,9 @@
           closeSignupModal();
           signupForm.reset();
 
-          showGeneralAlert(`Welcome to EcoAsset, ${result.data.user.full_name}! Account created.`, 'success');
+          showGeneralAlert(`Welcome to EcoAsset, ${result.data.user.full_name}! Redirecting...`, 'success');
           setTimeout(() => {
-            alert(`Account registered successfully as ${result.data.user.role}! Token saved.`);
+            redirectByRole(result.data.user.role);
           }, 600);
 
         } else {

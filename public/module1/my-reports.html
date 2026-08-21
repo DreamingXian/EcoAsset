@@ -16,6 +16,7 @@
     .user-page-wrapper {
       width: 100%;
       min-height: 100vh;
+      min-height: 100dvh;
       margin: 0;
       background: var(--bg-app);
       display: flex;
@@ -81,7 +82,8 @@
     .activity-list-container {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 24px calc(var(--nav-height) + 30px);
+      -webkit-overflow-scrolling: touch;
+      padding: 20px 24px calc(var(--nav-height) + 40px);
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -116,17 +118,23 @@
       flex-direction: column;
       gap: 12px;
       transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
     }
 
     .activity-card:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
+      border-color: #cbd5e1;
     }
 
     .activity-card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .activity-card-body {
@@ -140,6 +148,7 @@
       border-radius: var(--radius-md);
       object-fit: cover;
       flex-shrink: 0;
+      background: #f1f5f9;
     }
 
     .activity-info {
@@ -154,11 +163,26 @@
       font-size: 14.5px;
       font-weight: 700;
       color: #0f172a;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .activity-meta {
       font-size: 12px;
       color: var(--text-muted);
+    }
+
+    .empty-state-box {
+      text-align: center;
+      padding: 48px 24px;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1.5px dashed var(--border-color);
+      grid-column: 1 / -1;
+      width: 100%;
     }
 
     .user-bottom-nav {
@@ -186,7 +210,7 @@
     <header class="activity-top-bar">
       <div style="display: flex; align-items: center; gap: 10px;">
         <a href="index.html" style="text-decoration:none; font-size:20px; color:#047857;">🌿</a>
-        <h1 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a;">
+        <h1 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a; margin: 0;">
           My Activity & Reports
         </h1>
       </div>
@@ -195,19 +219,19 @@
       </a>
     </header>
 
-    <!-- 3 Filter Tabs: Reports, Upvotes, Resolved Archive (Requirement 2) -->
+    <!-- 3 Filter Tabs: Reports, Upvotes, Resolved Archive -->
     <div class="activity-filter-tabs">
-      <button class="filter-tab-btn active" onclick="switchFilter(this, 'my-reports')">
+      <button class="filter-tab-btn active" id="tab-btn-my-reports" onclick="switchFilter(this, 'my-reports')">
         <span>My Reports</span>
-        <span class="badge" style="background:#ecfdf5; color:#047857; font-size:10px;">2</span>
+        <span class="badge" id="count-my-reports" style="background:#ecfdf5; color:#047857; font-size:10px;">...</span>
       </button>
-      <button class="filter-tab-btn" onclick="switchFilter(this, 'upvoted')">
+      <button class="filter-tab-btn" id="tab-btn-upvoted" onclick="switchFilter(this, 'upvoted')">
         <span>Upvoted</span>
-        <span class="badge" style="background:#eff6ff; color:#1d4ed8; font-size:10px;">4</span>
+        <span class="badge" id="count-upvoted" style="background:#eff6ff; color:#1d4ed8; font-size:10px;">...</span>
       </button>
-      <button class="filter-tab-btn" onclick="switchFilter(this, 'archive')">
+      <button class="filter-tab-btn" id="tab-btn-archive" onclick="switchFilter(this, 'archive')">
         <span>Closed Archive</span>
-        <span class="badge" style="background:#f1f5f9; color:#475569; font-size:10px;">3</span>
+        <span class="badge" id="count-archive" style="background:#f1f5f9; color:#475569; font-size:10px;">...</span>
       </button>
     </div>
 
@@ -216,104 +240,26 @@
 
       <!-- PANE 1: MY REPORTS -->
       <div id="pane-my-reports" class="tab-pane-view" style="display: flex;">
-        
-        <div class="activity-card">
-          <div class="activity-card-header">
-            <span class="badge badge-critical">Critical Safety</span>
-            <span class="badge badge-operational">In Progress</span>
-          </div>
-          <div class="activity-card-body">
-            <img src="https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Report Thumbnail">
-            <div class="activity-info">
-              <h3 class="activity-title">Broken handrail on pedestrian bridge</h3>
-              <p class="activity-meta">📍 Persiaran KLCC • Reported 2 days ago</p>
-              <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px;">
-                🔥 47 Public Upvotes
-              </div>
-            </div>
-          </div>
+        <div class="empty-state-box">
+          <span style="font-size: 36px;">⏳</span>
+          <p style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-top: 8px;">Loading your reports...</p>
         </div>
-
-        <div class="activity-card">
-          <div class="activity-card-header">
-            <span class="badge badge-operational">Operational</span>
-            <span class="badge" style="background:#fef3c7; color:#b45309;">Pending Dispatch</span>
-          </div>
-          <div class="activity-card-body">
-            <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Report Thumbnail">
-            <div class="activity-info">
-              <h3 class="activity-title">Blocked drainage pipe causing pathway flooding</h3>
-              <p class="activity-meta">📍 Jalan Pahang, Titiwangsa • Reported 5 days ago</p>
-              <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px;">
-                🔥 38 Public Upvotes
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <!-- PANE 2: UPVOTED -->
       <div id="pane-upvoted" class="tab-pane-view" style="display: none;">
-        
-        <div class="activity-card">
-          <div class="activity-card-header">
-            <span class="badge badge-operational">Operational</span>
-            <span class="badge badge-operational">In Progress</span>
-          </div>
-          <div class="activity-card-body">
-            <img src="https://images.unsplash.com/photo-1555680202-c86f0e12f086?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Upvoted Thumbnail">
-            <div class="activity-info">
-              <h3 class="activity-title">Exposed street lighting wiring</h3>
-              <p class="activity-meta">📍 Jalan Ampang, KLCC • You upvoted 1 day ago</p>
-              <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px;">
-                🔥 31 Public Upvotes
-              </div>
-            </div>
-          </div>
+        <div class="empty-state-box">
+          <span style="font-size: 36px;">⏳</span>
+          <p style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-top: 8px;">Loading upvoted issues...</p>
         </div>
-
       </div>
 
-      <!-- PANE 3: CLOSED ARCHIVE (Resolved or Flagged Invalid - Requirement 2 & 7) -->
+      <!-- PANE 3: CLOSED ARCHIVE -->
       <div id="pane-archive" class="tab-pane-view" style="display: none;">
-        
-        <!-- Resolved Item -->
-        <div class="activity-card">
-          <div class="activity-card-header">
-            <span class="badge badge-aesthetic">Aesthetic</span>
-            <span class="badge badge-resolved">✓ Completed & Verified</span>
-          </div>
-          <div class="activity-card-body">
-            <img src="https://images.unsplash.com/photo-1605600659908-0ef719419d41?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Resolved Thumbnail">
-            <div class="activity-info">
-              <h3 class="activity-title">Overfilled park waste bins & litter</h3>
-              <p class="activity-meta">📍 Perdana Botanical Garden • Resolved 3 days ago</p>
-              <p style="font-size: 12px; color: #047857; margin-top: 4px; font-weight: 600;">
-                ✓ Fixed by Crew T-004 (Stainless bins installed)
-              </p>
-            </div>
-          </div>
+        <div class="empty-state-box">
+          <span style="font-size: 36px;">⏳</span>
+          <p style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-top: 8px;">Loading archive...</p>
         </div>
-
-        <!-- Invalid Flagged Item (Only visible in user history - Requirement 7) -->
-        <div class="activity-card" style="border-left: 4px solid #94a3b8;">
-          <div class="activity-card-header">
-            <span class="badge badge-invalid">Invalid / No Fault</span>
-            <span class="badge" style="background:#fee2e2; color:#b91c1c;">Closed (No Fault Found)</span>
-          </div>
-          <div class="activity-card-body">
-            <img src="https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Invalid Thumbnail">
-            <div class="activity-info">
-              <h3 class="activity-title">Reported crack on park bench</h3>
-              <p class="activity-meta">📍 Merdeka Square • Inspected 1 week ago</p>
-              <p style="font-size: 12px; color: #dc2626; margin-top: 4px; font-weight: 600;">
-                Inspection finding: Normal condition (-20 reputation deduction applied).
-              </p>
-            </div>
-          </div>
-        </div>
-
       </div>
 
     </main>
@@ -336,8 +282,188 @@
 
   </div>
 
+  <!-- Auth Guard Script -->
+  <script src="../js/auth-guard.js"></script>
   <script>
+    let currentTab = 'my-reports';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      AuthGuard.requireAuth(['TOURIST', 'SITE_RANGER', 'MAINTENANCE_CREW']);
+      loadUserActivity();
+    });
+
+    async function loadUserActivity() {
+      try {
+        const response = await AuthGuard.fetchWithAuth('/api/index.php/api/v1/user/activity');
+        if (response && response.ok) {
+          const res = await response.json();
+          const data = res.data || {};
+
+          const myReports = data.my_reports || [];
+          const upvotedReports = data.upvoted_reports || [];
+          const closedArchive = data.closed_archive || [];
+
+          document.getElementById('count-my-reports').textContent = myReports.length;
+          document.getElementById('count-upvoted').textContent = upvotedReports.length;
+          document.getElementById('count-archive').textContent = closedArchive.length;
+
+          renderReportsPane('pane-my-reports', myReports, 'my_reports');
+          renderReportsPane('pane-upvoted', upvotedReports, 'upvoted');
+          renderReportsPane('pane-archive', closedArchive, 'archive');
+        } else {
+          showErrorState();
+        }
+      } catch (err) {
+        console.error('Error fetching activity:', err);
+        showErrorState();
+      }
+    }
+
+    function renderReportsPane(containerId, list, type) {
+      const container = document.getElementById(containerId);
+      if (!list || list.length === 0) {
+        let emptyIcon = '📝';
+        let emptyTitle = 'No damage reports submitted yet';
+        let emptyDesc = 'Notice damage at a park or walkway? Tap Report Damage on the map!';
+        
+        if (type === 'upvoted') {
+          emptyIcon = '🔥';
+          emptyTitle = 'No upvoted issues yet';
+          emptyDesc = 'Browse the public map and upvote issues to help prioritize municipal dispatch!';
+        } else if (type === 'archive') {
+          emptyIcon = '📦';
+          emptyTitle = 'No closed archive records';
+          emptyDesc = 'When reported issues are fixed by municipal crews or reviewed, they will be archived here.';
+        }
+
+        container.innerHTML = `
+          <div class="empty-state-box">
+            <span style="font-size: 40px;">${emptyIcon}</span>
+            <h3 style="font-size: 15px; font-weight: 700; color: #334155; margin-top: 10px;">${emptyTitle}</h3>
+            <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px; max-width: 320px; margin-left: auto; margin-right: auto;">${emptyDesc}</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(item => {
+        const catBadge = getCategoryBadgeHtml(item.category);
+        const statusBadge = getStatusBadgeHtml(item.status);
+        const relativeTime = formatRelativeTime(item.created_at || item.exif_timestamp);
+        const photoSrc = item.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=300&q=80';
+        const districtText = item.district ? `📍 ${item.district}` : '📍 Kuala Lumpur';
+        const upvoteCount = Math.max(1, parseInt(item.upvote_count) || 1);
+
+        let extraNoteHtml = '';
+        if (type === 'archive') {
+          if (item.status === 'COMPLETED') {
+            const crewName = item.crew_name ? `by ${item.crew_name}` : 'by Municipal Field Crew';
+            const notes = item.resolution_notes ? `"${item.resolution_notes}"` : 'Repaired & verified in field.';
+            extraNoteHtml = `
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px 10px; margin-top: 6px; font-size: 11.5px; color: #15803d;">
+                <strong>✓ Fixed ${crewName}:</strong> ${notes}
+              </div>
+            `;
+          } else if (item.status === 'INVALID_RESOLVED') {
+            const notes = item.flag_invalid_notes || item.drop_reason || 'Normal condition confirmed upon field inspection.';
+            extraNoteHtml = `
+              <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 6px 10px; margin-top: 6px; font-size: 11.5px; color: #b91c1c;">
+                <strong>Inspection Finding:</strong> ${notes}
+              </div>
+            `;
+          }
+        }
+
+        return `
+          <div class="activity-card" onclick="window.location.href='index.html?report=${item.report_id}'" title="Click to view on public map">
+            <div class="activity-card-header">
+              ${catBadge}
+              ${statusBadge}
+            </div>
+            <div class="activity-card-body">
+              <img src="${photoSrc}" class="activity-thumb" alt="Evidence Photo" onerror="this.src='https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=300&q=80'">
+              <div class="activity-info">
+                <h3 class="activity-title">${escapeHtml(item.description || 'Reported damage')}</h3>
+                <p class="activity-meta">${districtText} • ${relativeTime}</p>
+                <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  <span>🔥</span><span>${upvoteCount} Public ${upvoteCount === 1 ? 'Upvote' : 'Upvotes'}</span>
+                </div>
+              </div>
+            </div>
+            ${extraNoteHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getCategoryBadgeHtml(cat) {
+      switch (cat) {
+        case 'CRITICAL_SAFETY':
+          return '<span class="badge badge-critical">⚡ Critical Safety</span>';
+        case 'MAJOR_BLOCKAGE':
+          return '<span class="badge badge-operational">🚧 Major Blockage</span>';
+        case 'MINOR_DEFECT':
+          return '<span class="badge" style="background:#fef3c7; color:#b45309;">⚠️ Minor Defect</span>';
+        case 'AESTHETIC':
+          return '<span class="badge badge-aesthetic">🧹 Aesthetic</span>';
+        default:
+          return '<span class="badge badge-operational">Operational</span>';
+      }
+    }
+
+    function getStatusBadgeHtml(status) {
+      switch (status) {
+        case 'COMPLETED':
+          return '<span class="badge badge-resolved">✓ Completed & Verified</span>';
+        case 'IN_PROGRESS':
+          return '<span class="badge badge-operational">In Progress</span>';
+        case 'OPEN_FOR_CLAIM':
+          return '<span class="badge" style="background:#eff6ff; color:#1d4ed8;">Pending Dispatch</span>';
+        case 'PENDING_VALIDATION':
+          return '<span class="badge" style="background:#fef3c7; color:#b45309;">Under Review</span>';
+        case 'INVALID_RESOLVED':
+          return '<span class="badge" style="background:#fee2e2; color:#b91c1c;">Closed (Invalid)</span>';
+        default:
+          return `<span class="badge">${status || 'Active'}</span>`;
+      }
+    }
+
+    function formatRelativeTime(dateString) {
+      if (!dateString) return 'Recently';
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffSecs = Math.floor((now - date) / 1000);
+
+      if (diffSecs < 60) return 'Just now';
+      if (diffSecs < 3600) return `${Math.floor(diffSecs / 60)}m ago`;
+      if (diffSecs < 86400) return `${Math.floor(diffSecs / 3600)}h ago`;
+      const diffDays = Math.floor(diffSecs / 86400);
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 30) return `${diffDays} days ago`;
+      return date.toLocaleDateString();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showErrorState() {
+      ['pane-my-reports', 'pane-upvoted', 'pane-archive'].forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) {
+          elem.innerHTML = `
+            <div class="empty-state-box">
+              <span style="font-size: 36px;">⚠️</span>
+              <p style="font-size: 13px; font-weight: 600; color: #dc2626; margin-top: 8px;">Failed to load activity. Please verify your connection.</p>
+            </div>
+          `;
+        }
+      });
+    }
+
     function switchFilter(btn, tabId) {
+      currentTab = tabId;
       document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -354,11 +480,7 @@
     window.addEventListener('resize', () => {
       const activeBtn = document.querySelector('.filter-tab-btn.active');
       if (activeBtn) {
-        const text = activeBtn.innerText.toLowerCase();
-        let id = 'my-reports';
-        if (text.includes('upvoted')) id = 'upvoted';
-        if (text.includes('archive')) id = 'archive';
-        const target = document.getElementById('pane-' + id);
+        const target = document.getElementById('pane-' + currentTab);
         if (target) {
           target.style.display = window.innerWidth >= 768 ? 'grid' : 'flex';
         }

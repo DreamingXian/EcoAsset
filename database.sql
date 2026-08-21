@@ -34,7 +34,8 @@ CREATE TYPE skill_category AS ENUM (
     'ELECTRICAL', 
     'STRUCTURAL', 
     'SANITATION',
-    'GENERAL_FACILITY'
+    'GENERAL_FACILITY',
+    'OTHER'
 );
 
 CREATE TYPE availability_state AS ENUM (
@@ -44,8 +45,10 @@ CREATE TYPE availability_state AS ENUM (
 
 CREATE TYPE issue_category AS ENUM (
     'CRITICAL_SAFETY', 
-    'OPERATIONAL', 
-    'AESTHETIC'
+    'MAJOR_BLOCKAGE',
+    'MINOR_DEFECT',
+    'AESTHETIC',
+    'OPERATIONAL'
 );
 
 CREATE TYPE report_status AS ENUM (

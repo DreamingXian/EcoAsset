@@ -349,6 +349,30 @@ class UserDAO
     }
 
     /**
+     * Get user contribution statistics (reports submitted, upvotes given, resolved fixes).
+     */
+    public function getUserActivityStats(string $userId): array
+    {
+        $stmt1 = $this->db->prepare("SELECT COUNT(*) as cnt FROM damage_reports WHERE user_id = :id");
+        $stmt1->execute(['id' => $userId]);
+        $reportsCount = (int)($stmt1->fetch()['cnt'] ?? 0);
+
+        $stmt2 = $this->db->prepare("SELECT COUNT(*) as cnt FROM report_upvotes WHERE user_id = :id");
+        $stmt2->execute(['id' => $userId]);
+        $upvotesCount = (int)($stmt2->fetch()['cnt'] ?? 0);
+
+        $stmt3 = $this->db->prepare("SELECT COUNT(*) as cnt FROM damage_reports WHERE user_id = :id AND status = 'COMPLETED'");
+        $stmt3->execute(['id' => $userId]);
+        $resolvedCount = (int)($stmt3->fetch()['cnt'] ?? 0);
+
+        return [
+            'reports_count'  => $reportsCount,
+            'upvotes_count'  => $upvotesCount,
+            'resolved_count' => $resolvedCount
+        ];
+    }
+
+    /**
      * Delete user by ID.
      */
     public function deleteUser(string $userId): bool

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../src/autoload.php';
 
 use App\Controllers\AuthController;
+use App\Controllers\ReportController;
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -26,23 +27,35 @@ if (empty($cleanUri)) {
 // -------------------------------------------------------------
 // Router Definitions
 // -------------------------------------------------------------
+
+// 1. Auth Routes
 if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/v1/auth/login')) {
-    $authController = new AuthController();
-    $authController->login();
-} elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/signup' || $uri === '/api/v1/auth/signup' || $cleanUri === '/api/v1/auth/register' || $uri === '/api/v1/auth/register')) {
-    $authController = new AuthController();
-    $authController->register();
+    (new AuthController())->login();
+} elseif ($method === 'POST' && in_array($cleanUri, ['/api/v1/auth/signup', '/api/v1/auth/register'])) {
+    (new AuthController())->register();
 } elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/forgot-password' || $uri === '/api/v1/auth/forgot-password')) {
-    $authController = new AuthController();
-    $authController->forgotPassword();
+    (new AuthController())->forgotPassword();
 } elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/reset-password' || $uri === '/api/v1/auth/reset-password')) {
-    $authController = new AuthController();
-    $authController->resetPassword();
+    (new AuthController())->resetPassword();
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/auth/me' || $uri === '/api/v1/auth/me')) {
-    $authController = new AuthController();
-    $authController->me();
+    (new AuthController())->me();
+
+// 2. Damage Report Routes
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/reports' || $uri === '/api/v1/reports')) {
+    (new ReportController())->createReport();
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/reports' || $uri === '/api/v1/reports')) {
+    (new ReportController())->getActiveReports();
+} elseif ($method === 'POST' && preg_match('#^/api/v1/reports/([a-f0-9\-]+)/upvote$#i', $cleanUri, $m)) {
+    (new ReportController())->upvoteReport($m[1]);
+} elseif ($method === 'GET' && preg_match('#^/api/v1/reports/([a-f0-9\-]+)$#i', $cleanUri, $m)) {
+    (new ReportController())->getReportById($m[1]);
+
+// 3. Citizen Activity History Route
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/user/activity' || $uri === '/api/v1/user/activity')) {
+    (new ReportController())->getUserActivity();
+
+// 4. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
-    // API Welcome / Health Check Info
     echo json_encode([
         "name" => "EcoAsset REST API",
         "version" => "1.0.0",
@@ -54,7 +67,9 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
             "POST /api/v1/auth/forgot-password" => "Password Reset Token Dispatch",
             "GET  /api/v1/auth/me"              => "Session Profile Inspection (requires Bearer token)",
             "GET  /api/v1/reports"              => "Damage Reports List",
-            "POST /api/v1/reports"              => "Submit Damage Report"
+            "POST /api/v1/reports"              => "Submit Damage Report (Photo + EXIF check)",
+            "POST /api/v1/reports/{id}/upvote"  => "Upvote Damage Report Pin",
+            "GET  /api/v1/user/activity"        => "User Report & Upvote Activity History"
         ]
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } else {
@@ -63,7 +78,7 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
         "status" => "error",
         "error" => "Endpoint not found",
         "requested_uri" => $uri,
+        "clean_uri" => $cleanUri,
         "method" => $method
     ], JSON_PRETTY_PRINT);
 }
-

@@ -397,6 +397,9 @@ class AuthController
         }
 
         unset($user['password_hash']);
+        $stats = $this->userDAO->getUserActivityStats($user['user_id']);
+        $user['stats'] = $stats;
+
         ResponseUtil::success(['user' => $user], 'Session active.');
     }
 }
