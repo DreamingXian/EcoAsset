@@ -1,0 +1,741 @@
+/* ==========================================================================
+   Module 1: Public Crowdsourced Damage Reporting Portal Styles
+   ========================================================================== */
+
+/* Fullscreen Map Canvas Layout */
+.fullscreen-map-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+/* Floating Top Navigation Bar over Map */
+.floating-top-navbar {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 28px);
+  max-width: 600px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 500;
+}
+
+.floating-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  height: var(--nav-height);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-color);
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 600;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 600px) {
+  .floating-bottom-nav {
+    border-radius: 0;
+  }
+}
+
+/* Floating Map Overlay Controls (Top-Right) */
+.map-floating-controls {
+  position: fixed;
+  top: 82px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 400;
+}
+
+/* Bottom Floating Actions Container (Self-Locate on Left, Report Button on Right/Center) */
+.bottom-floating-actions-bar {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 450;
+  width: calc(100% - 28px);
+  max-width: 520px;
+  justify-content: center;
+}
+
+/* Self-Locate Floating Target Button */
+.btn-self-locate {
+  width: 48px;
+  height: 48px;
+  background: #ffffff;
+  border-radius: var(--radius-full);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  border: 1.5px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.btn-self-locate:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.btn-self-locate:active {
+  transform: scale(0.92);
+}
+
+/* Centric Report Damage Button */
+.btn-centric-report {
+  flex: 1;
+  max-width: 320px;
+  height: 48px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  padding: 0 22px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+}
+
+.btn-centric-report:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(5, 150, 105, 0.55);
+}
+
+.btn-centric-report:active {
+  transform: scale(0.96);
+}
+
+/* Status Legend Floating Box */
+.map-status-legend {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.legend-dot.critical { background-color: var(--color-critical); }
+.legend-dot.operational { background-color: var(--color-operational); }
+.legend-dot.resolved { background-color: var(--color-resolved); }
+
+/* Zoom Threshold Notice Badge */
+.zoom-lod-badge {
+  position: fixed;
+  top: 82px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 7px 16px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 400;
+  display: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.zoom-lod-badge.show {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* User Current GPS Pulse Marker */
+.user-current-location-marker {
+  width: 20px;
+  height: 20px;
+  background: #2563eb;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.6);
+  position: relative;
+}
+
+.user-current-location-marker::after {
+  content: '';
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.25);
+  animation: pulseLocation 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pulseLocation {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Upright Custom Pin Markers (No Unnecessary Rotation) */
+.custom-pin-marker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: bold;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.custom-pin-marker span.pin-icon {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.custom-pin-marker:hover {
+  transform: scale(1.15);
+  z-index: 999;
+}
+
+.pin-critical {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: 2.5px solid #ffffff;
+}
+
+.pin-operational {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+  border: 2.5px solid #ffffff;
+}
+
+.pin-resolved {
+  background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+  border: 2.5px solid #ffffff;
+}
+
+/* Upvote Counter at Top-Right Corner (Clearly separated away from the pin) */
+.pin-upvote-counter {
+  position: absolute;
+  top: -12px;
+  right: -24px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2.5px 7.5px;
+  border-radius: var(--radius-full);
+  border: 2px solid #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   INCIDENT DRAWER & IMPACT DRAWER (Center Screen on PC View)
+   ========================================================================== */
+.bottom-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: #ffffff;
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--shadow-drawer);
+  z-index: 2100;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-drawer.active {
+  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  .bottom-drawer {
+    top: 50%;
+    left: 50%;
+    bottom: auto;
+    right: auto;
+    transform: translate(-50%, -50%) scale(0.95);
+    max-width: 540px;
+    width: calc(100% - 40px);
+    border-radius: 24px;
+    max-height: 85vh;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease, visibility 0.25s ease;
+  }
+
+  .bottom-drawer.active {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.drawer-drag-handle {
+  width: 42px;
+  height: 5px;
+  background: #cbd5e1;
+  border-radius: var(--radius-full);
+  margin: 12px auto 6px;
+  flex-shrink: 0;
+}
+
+.drawer-content {
+  padding: 16px 24px calc(var(--nav-height) + 16px);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .drawer-content {
+    padding: 20px 26px 26px;
+  }
+  .drawer-drag-handle {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   REPORT MODAL OVERLAY & POPUP
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 2500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .modal-overlay {
+    align-items: center;
+  }
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 28px 28px 0 0;
+  padding: 20px 24px 34px;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow-y: auto;
+  box-shadow: var(--shadow-drawer);
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .modal-sheet {
+    border-radius: 24px;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 85vh;
+  }
+  .modal-overlay.active .modal-sheet {
+    transform: scale(1);
+  }
+}
+
+.modal-overlay.active .modal-sheet {
+  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  .modal-overlay.active .modal-sheet {
+    transform: scale(1);
+  }
+}
+
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* 15-Minute Countdown Decay Banner */
+.decay-timer-banner {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+}
+
+/* Blank Camera Placeholder & Frame */
+.photo-capture-frame {
+  width: 100%;
+  height: 200px;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: #64748b;
+  text-align: center;
+  padding: 16px;
+}
+
+.photo-capture-frame.captured {
+  border-style: solid;
+  border-color: var(--color-primary);
+  background: #000000;
+}
+
+.photo-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+/* Form Titles & Inputs */
+.form-group-title {
+  display: block;
+  width: 100%;
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 14px;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  width: 100%;
+  display: block;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid #cbd5e1;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.2s ease;
+  margin-bottom: 14px;
+  resize: vertical;
+}
+
+.form-control:focus {
+  border-color: var(--color-primary);
+}
+
+/* Character Counter */
+.char-counter {
+  text-align: right;
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin-top: -10px;
+  margin-bottom: 16px;
+}
+
+/* Interactive Survey Cards */
+.survey-question-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.survey-question-card:hover {
+  border-color: var(--color-primary);
+  background: #f0fdf4;
+}
+
+.survey-question-card.selected {
+  border-color: var(--color-primary);
+  background: #ecfdf5;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
+}
+
+.survey-radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.survey-question-card.selected .survey-radio-circle {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.survey-radio-inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: none;
+}
+
+.survey-question-card.selected .survey-radio-inner {
+  display: block;
+}
+
+.survey-text-title {
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.survey-text-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Maintenance Trade Interactive Selectable Chips */
+.trade-chips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .trade-chips-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trade-chip-card {
+  border: 1.5px solid var(--border-color);
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.trade-chip-card:hover {
+  border-color: var(--color-primary);
+  background: #f0fdf4;
+}
+
+.trade-chip-card.selected {
+  border-color: var(--color-primary);
+  background: #ecfdf5;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
+}
+
+.trade-chip-icon {
+  font-size: 20px;
+}
+
+.trade-chip-name {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Interactive Mini-Map in Report Modal */
+.mini-map-box {
+  width: 100%;
+  height: 170px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-color);
+  margin-top: 10px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+}
+
+#reportMiniMap {
+  width: 100%;
+  height: 100%;
+}
+
+/* Incident Detail Drawer Photo Wrapper */
+.incident-photo-wrapper {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 14px;
+  background: #1e293b;
+}
+
+.incident-photo-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-badge-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.incident-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.incident-address {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.incident-desc {
+  font-size: 13.5px;
+  color: #334155;
+  line-height: 1.45;
+  margin-bottom: 16px;
+  background: #f8fafc;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+}
+
+.drawer-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}

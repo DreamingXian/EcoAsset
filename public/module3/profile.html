@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EcoAsset - Crew Profile</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Global Styles -->
+  <link rel="stylesheet" href="../css/global.css">
+  <style>
+    .crew-hero-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #ffffff;
+      padding: 30px 20px 24px;
+      text-align: center;
+      border-radius: 0 0 28px 28px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.35);
+    }
+
+    .crew-avatar-circle {
+      width: 72px;
+      height: 72px;
+      background: #ea580c;
+      color: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 auto 12px;
+      box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4);
+    }
+
+    .crew-name {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+
+    .crew-id-pill {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    .crew-score-box {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-md);
+      margin: -16px 18px 16px;
+      border: 1px solid var(--border-color);
+      z-index: 10;
+      position: relative;
+    }
+
+    .skills-chip-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .skill-badge-item {
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      border: 1px solid #cbd5e1;
+    }
+
+    .menu-options-list {
+      padding: 0 18px calc(var(--nav-height) + 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu-option-item {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-decoration: none;
+      color: #1e293b;
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="crew-terminal-wrapper">
+    
+    <!-- Profile Top Hero -->
+    <div class="crew-hero-card">
+      <div class="crew-avatar-circle">TB</div>
+      <h2 class="crew-name">Tan Boon Huat</h2>
+      <p class="crew-id-pill">Technician ID: T-004 • Kuala Lumpur Central Depot</p>
+      <span class="badge" style="background: rgba(234,88,12,0.25); color: #fed7aa; border: 1px solid rgba(254,215,170,0.3);">
+        👷 Maintenance Crew Technician
+      </span>
+    </div>
+
+    <!-- Rating & Performance Score Box (Requirement 3) -->
+    <div class="crew-score-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="font-size: 12.5px; font-weight: 700; color: #334155;">Team Performance Rating</span>
+        <span style="font-size: 15px; font-weight: 800; color: #047857;">★ 4.8 / 5.0 Rating</span>
+      </div>
+      <p style="font-size: 11.5px; color: #64748b; line-height: 1.4;">
+        High SLA compliance on completed work orders. Dropping an accepted task incurs a performance rating deduction.
+      </p>
+    </div>
+
+    <!-- Multi-Skill Trade Capabilities (Requirement 8 & 9) -->
+    <div style="padding: 0 18px 16px;">
+      <label class="form-group-title">Registered Trade Capabilities</label>
+      <div class="skills-chip-row">
+        <span class="skill-badge-item">🏗️ Structural Repairs</span>
+        <span class="skill-badge-item">⚡ Electrical & Lighting</span>
+        <span class="skill-badge-item">🪑 General Facilities / Furniture</span>
+      </div>
+    </div>
+
+    <!-- Account Actions & Logout -->
+    <div class="menu-options-list">
+      <div class="menu-option-item" onclick="alert('GPS Location Active: Persiaran KLCC Depot (Zone 1).')">
+        <span>📍 Assigned Station: <strong>Kuala Lumpur - Zone 1</strong></span>
+        <span>✓</span>
+      </div>
+      <div class="menu-option-item" onclick="alert('Duty Status: Online for 8:00 AM / 1:00 PM automated dispatches.')">
+        <span>⏱️ Next Batch Scan: <strong>1:00 PM</strong></span>
+        <span>🕒</span>
+      </div>
+      <a href="../login.html" class="btn btn-danger btn-block" style="margin-top: 10px;">
+        <span>🚪 Sign Out / Switch Role</span>
+      </a>
+    </div>
+
+    <!-- Bottom Navigation Bar for Crew (Requirement 3) -->
+    <nav class="bottom-nav">
+      <a href="index.html" class="nav-tab">
+        <span class="tab-icon">🚜</span>
+        <span>Crew Terminal</span>
+      </a>
+      <a href="profile.html" class="nav-tab active">
+        <span class="tab-icon">👤</span>
+        <span>Crew Profile</span>
+      </a>
+    </nav>
+
+  </div>
+
+</body>
+</html>
