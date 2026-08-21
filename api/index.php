@@ -29,6 +29,9 @@ if (empty($cleanUri)) {
 if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/v1/auth/login')) {
     $authController = new AuthController();
     $authController->login();
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/signup' || $uri === '/api/v1/auth/signup' || $cleanUri === '/api/v1/auth/register' || $uri === '/api/v1/auth/register')) {
+    $authController = new AuthController();
+    $authController->register();
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/auth/me' || $uri === '/api/v1/auth/me')) {
     $authController = new AuthController();
     $authController->me();
@@ -40,10 +43,11 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
         "status" => "online",
         "timestamp" => date('c'),
         "endpoints" => [
-            "POST /api/v1/auth/login" => "User Authentication & JWT Issuance",
-            "GET  /api/v1/auth/me"    => "Session Profile Inspection (requires Bearer token)",
-            "GET  /api/v1/reports"    => "Damage Reports List",
-            "POST /api/v1/reports"    => "Submit Damage Report"
+            "POST /api/v1/auth/login"  => "User Authentication & JWT Issuance",
+            "POST /api/v1/auth/signup" => "Tourist Registration & JWT Issuance",
+            "GET  /api/v1/auth/me"     => "Session Profile Inspection (requires Bearer token)",
+            "GET  /api/v1/reports"     => "Damage Reports List",
+            "POST /api/v1/reports"     => "Submit Damage Report"
         ]
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } else {

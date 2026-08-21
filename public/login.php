@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EcoAsset - Sign In</title>
-  <!-- Google Fonts: Plus Jakarta Sans / Inter -->
+  <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -45,9 +45,11 @@
       align-items: center;
       padding: 16px;
       -webkit-font-smoothing: antialiased;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    /* Screen Wrapper / Mobile Device Simulation Container */
+    /* Screen Wrapper */
     .app-container {
       width: 100%;
       max-width: 412px;
@@ -55,6 +57,11 @@
       flex-direction: column;
       align-items: center;
       padding: 24px 8px;
+      transition: filter 0.25s ease;
+    }
+
+    body.modal-open .app-container {
+      filter: blur(2px);
     }
 
     /* Header & Branding */
@@ -218,7 +225,7 @@
       display: none;
       align-items: flex-start;
       gap: 6px;
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--error-color);
       margin-top: 6px;
       line-height: 1.4;
@@ -234,9 +241,23 @@
       height: 15px;
       flex-shrink: 0;
       margin-top: 2px;
-      stroke: currentColor;
+      stroke: var(--error-color);
       fill: none;
       stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .error-action-link {
+      color: #b91c1c;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-left: 4px;
+    }
+
+    .error-action-link:hover {
+      color: #7f1d1d;
     }
 
     /* Top General Alert Message */
@@ -270,6 +291,7 @@
       width: 18px;
       height: 18px;
       flex-shrink: 0;
+      stroke: currentColor;
     }
 
     /* Links Row */
@@ -349,6 +371,19 @@
       background-color: var(--primary-light);
     }
 
+    .btn-cancel {
+      background-color: #ffffff;
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-cancel:hover {
+      background-color: #f8fafc;
+      border-color: #cbd5e1;
+      color: #1e293b;
+    }
+
     /* Divider */
     .divider {
       display: flex;
@@ -369,6 +404,106 @@
 
     .divider span {
       padding: 0 12px;
+    }
+
+    /* Modal Sheet Backdrop & Container */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 0;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      max-width: 412px;
+      background: #ffffff;
+      border-radius: 28px 28px 0 0;
+      padding: 24px 24px 28px 24px;
+      box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.15);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop.active .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background-color: #cbd5e1;
+      border-radius: 2px;
+      margin: 0 auto 14px auto;
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .sheet-title-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sheet-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: -0.2px;
+    }
+
+    .sheet-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    .sheet-close-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      line-height: 1;
+      transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sheet-close-btn:hover {
+      color: #334155;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 22px;
     }
 
     /* Spinner Animation */
@@ -394,6 +529,7 @@
 </head>
 <body>
 
+  <!-- Screen Wrapper -->
   <div class="app-container">
 
     <!-- Branding Header -->
@@ -416,7 +552,8 @@
 
       <!-- General Global Alert (for credentials mismatch / system error / success) -->
       <div id="generalAlert" class="general-alert" role="alert">
-        <svg id="alertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Exclamation inside Circle SVG -->
+        <svg id="alertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="12"></line>
           <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -447,7 +584,8 @@
             />
           </div>
           <div class="error-feedback" id="emailError">
-            <svg viewBox="0 0 24 24">
+            <!-- Exclamation inside Circle SVG (!) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -477,7 +615,8 @@
             />
           </div>
           <div class="error-feedback" id="passwordError">
-            <svg viewBox="0 0 24 24">
+            <!-- Exclamation inside Circle SVG (!) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -504,8 +643,8 @@
           <span>or</span>
         </div>
 
-        <!-- Sign Up Button -->
-        <button type="button" class="btn btn-secondary" onclick="alert('Sign up flow will be opened in the next module.')">
+        <!-- Sign Up Button (Triggers Bottom Sheet Modal) -->
+        <button type="button" id="openSignupBtn" class="btn btn-secondary">
           Sign Up
         </button>
 
@@ -514,8 +653,138 @@
 
   </div>
 
+  <!-- Sign Up Bottom Modal Sheet -->
+  <div id="signupModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+
+      <div class="sheet-header">
+        <div class="sheet-title-box">
+          <h3 class="sheet-title">Create Account</h3>
+          <p class="sheet-subtitle">Join EcoAsset as a public user</p>
+        </div>
+        <button type="button" id="closeSignupBtn" class="sheet-close-btn" aria-label="Close modal">
+          <!-- Close X SVG -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="signupForm" novalidate>
+
+        <!-- Full Name Field -->
+        <div class="form-group" id="signupNameGroup">
+          <label for="signupNameInput" class="form-label">Full Name</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <!-- User Icon -->
+              <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              id="signupNameInput"
+              class="form-input"
+              placeholder="Full Name"
+              autocomplete="name"
+              required
+            />
+          </div>
+          <div class="error-feedback" id="signupNameError">
+            <!-- Exclamation inside Circle SVG (!) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="signupNameErrorText">Full name is required.</span>
+          </div>
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-group" id="signupEmailGroup">
+          <label for="signupEmailInput" class="form-label">Email Address</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <!-- Envelope Mail Icon -->
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <polyline points="3 7 12 13 21 7" />
+              </svg>
+            </span>
+            <input
+              type="email"
+              id="signupEmailInput"
+              class="form-input"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="error-feedback" id="signupEmailError">
+            <!-- Exclamation inside Circle SVG (!) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="signupEmailErrorText">Email address is required.</span>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group" id="signupPasswordGroup">
+          <label for="signupPasswordInput" class="form-label">Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <!-- Padlock Lock Icon -->
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </span>
+            <input
+              type="password"
+              id="signupPasswordInput"
+              class="form-input"
+              placeholder="Min 8 characters"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <div class="error-feedback" id="signupPasswordError">
+            <!-- Exclamation inside Circle SVG (!) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="signupPasswordErrorText">Password is required.</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="btn-row">
+          <button type="submit" id="signupSubmitBtn" class="btn btn-primary">
+            <span id="signupBtnSpinner" class="spinner" style="display: none;"></span>
+            <span id="signupBtnText">Create Account</span>
+          </button>
+          <button type="button" id="cancelSignupBtn" class="btn btn-cancel">
+            Cancel
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
   <script>
-    const form = document.getElementById('loginForm');
+    // Elements - Login
+    const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
     const emailGroup = document.getElementById('emailGroup');
@@ -528,17 +797,40 @@
     const btnSpinner = document.getElementById('btnSpinner');
     const btnText = document.getElementById('btnText');
 
+    // Elements - Signup Modal
+    const signupModal = document.getElementById('signupModal');
+    const openSignupBtn = document.getElementById('openSignupBtn');
+    const closeSignupBtn = document.getElementById('closeSignupBtn');
+    const cancelSignupBtn = document.getElementById('cancelSignupBtn');
+    const signupForm = document.getElementById('signupForm');
+    const signupNameInput = document.getElementById('signupNameInput');
+    const signupEmailInput = document.getElementById('signupEmailInput');
+    const signupPasswordInput = document.getElementById('signupPasswordInput');
+    const signupNameGroup = document.getElementById('signupNameGroup');
+    const signupEmailGroup = document.getElementById('signupEmailGroup');
+    const signupPasswordGroup = document.getElementById('signupPasswordGroup');
+    const signupNameErrorText = document.getElementById('signupNameErrorText');
+    const signupEmailErrorText = document.getElementById('signupEmailErrorText');
+    const signupPasswordErrorText = document.getElementById('signupPasswordErrorText');
+    const signupSubmitBtn = document.getElementById('signupSubmitBtn');
+    const signupBtnSpinner = document.getElementById('signupBtnSpinner');
+    const signupBtnText = document.getElementById('signupBtnText');
+
     // Email regex validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // Reset error state for a field
+    // Helpers for error states
     function clearFieldError(group) {
       group.classList.remove('has-error');
     }
 
-    function setFieldError(group, textElem, message) {
+    function setFieldError(group, textElem, message, htmlContent = null) {
       group.classList.add('has-error');
-      textElem.textContent = message;
+      if (htmlContent) {
+        textElem.innerHTML = htmlContent;
+      } else {
+        textElem.textContent = message;
+      }
     }
 
     function hideGeneralAlert() {
@@ -552,7 +844,34 @@
       generalAlert.style.display = 'flex';
     }
 
-    // Real-time input clearing
+    // Modal Controls
+    function openModal() {
+      signupModal.classList.add('active');
+      document.body.classList.add('modal-open');
+      signupNameInput.focus();
+    }
+
+    function closeModal() {
+      signupModal.classList.remove('active');
+      document.body.classList.remove('modal-open');
+      // Reset signup form errors
+      clearFieldError(signupNameGroup);
+      clearFieldError(signupEmailGroup);
+      clearFieldError(signupPasswordGroup);
+    }
+
+    openSignupBtn.addEventListener('click', openModal);
+    closeSignupBtn.addEventListener('click', closeModal);
+    cancelSignupBtn.addEventListener('click', closeModal);
+
+    // Close modal when clicking backdrop outside sheet
+    signupModal.addEventListener('click', (e) => {
+      if (e.target === signupModal) {
+        closeModal();
+      }
+    });
+
+    // Real-time input clearing - Login
     emailInput.addEventListener('input', () => {
       clearFieldError(emailGroup);
       hideGeneralAlert();
@@ -563,8 +882,27 @@
       hideGeneralAlert();
     });
 
-    // Form Submission Handling
-    form.addEventListener('submit', async (e) => {
+    // Real-time input clearing - Signup
+    signupNameInput.addEventListener('input', () => clearFieldError(signupNameGroup));
+    signupEmailInput.addEventListener('input', () => clearFieldError(signupEmailGroup));
+    signupPasswordInput.addEventListener('input', () => clearFieldError(signupPasswordGroup));
+
+    // Handle "Go to Login" link inside signup error message
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'modalGoToLogin') {
+        e.preventDefault();
+        const existingEmail = signupEmailInput.value.trim();
+        closeModal();
+        emailInput.value = existingEmail;
+        clearFieldError(emailGroup);
+        passwordInput.focus();
+      }
+    });
+
+    // -------------------------------------------------------------
+    // Login Form Submit
+    // -------------------------------------------------------------
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideGeneralAlert();
 
@@ -591,12 +929,10 @@
         clearFieldError(passwordGroup);
       }
 
-      if (hasError) {
-        return;
-      }
+      if (hasError) return;
 
-      // 3. Trigger API Login Request
-      setLoading(true);
+      // 3. API Call
+      setLoginLoading(true);
 
       try {
         const response = await fetch('/api/index.php/api/v1/auth/login', {
@@ -611,50 +947,38 @@
         const result = await response.json();
 
         if (response.ok && result.status === 'success') {
-          // Store token and user details
           localStorage.setItem('ecoasset_token', result.data.token);
           localStorage.setItem('ecoasset_user', JSON.stringify(result.data.user));
 
-          showGeneralAlert(`Welcome back, ${result.data.user.full_name}! Redirecting...`, 'success');
-          
+          showGeneralAlert(`Welcome back, ${result.data.user.full_name}!`, 'success');
           setTimeout(() => {
-            // Role-based routing or default dashboard
-            const role = result.data.user.role;
-            alert(`Login successful as ${role}! Token saved.`);
-          }, 800);
+            alert(`Logged in successfully as ${result.data.user.role}! Token saved.`);
+          }, 600);
 
         } else {
-          // Handle specific backend error codes & messages
           const errorMsg = result.message || 'Unable to log in. Please try again.';
           const errorDetails = result.details?.errors || {};
 
-          // Deactivated account scenario
           if (response.status === 403 || errorDetails.email?.includes('deactivated')) {
             setFieldError(emailGroup, emailErrorText, 'Oops, your account has been deactivated and cannot login.');
-          }
-          // Email required / invalid email format from server
-          else if (errorDetails.email) {
+          } else if (errorDetails.email) {
             setFieldError(emailGroup, emailErrorText, errorDetails.email);
-          }
-          // Password required
-          else if (errorDetails.password) {
+          } else if (errorDetails.password) {
             setFieldError(passwordGroup, passwordErrorText, errorDetails.password);
-          }
-          // Credential mismatch (Incorrect email or password)
-          else if (response.status === 401 || errorDetails.general) {
+          } else if (response.status === 401 || errorDetails.general) {
             showGeneralAlert('Incorrect email or password. Please try again.', 'error');
           } else {
             showGeneralAlert(errorMsg, 'error');
           }
         }
       } catch (err) {
-        showGeneralAlert('Network error: Unable to connect to server. Please check your connection.', 'error');
+        showGeneralAlert('Network error: Unable to connect to server.', 'error');
       } finally {
-        setLoading(false);
+        setLoginLoading(false);
       }
     });
 
-    function setLoading(isLoading) {
+    function setLoginLoading(isLoading) {
       loginBtn.disabled = isLoading;
       if (isLoading) {
         btnSpinner.style.display = 'inline-block';
@@ -662,6 +986,129 @@
       } else {
         btnSpinner.style.display = 'none';
         btnText.textContent = 'Log In';
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Signup Form Submit
+    // -------------------------------------------------------------
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const fullName = signupNameInput.value.trim();
+      const email = signupEmailInput.value.trim();
+      const password = signupPasswordInput.value;
+      let hasError = false;
+
+      // 1. Validate Name
+      if (!fullName) {
+        setFieldError(signupNameGroup, signupNameErrorText, 'Full name is required.');
+        hasError = true;
+      } else {
+        clearFieldError(signupNameGroup);
+      }
+
+      // 2. Validate Email
+      if (!email) {
+        setFieldError(signupEmailGroup, signupEmailErrorText, 'Email address is required.');
+        hasError = true;
+      } else if (!emailRegex.test(email)) {
+        setFieldError(signupEmailGroup, signupEmailErrorText, 'Please enter a valid email address (e.g. you@example.com).');
+        hasError = true;
+      } else {
+        clearFieldError(signupEmailGroup);
+      }
+
+      // 3. Validate Password
+      if (!password) {
+        setFieldError(signupPasswordGroup, signupPasswordErrorText, 'Password is required.');
+        hasError = true;
+      } else if (password.length < 8) {
+        setFieldError(signupPasswordGroup, signupPasswordErrorText, 'Password must be at least 8 characters.');
+        hasError = true;
+      } else {
+        clearFieldError(signupPasswordGroup);
+      }
+
+      if (hasError) return;
+
+      // 4. API Registration Call
+      setSignupLoading(true);
+
+      try {
+        const response = await fetch('/api/index.php/api/v1/auth/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            full_name: fullName,
+            email: email,
+            password: password
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === 'success') {
+          // Store token and user
+          localStorage.setItem('ecoasset_token', result.data.token);
+          localStorage.setItem('ecoasset_user', JSON.stringify(result.data.user));
+
+          closeModal();
+          signupForm.reset();
+
+          showGeneralAlert(`Welcome to EcoAsset, ${result.data.user.full_name}! Account created.`, 'success');
+          setTimeout(() => {
+            alert(`Account registered successfully as ${result.data.user.role}! Token saved.`);
+          }, 600);
+
+        } else {
+          const errorDetails = result.details?.errors || {};
+          const isDeactivated = result.details?.deactivated;
+          const exists = result.details?.exists;
+
+          if (isDeactivated) {
+            setFieldError(
+              signupEmailGroup,
+              signupEmailErrorText,
+              'Account exists but has been deactivated, please try again with another email address.'
+            );
+          } else if (exists || errorDetails.email?.includes('exists')) {
+            setFieldError(
+              signupEmailGroup,
+              signupEmailErrorText,
+              '',
+              `Email exists, please click on login instead. <a href="#" id="modalGoToLogin" class="error-action-link">Go to Login</a>`
+            );
+          } else if (errorDetails.email) {
+            setFieldError(signupEmailGroup, signupEmailErrorText, errorDetails.email);
+          }
+
+          if (errorDetails.full_name) {
+            setFieldError(signupNameGroup, signupNameErrorText, errorDetails.full_name);
+          }
+
+          if (errorDetails.password) {
+            setFieldError(signupPasswordGroup, signupPasswordErrorText, errorDetails.password);
+          }
+        }
+      } catch (err) {
+        setFieldError(signupEmailGroup, signupEmailErrorText, 'Network error. Please try again.');
+      } finally {
+        setSignupLoading(false);
+      }
+    });
+
+    function setSignupLoading(isLoading) {
+      signupSubmitBtn.disabled = isLoading;
+      if (isLoading) {
+        signupBtnSpinner.style.display = 'inline-block';
+        signupBtnText.textContent = 'Creating...';
+      } else {
+        signupBtnSpinner.style.display = 'none';
+        signupBtnText.textContent = 'Create Account';
       }
     }
   </script>
