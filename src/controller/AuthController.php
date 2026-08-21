@@ -240,6 +240,137 @@ class AuthController
     }
 
     /**
+     * Handle Forgot Password / Send Reset Link (POST /api/v1/auth/forgot-password)
+     */
+    public function forgotPassword(): void
+    {
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true) ?? $_POST;
+
+        $email = trim($data['email'] ?? '');
+
+        // 1. Validate Email Input
+        if (empty($email)) {
+            ResponseUtil::error('Email address is required.', 400, [
+                'errors' => ['email' => 'Email address is required.']
+            ]);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            ResponseUtil::error('Please enter a valid email address (e.g. you@example.com).', 400, [
+                'errors' => ['email' => 'Please enter a valid email address (e.g. you@example.com).']
+            ]);
+            return;
+        }
+
+        try {
+            // 2. Query user in Supabase DB
+            $user = $this->userDAO->getUserByEmail($email);
+
+            if (!$user) {
+                ResponseUtil::error('Account not found, try sign up instead?', 404, [
+                    'errors' => [
+                        'email' => 'Account not found, try sign up instead?'
+                    ],
+                    'not_found' => true
+                ]);
+                return;
+            }
+
+            // 3. Check if deactivated
+            if (isset($user['is_active']) && ($user['is_active'] === false || $user['is_active'] === 0 || $user['is_active'] === 'f')) {
+                ResponseUtil::error('Your account has been deactivated, password cannot be reset.', 403, [
+                    'errors' => [
+                        'email' => 'Your account has been deactivated, password cannot be reset.'
+                    ],
+                    'deactivated' => true
+                ]);
+                return;
+            }
+
+            // 4. Generate 1-hour signed password reset token
+            $resetToken = JWTUtil::generateToken([
+                'user_id' => $user['user_id'],
+                'email'   => $user['email'],
+                'type'    => 'password_reset'
+            ], 3600);
+
+            // 5. Audit log event
+            try {
+                $this->auditLogDAO->log($user['user_id'], 'PASSWORD_RESET_REQUEST', "Password reset requested for {$user['email']}");
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            // 6. Return success (includes simulated link for easy testing)
+            ResponseUtil::success([
+                'email' => $user['email'],
+                'reset_link' => "/public/reset_password.php?token=" . urlencode($resetToken) . "&email=" . urlencode($user['email'])
+            ], 'Reset link sent! Check your inbox.');
+
+        } catch (Exception $e) {
+            ResponseUtil::error('Password reset service error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Handle updating password via reset token (POST /api/v1/auth/reset-password)
+     */
+    public function resetPassword(): void
+    {
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true) ?? $_POST;
+
+        $token = $data['token'] ?? '';
+        $email = trim($data['email'] ?? '');
+        $newPassword = $data['new_password'] ?? '';
+
+        if (empty($token)) {
+            ResponseUtil::error('Reset token is required.', 400);
+            return;
+        }
+
+        // 1. Validate Token
+        $payload = JWTUtil::validateToken($token);
+        if (!$payload || ($payload['type'] ?? '') !== 'password_reset' || strtolower($payload['email'] ?? '') !== strtolower($email)) {
+            ResponseUtil::error('Invalid or expired password reset link. Please request a new one.', 400);
+            return;
+        }
+
+        // 2. Validate Password
+        if (empty($newPassword) || strlen($newPassword) < 8) {
+            ResponseUtil::error('Password must be at least 8 characters.', 400, [
+                'errors' => ['new_password' => 'Password must be at least 8 characters.']
+            ]);
+            return;
+        }
+
+        try {
+            $db = \App\Config\Database::getConnection();
+            $passwordHash = password_hash($newPassword, PASSWORD_BCRYPT);
+
+            $stmt = $db->prepare("UPDATE users SET password_hash = :hash WHERE user_id = :id");
+            $stmt->execute([
+                'hash' => $passwordHash,
+                'id'   => $payload['user_id']
+            ]);
+
+            // Audit log
+            try {
+                $this->auditLogDAO->log($payload['user_id'], 'PASSWORD_RESET_SUCCESS', "Password successfully reset for {$email}");
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success(null, 'Password updated successfully! You can now log in with your new password.');
+
+        } catch (Exception $e) {
+            ResponseUtil::error('Unable to update password: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Get current authenticated user session (GET /api/v1/auth/me)
      */
     public function me(): void
@@ -269,3 +400,4 @@ class AuthController
         ResponseUtil::success(['user' => $user], 'Session active.');
     }
 }
+

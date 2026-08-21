@@ -13,6 +13,8 @@
       --primary-color: #1e4a38;
       --primary-hover: #16382b;
       --primary-light: #e8f3ee;
+      --teal-btn: #00a884;
+      --teal-btn-hover: #008f70;
       --text-main: #1e293b;
       --text-muted: #64748b;
       --text-placeholder: #94a3b8;
@@ -56,12 +58,40 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 8px;
+      padding: 16px 8px 24px 8px;
       transition: filter 0.25s ease;
     }
 
     body.modal-open .app-container {
       filter: blur(2px);
+    }
+
+    /* Top Floating Success Notification Banner (Screenshot 6) */
+    .top-notification {
+      width: 100%;
+      background-color: #eafaf1;
+      border: 1px solid #b7ebd1;
+      color: #0d6832;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);
+      animation: fadeInDown 0.35s ease;
+    }
+
+    .top-notification.show {
+      display: flex;
+    }
+
+    .top-notification svg {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
     }
 
     /* Header & Branding */
@@ -361,6 +391,28 @@
       cursor: not-allowed;
     }
 
+    .btn-teal {
+      background-color: var(--teal-btn);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.25);
+    }
+
+    .btn-teal:hover:not(:disabled) {
+      background-color: var(--teal-btn-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 168, 132, 0.35);
+    }
+
+    .btn-teal:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-teal:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
     .btn-secondary {
       background-color: #ffffff;
       color: var(--primary-color);
@@ -525,12 +577,27 @@
       from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
   <!-- Screen Wrapper -->
   <div class="app-container">
+
+    <!-- Top Floating Success Banner (Screenshot 6) -->
+    <div id="topNotification" class="top-notification" role="status">
+      <!-- Green Checkmark in Solid Circle SVG -->
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#00a884"></circle>
+        <path d="M8 12.5l2.5 2.5L16 9" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span id="topNotificationText">Reset link sent! Check your inbox.</span>
+    </div>
 
     <!-- Branding Header -->
     <div class="brand-header">
@@ -550,7 +617,7 @@
     <div class="auth-card">
       <h2 class="card-title">Sign in to your account</h2>
 
-      <!-- General Global Alert (for credentials mismatch / system error / success) -->
+      <!-- General Global Alert -->
       <div id="generalAlert" class="general-alert" role="alert">
         <!-- Exclamation inside Circle SVG -->
         <svg id="alertIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -628,7 +695,7 @@
         <!-- Forgot Password Link -->
         <div class="link-row">
           <span class="forgot-link">
-            Forgot Password? <span class="highlight" onclick="alert('Forgot password functionality will be available in the next release.')">Click Here</span>
+            Forgot Password? <span id="openForgotBtn" class="highlight">Click Here</span>
           </span>
         </div>
 
@@ -782,7 +849,86 @@
     </div>
   </div>
 
+  <!-- Reset Password Bottom Modal Sheet (Screenshots 1-5) -->
+  <div id="forgotModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+
+      <div class="sheet-header">
+        <div class="sheet-title-box">
+          <h3 class="sheet-title">Reset Password</h3>
+          <p class="sheet-subtitle">We will send a reset link to your email</p>
+        </div>
+        <button type="button" id="closeForgotBtn" class="sheet-close-btn" aria-label="Close modal">
+          <!-- Close X SVG -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="forgotForm" novalidate>
+
+        <!-- Email Field -->
+        <div class="form-group" id="forgotEmailGroup">
+          <label for="forgotEmailInput" class="form-label">Email Address</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <!-- Envelope Mail Icon -->
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <polyline points="3 7 12 13 21 7" />
+              </svg>
+            </span>
+            <input
+              type="email"
+              id="forgotEmailInput"
+              class="form-input"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="error-feedback" id="forgotEmailError">
+            <!-- Exclamation inside Circle SVG (!) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="forgotEmailErrorText">Email address is required.</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="btn-row">
+          <button type="submit" id="forgotSubmitBtn" class="btn btn-primary">
+            <span id="forgotBtnSpinner" class="spinner" style="display: none;"></span>
+            <span id="forgotBtnText">Send Reset Link</span>
+          </button>
+          <button type="button" id="cancelForgotBtn" class="btn btn-cancel">
+            Cancel
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
   <script>
+    // Top Notification
+    const topNotification = document.getElementById('topNotification');
+    const topNotificationText = document.getElementById('topNotificationText');
+
+    function showTopNotification(message, duration = 6000) {
+      topNotificationText.textContent = message;
+      topNotification.classList.add('show');
+      setTimeout(() => {
+        topNotification.classList.remove('show');
+      }, duration);
+    }
+
     // Elements - Login
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('emailInput');
@@ -816,6 +962,19 @@
     const signupBtnSpinner = document.getElementById('signupBtnSpinner');
     const signupBtnText = document.getElementById('signupBtnText');
 
+    // Elements - Forgot Password Modal
+    const forgotModal = document.getElementById('forgotModal');
+    const openForgotBtn = document.getElementById('openForgotBtn');
+    const closeForgotBtn = document.getElementById('closeForgotBtn');
+    const cancelForgotBtn = document.getElementById('cancelForgotBtn');
+    const forgotForm = document.getElementById('forgotForm');
+    const forgotEmailInput = document.getElementById('forgotEmailInput');
+    const forgotEmailGroup = document.getElementById('forgotEmailGroup');
+    const forgotEmailErrorText = document.getElementById('forgotEmailErrorText');
+    const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+    const forgotBtnSpinner = document.getElementById('forgotBtnSpinner');
+    const forgotBtnText = document.getElementById('forgotBtnText');
+
     // Email regex validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -844,31 +1003,55 @@
       generalAlert.style.display = 'flex';
     }
 
-    // Modal Controls
-    function openModal() {
+    // Modal Controls - Signup
+    function openSignupModal() {
+      closeForgotModal();
       signupModal.classList.add('active');
       document.body.classList.add('modal-open');
       signupNameInput.focus();
     }
 
-    function closeModal() {
+    function closeSignupModal() {
       signupModal.classList.remove('active');
-      document.body.classList.remove('modal-open');
-      // Reset signup form errors
+      if (!forgotModal.classList.contains('active')) {
+        document.body.classList.remove('modal-open');
+      }
       clearFieldError(signupNameGroup);
       clearFieldError(signupEmailGroup);
       clearFieldError(signupPasswordGroup);
     }
 
-    openSignupBtn.addEventListener('click', openModal);
-    closeSignupBtn.addEventListener('click', closeModal);
-    cancelSignupBtn.addEventListener('click', closeModal);
+    // Modal Controls - Forgot Password
+    function openForgotModal() {
+      closeSignupModal();
+      forgotModal.classList.add('active');
+      document.body.classList.add('modal-open');
+      forgotEmailInput.focus();
+    }
 
-    // Close modal when clicking backdrop outside sheet
-    signupModal.addEventListener('click', (e) => {
-      if (e.target === signupModal) {
-        closeModal();
+    function closeForgotModal() {
+      forgotModal.classList.remove('active');
+      if (!signupModal.classList.contains('active')) {
+        document.body.classList.remove('modal-open');
       }
+      clearFieldError(forgotEmailGroup);
+    }
+
+    openSignupBtn.addEventListener('click', openSignupModal);
+    closeSignupBtn.addEventListener('click', closeSignupModal);
+    cancelSignupBtn.addEventListener('click', closeSignupModal);
+
+    openForgotBtn.addEventListener('click', openForgotModal);
+    closeForgotBtn.addEventListener('click', closeForgotModal);
+    cancelForgotBtn.addEventListener('click', closeForgotModal);
+
+    // Close when clicking backdrop
+    signupModal.addEventListener('click', (e) => {
+      if (e.target === signupModal) closeSignupModal();
+    });
+
+    forgotModal.addEventListener('click', (e) => {
+      if (e.target === forgotModal) closeForgotModal();
     });
 
     // Real-time input clearing - Login
@@ -887,15 +1070,31 @@
     signupEmailInput.addEventListener('input', () => clearFieldError(signupEmailGroup));
     signupPasswordInput.addEventListener('input', () => clearFieldError(signupPasswordGroup));
 
+    // Real-time input clearing - Forgot Password
+    forgotEmailInput.addEventListener('input', () => clearFieldError(forgotEmailGroup));
+
     // Handle "Go to Login" link inside signup error message
     document.addEventListener('click', (e) => {
       if (e.target && e.target.id === 'modalGoToLogin') {
         e.preventDefault();
         const existingEmail = signupEmailInput.value.trim();
-        closeModal();
+        closeSignupModal();
         emailInput.value = existingEmail;
         clearFieldError(emailGroup);
         passwordInput.focus();
+      }
+    });
+
+    // Handle "Sign Up" link inside reset password error message (Screenshot 4)
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'resetGoToSignup') {
+        e.preventDefault();
+        const typedEmail = forgotEmailInput.value.trim();
+        closeForgotModal();
+        openSignupModal();
+        signupEmailInput.value = typedEmail;
+        clearFieldError(signupEmailGroup);
+        signupNameInput.focus();
       }
     });
 
@@ -1052,11 +1251,10 @@
         const result = await response.json();
 
         if (response.ok && result.status === 'success') {
-          // Store token and user
           localStorage.setItem('ecoasset_token', result.data.token);
           localStorage.setItem('ecoasset_user', JSON.stringify(result.data.user));
 
-          closeModal();
+          closeSignupModal();
           signupForm.reset();
 
           showGeneralAlert(`Welcome to EcoAsset, ${result.data.user.full_name}! Account created.`, 'success');
@@ -1109,6 +1307,105 @@
       } else {
         signupBtnSpinner.style.display = 'none';
         signupBtnText.textContent = 'Create Account';
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Forgot Password Form Submit (Screenshots 1-6)
+    // -------------------------------------------------------------
+    forgotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = forgotEmailInput.value.trim();
+      let hasError = false;
+
+      // 1. Validate Email Input
+      if (!email) {
+        setFieldError(forgotEmailGroup, forgotEmailErrorText, 'Email address is required.');
+        hasError = true;
+      } else if (!emailRegex.test(email)) {
+        setFieldError(forgotEmailGroup, forgotEmailErrorText, 'Please enter a valid email address (e.g. you@example.com).');
+        hasError = true;
+      } else {
+        clearFieldError(forgotEmailGroup);
+      }
+
+      if (hasError) return;
+
+      // 2. API Request
+      setForgotLoading(true);
+
+      try {
+        const response = await fetch('/api/index.php/api/v1/auth/forgot-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === 'success') {
+          // Success State (Screenshot 6): Close sheet and display top green notification
+          closeForgotModal();
+          forgotForm.reset();
+          
+          const resetUrl = result.data?.reset_link || '#';
+          console.log('%c🔗 [EcoAsset DEV] Password Reset Link:', 'color: #00a884; font-weight: bold; font-size: 14px;', window.location.origin + resetUrl);
+          
+          // Display top notification with clickable shortcut for dev testing
+          topNotificationText.innerHTML = `Reset link sent! Check your inbox.`;
+          topNotification.classList.add('show');
+          setTimeout(() => {
+            topNotification.classList.remove('show');
+          }, 10000);
+
+        } else {
+          const errorDetails = result.details?.errors || {};
+          const isDeactivated = result.details?.deactivated;
+          const isNotFound = result.details?.not_found;
+
+          // Deactivated user error (Screenshot 5)
+          if (isDeactivated || response.status === 403) {
+            setFieldError(
+              forgotEmailGroup,
+              forgotEmailErrorText,
+              'Your account has been deactivated, password cannot be reset.'
+            );
+          }
+          // Account not found error (Screenshot 4)
+          else if (isNotFound || response.status === 404 || errorDetails.email?.includes('Account not found')) {
+            setFieldError(
+              forgotEmailGroup,
+              forgotEmailErrorText,
+              '',
+              `Account not found, try sign up instead? <a href="#" id="resetGoToSignup" class="error-action-link">Sign Up</a>`
+            );
+          }
+          // Invalid format or other email error
+          else if (errorDetails.email) {
+            setFieldError(forgotEmailGroup, forgotEmailErrorText, errorDetails.email);
+          } else {
+            setFieldError(forgotEmailGroup, forgotEmailErrorText, result.message || 'Unable to send reset link.');
+          }
+        }
+      } catch (err) {
+        setFieldError(forgotEmailGroup, forgotEmailErrorText, 'Network error: Unable to connect to server.');
+      } finally {
+        setForgotLoading(false);
+      }
+    });
+
+    function setForgotLoading(isLoading) {
+      forgotSubmitBtn.disabled = isLoading;
+      if (isLoading) {
+        forgotBtnSpinner.style.display = 'inline-block';
+        forgotBtnText.textContent = 'Sending...';
+      } else {
+        forgotBtnSpinner.style.display = 'none';
+        forgotBtnText.textContent = 'Send Reset Link';
       }
     }
   </script>

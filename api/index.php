@@ -32,6 +32,12 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 } elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/signup' || $uri === '/api/v1/auth/signup' || $cleanUri === '/api/v1/auth/register' || $uri === '/api/v1/auth/register')) {
     $authController = new AuthController();
     $authController->register();
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/forgot-password' || $uri === '/api/v1/auth/forgot-password')) {
+    $authController = new AuthController();
+    $authController->forgotPassword();
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/auth/reset-password' || $uri === '/api/v1/auth/reset-password')) {
+    $authController = new AuthController();
+    $authController->resetPassword();
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/auth/me' || $uri === '/api/v1/auth/me')) {
     $authController = new AuthController();
     $authController->me();
@@ -43,11 +49,12 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
         "status" => "online",
         "timestamp" => date('c'),
         "endpoints" => [
-            "POST /api/v1/auth/login"  => "User Authentication & JWT Issuance",
-            "POST /api/v1/auth/signup" => "Tourist Registration & JWT Issuance",
-            "GET  /api/v1/auth/me"     => "Session Profile Inspection (requires Bearer token)",
-            "GET  /api/v1/reports"     => "Damage Reports List",
-            "POST /api/v1/reports"     => "Submit Damage Report"
+            "POST /api/v1/auth/login"           => "User Authentication & JWT Issuance",
+            "POST /api/v1/auth/signup"          => "Tourist Registration & JWT Issuance",
+            "POST /api/v1/auth/forgot-password" => "Password Reset Token Dispatch",
+            "GET  /api/v1/auth/me"              => "Session Profile Inspection (requires Bearer token)",
+            "GET  /api/v1/reports"              => "Damage Reports List",
+            "POST /api/v1/reports"              => "Submit Damage Report"
         ]
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } else {
