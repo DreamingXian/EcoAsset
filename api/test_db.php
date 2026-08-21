@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/src/Config/Database.php';
+require_once __DIR__ . '/../src/autoload.php';
 
 use App\Config\Database;
 
