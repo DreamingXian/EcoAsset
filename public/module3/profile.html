@@ -3,38 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>EcoAsset - Crew Profile</title>
+  <title>EcoAsset - Maintenance Crew Profile</title>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <!-- Global Styles -->
   <link rel="stylesheet" href="../css/global.css">
   <style>
+    body {
+      background: #f8fafc;
+    }
+
+    .crew-profile-container {
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: calc(var(--nav-height) + 40px);
+    }
+
+    /* Hero Card */
     .crew-hero-card {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #ffffff;
-      padding: 30px 20px 24px;
+      padding: 28px 20px 22px;
       text-align: center;
       border-radius: 0 0 28px 28px;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.35);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+      position: relative;
     }
 
     .crew-avatar-circle {
-      width: 72px;
-      height: 72px;
-      background: #ea580c;
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
       color: #ffffff;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       margin: 0 auto 12px;
-      box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4);
+      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.4);
+      border: 3px solid rgba(255, 255, 255, 0.2);
     }
 
     .crew-name {
@@ -44,114 +63,590 @@
       margin-bottom: 2px;
     }
 
-    .crew-id-pill {
-      font-size: 12px;
+    .crew-email {
+      font-size: 12.5px;
       color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .crew-badges-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    .crew-role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11.5px;
+      font-weight: 700;
+      background: rgba(234, 88, 12, 0.2);
+      color: #fed7aa;
+      border: 1px solid rgba(254, 215, 170, 0.3);
+    }
+
+    /* Star Rating under role badge */
+    .hero-rating-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      border-radius: var(--radius-full);
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    /* Duty Availability Dynamic Status Banner */
+    .duty-status-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 14px 18px;
+      margin: 14px 16px 0;
+      border: 1.5px solid var(--border-color);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .duty-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .duty-status-badge.available {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .duty-status-badge.busy {
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+    }
+
+    /* Content Cards */
+    .profile-section-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 18px 20px;
+      margin: 14px 16px 0;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 800;
+      color: #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* View Mode: Static Skill Badges */
+    .view-skills-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .static-skill-pill {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .no-skills-notice {
+      font-size: 12.5px;
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+    /* Edit Mode: Interactive Toggle Chips */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .skill-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .skill-chip.selected {
+      border-color: #059669;
+      background: #f0fdf4;
+      color: #065f46;
+      font-weight: 700;
+    }
+
+    .skill-chip input {
+      display: none;
+    }
+
+    /* Location View / Edit Elements */
+    .location-text-box {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Location Search Bar in Edit Mode */
+    .location-search-wrapper {
+      position: relative;
       margin-bottom: 10px;
     }
 
-    .crew-score-box {
+    .location-search-input {
+      width: 100%;
+      padding: 10px 36px 10px 38px;
+      border-radius: 12px;
+      border: 1.5px solid #cbd5e1;
+      font-family: inherit;
+      font-size: 13px;
+      color: #0f172a;
+      outline: none;
       background: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 16px;
-      box-shadow: var(--shadow-md);
-      margin: -16px 18px 16px;
-      border: 1px solid var(--border-color);
-      z-index: 10;
-      position: relative;
+      transition: border-color 0.2s ease;
     }
 
-    .skills-chip-row {
+    .location-search-input:focus {
+      border-color: #059669;
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+    }
+
+    .location-search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .location-search-clear {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: #94a3b8;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* Search Dropdown */
+    .location-autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+      border: 1px solid #e2e8f0;
+      max-height: 220px;
+      overflow-y: auto;
+      display: none;
+      z-index: 1000;
+      padding: 4px 0;
+    }
+
+    .location-autocomplete-dropdown.show {
+      display: block;
+    }
+
+    .location-dropdown-item {
+      padding: 9px 12px;
       display: flex;
+      align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
+      cursor: pointer;
+      font-size: 12.5px;
+      border-bottom: 1px solid #f8fafc;
     }
 
-    .skill-badge-item {
+    .location-dropdown-item:hover {
       background: #f1f5f9;
-      color: #334155;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: var(--radius-full);
-      border: 1px solid #cbd5e1;
     }
 
-    .menu-options-list {
-      padding: 0 18px calc(var(--nav-height) + 24px);
+    .mini-base-map {
+      width: 100%;
+      height: 160px;
+      border-radius: 14px;
+      border: 1.5px solid #e2e8f0;
+      z-index: 10;
+    }
+
+    /* Action Buttons at Bottom */
+    .action-buttons-wrapper {
+      padding: 16px 16px 0;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .menu-option-item {
-      background: #ffffff;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
+    .btn-edit-profile {
+      width: 100%;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      text-decoration: none;
-      color: #1e293b;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);
+    }
+
+    .btn-save-profile {
+      width: 100%;
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: #ffffff;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-cancel-edit {
+      width: 100%;
+      background: #ffffff;
+      color: #64748b;
+      padding: 12px;
       font-size: 13.5px;
-      font-weight: 600;
+      font-weight: 700;
+      border-radius: 14px;
+      border: 1.5px solid #cbd5e1;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-logout {
+      width: 100%;
+      background: #ffffff;
+      color: #dc2626;
+      border: 1.5px solid #fecaca;
+      padding: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      border-radius: 14px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease;
+    }
+
+    .btn-logout:hover {
+      background: #fef2f2;
+    }
+
+    /* Confirmation Modal */
+    .confirm-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .confirm-modal-overlay.show {
+      display: flex;
+    }
+
+    .confirm-modal-box {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 22px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      animation: modalPop 0.2s ease-out;
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .confirm-modal-title {
+      font-family: var(--font-heading);
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .confirm-modal-desc {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 18px;
+      line-height: 1.45;
+    }
+
+    .confirm-modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Bottom Navigation Bar for Crew */
+    .crew-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 600px;
+      height: var(--nav-height);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      border-radius: 20px 20px 0 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 600;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
     }
   </style>
 </head>
 <body>
 
-  <div class="crew-terminal-wrapper">
+  <!-- Toast Notification Banner -->
+  <div class="toast-banner" id="toastBanner">
+    <span id="toastMsg">Action completed.</span>
+    <span style="cursor:pointer; font-size:16px;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="confirm-modal-overlay" id="confirmModal">
+    <div class="confirm-modal-box">
+      <div style="font-size: 36px; margin-bottom: 8px;">💾</div>
+      <h3 class="confirm-modal-title">Confirm Profile Changes?</h3>
+      <p class="confirm-modal-desc" id="confirmModalDesc">
+        Are you sure you want to update your registered trade capabilities and base team location?
+      </p>
+      <div class="confirm-modal-actions">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn btn-primary" id="btnExecuteSave" onclick="executeSaveProfile()">Confirm & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="crew-profile-container">
     
     <!-- Profile Top Hero -->
     <div class="crew-hero-card">
-      <div class="crew-avatar-circle">TB</div>
-      <h2 class="crew-name">Tan Boon Huat</h2>
-      <p class="crew-id-pill">Technician ID: T-004 • Kuala Lumpur Central Depot</p>
-      <span class="badge" style="background: rgba(234,88,12,0.25); color: #fed7aa; border: 1px solid rgba(254,215,170,0.3);">
-        👷 Maintenance Crew Technician
-      </span>
-    </div>
-
-    <!-- Rating & Performance Score Box (Requirement 3) -->
-    <div class="crew-score-box">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 12.5px; font-weight: 700; color: #334155;">Team Performance Rating</span>
-        <span style="font-size: 15px; font-weight: 800; color: #047857;">★ 4.8 / 5.0 Rating</span>
+      <div class="crew-avatar-circle" id="crewAvatar">MC</div>
+      <h2 class="crew-name" id="crewName">Loading...</h2>
+      <p class="crew-email" id="crewEmail">technician@ecoasset.org</p>
+      
+      <div class="crew-badges-row">
+        <span class="crew-role-badge">
+          <span>👷 Field Maintenance Crew</span>
+        </span>
       </div>
-      <p style="font-size: 11.5px; color: #64748b; line-height: 1.4;">
-        High SLA compliance on completed work orders. Dropping an accepted task incurs a performance rating deduction.
-      </p>
-    </div>
 
-    <!-- Multi-Skill Trade Capabilities (Requirement 8 & 9) -->
-    <div style="padding: 0 18px 16px;">
-      <label class="form-group-title">Registered Trade Capabilities</label>
-      <div class="skills-chip-row">
-        <span class="skill-badge-item">🏗️ Structural Repairs</span>
-        <span class="skill-badge-item">⚡ Electrical & Lighting</span>
-        <span class="skill-badge-item">🪑 General Facilities / Furniture</span>
+      <!-- Performance Rating (0.0 to 5.0 Stars) placed directly in Hero Card -->
+      <div>
+        <span class="hero-rating-pill" id="heroRatingBadge">
+          <span>★</span><span id="heroRatingScore">5.0 / 5.0 Rating</span>
+        </span>
       </div>
     </div>
 
-    <!-- Account Actions & Logout -->
-    <div class="menu-options-list">
-      <div class="menu-option-item" onclick="alert('GPS Location Active: Persiaran KLCC Depot (Zone 1).')">
-        <span>📍 Assigned Station: <strong>Kuala Lumpur - Zone 1</strong></span>
-        <span>✓</span>
+    <!-- Duty Availability (Dynamic - Depends on In-Progress Tasks) -->
+    <div class="duty-status-card">
+      <div>
+        <span style="font-size: 13px; font-weight: 700; color: #1e293b; display: block;">Duty Availability</span>
+        <span style="font-size: 11.5px; color: #64748b;" id="dutyWorkloadDesc">Auto-set by active task workload</span>
       </div>
-      <div class="menu-option-item" onclick="alert('Duty Status: Online for 8:00 AM / 1:00 PM automated dispatches.')">
-        <span>⏱️ Next Batch Scan: <strong>1:00 PM</strong></span>
-        <span>🕒</span>
+      <div class="duty-status-badge available" id="dutyStatusBadge">
+        <span>🟢 Available</span>
       </div>
-      <a href="../login.html" class="btn btn-danger btn-block" style="margin-top: 10px;">
-        <span>🚪 Sign Out / Switch Role</span>
-      </a>
     </div>
 
-    <!-- Bottom Navigation Bar for Crew (Requirement 3) -->
-    <nav class="bottom-nav">
+    <!-- Trade Capabilities Section -->
+    <div class="profile-section-card">
+      <div class="section-title">
+        <span>🛠️ Trade Capabilities (Eligible Skills)</span>
+      </div>
+
+      <!-- View Mode: Static Badges -->
+      <div id="viewSkillsContainer" class="view-skills-cluster">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Edit Mode: Interactive Checkboxes -->
+      <div id="editSkillsContainer" style="display: none;">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">
+          Select skills to qualify this crew team for automated incident dispatches:
+        </p>
+        <div class="skills-grid">
+          <label class="skill-chip" id="chip-STRUCTURAL">
+            <input type="checkbox" value="STRUCTURAL" onchange="toggleSkillChip('STRUCTURAL')">
+            <span>🏗️ Structural</span>
+          </label>
+          <label class="skill-chip" id="chip-ELECTRICAL">
+            <input type="checkbox" value="ELECTRICAL" onchange="toggleSkillChip('ELECTRICAL')">
+            <span>⚡ Electrical</span>
+          </label>
+          <label class="skill-chip" id="chip-SANITATION">
+            <input type="checkbox" value="SANITATION" onchange="toggleSkillChip('SANITATION')">
+            <span>🚰 Sanitation</span>
+          </label>
+          <label class="skill-chip" id="chip-GENERAL_FACILITY">
+            <input type="checkbox" value="GENERAL_FACILITY" onchange="toggleSkillChip('GENERAL_FACILITY')">
+            <span>🪑 Facilities</span>
+          </label>
+          <label class="skill-chip" id="chip-OTHER" style="grid-column: span 2;">
+            <input type="checkbox" value="OTHER" onchange="toggleSkillChip('OTHER')">
+            <span>🛠️ General / Other Trade</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Base Location Section -->
+    <div class="profile-section-card">
+      <div class="section-title">
+        <span>📍 Base Station & Team Location</span>
+      </div>
+
+      <!-- Location Display Text Box -->
+      <div class="location-text-box" id="locationTextBox">
+        <span>📍</span>
+        <span id="stationRegionText">Persiaran KLCC Central Depot</span>
+      </div>
+
+      <!-- Edit Mode Location Controls (Search Bar + GPS) -->
+      <div id="editLocationControls" style="display: none;">
+        <div class="location-search-wrapper">
+          <span class="location-search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="locationSearchInput" 
+            class="location-search-input" 
+            placeholder="Search address or area in Malaysia..." 
+            oninput="handleAddressSearch()" 
+            autocomplete="off"
+          >
+          <button id="locationClearBtn" class="location-search-clear" onclick="clearAddressSearch()">✕</button>
+          
+          <!-- Address Autocomplete Dropdown -->
+          <div id="addressDropdown" class="location-autocomplete-dropdown"></div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="btn btn-secondary" style="flex: 1; font-size: 12px; padding: 9px;" onclick="locateCurrentGPS()">
+            <span>🎯 Use Current GPS</span>
+          </button>
+        </div>
+        <p style="font-size: 11.5px; color: #64748b; margin-bottom: 8px;">
+          💡 You can also click anywhere on the map or drag the pin to set your team base.
+        </p>
+      </div>
+
+      <!-- Mini Base Map -->
+      <div id="miniBaseMap" class="mini-base-map"></div>
+    </div>
+
+    <!-- Bottom Actions Container -->
+    <div class="action-buttons-wrapper">
+      
+      <!-- View Mode Button -->
+      <div id="viewActionsGroup">
+        <button class="btn-edit-profile" onclick="enterEditMode()">
+          <span>✏️ Edit Profile & Capabilities</span>
+        </button>
+      </div>
+
+      <!-- Edit Mode Buttons -->
+      <div id="editActionsGroup" style="display: none; display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn-save-profile" onclick="promptSaveConfirmation()">
+          <span>💾 Save Changes</span>
+        </button>
+        <button class="btn-cancel-edit" onclick="cancelEditMode()">
+          <span>Cancel</span>
+        </button>
+      </div>
+
+      <!-- Sign Out Button (Always at bottom) -->
+      <button class="btn-logout" onclick="handleLogout()">
+        <span>🚪 Sign Out / Switch Account</span>
+      </button>
+    </div>
+
+    <!-- Bottom Navigation Bar for Crew -->
+    <nav class="crew-bottom-nav">
       <a href="index.html" class="nav-tab">
         <span class="tab-icon">🚜</span>
         <span>Crew Terminal</span>
@@ -164,5 +659,449 @@
 
   </div>
 
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Auth Guard Script -->
+  <script src="../js/auth-guard.js"></script>
+
+  <script>
+    let miniMap = null;
+    let baseMarker = null;
+    let isEditMode = false;
+    let geocodeTimer = null;
+    let geocodeController = null;
+
+    // Saved Server State
+    let savedProfile = {
+      skill_tags: [],
+      current_latitude: 3.1578,
+      current_longitude: 101.7119,
+      station_region: 'Persiaran KLCC Central Depot',
+      availability_status: 'AVAILABLE',
+      active_tasks_count: 0
+    };
+
+    // Staged Edit State
+    let editedData = {
+      skill_tags: [],
+      current_latitude: 3.1578,
+      current_longitude: 101.7119,
+      station_region: 'Persiaran KLCC Central Depot'
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await AuthGuard.requireAuth(['MAINTENANCE_CREW', 'ADMINISTRATOR']);
+      if (!user) return;
+
+      initMiniMap(3.1578, 101.7119);
+      await loadCrewProfile();
+    });
+
+    function initMiniMap(lat, lng) {
+      if (miniMap) return;
+      miniMap = L.map('miniBaseMap', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([lat, lng], 14);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(miniMap);
+
+      baseMarker = L.marker([lat, lng], { draggable: false }).addTo(miniMap);
+
+      // Handle map clicks in Edit Mode
+      miniMap.on('click', async (e) => {
+        if (!isEditMode) return;
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        setMarkerPosition(lat, lng);
+        await reverseGeocode(lat, lng);
+      });
+
+      baseMarker.on('dragend', async (e) => {
+        if (!isEditMode) return;
+        const pos = e.target.getLatLng();
+        setMarkerPosition(pos.lat, pos.lng);
+        await reverseGeocode(pos.lat, pos.lng);
+      });
+    }
+
+    function setMarkerPosition(lat, lng) {
+      editedData.current_latitude = lat;
+      editedData.current_longitude = lng;
+      if (baseMarker) {
+        baseMarker.setLatLng([lat, lng]);
+      }
+      if (miniMap) {
+        miniMap.panTo([lat, lng]);
+      }
+    }
+
+    async function loadCrewProfile() {
+      try {
+        const response = await AuthGuard.fetchWithAuth('/api/index.php/api/v1/crew/profile');
+        if (!response.ok) throw new Error('Failed to load profile');
+        const res = await response.json();
+
+        if (res.status === 'success' && res.data?.profile) {
+          const p = res.data.profile;
+
+          document.getElementById('crewName').textContent = p.full_name || 'Maintenance Crew';
+          document.getElementById('crewEmail').textContent = p.email || '';
+          
+          const initials = (p.full_name || 'MC').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+          document.getElementById('crewAvatar').textContent = initials;
+
+          // 1. Performance Rating in Hero Card (0.0 to 5.0 scale)
+          const rawScore = parseFloat(p.performance_score) || 100.0;
+          const stars = (rawScore / 20.0).toFixed(1);
+          document.getElementById('heroRatingScore').textContent = `${stars} / 5.0 Rating (${rawScore.toFixed(0)}%)`;
+
+          // 2. Dynamic Availability Status (Depends on in-progress tasks)
+          const statusBadge = document.getElementById('dutyStatusBadge');
+          const workloadDesc = document.getElementById('dutyWorkloadDesc');
+          const activeTasks = parseInt(p.active_tasks_count) || 0;
+
+          if (p.availability_status === 'BUSY' || activeTasks > 0) {
+            statusBadge.className = 'duty-status-badge busy';
+            statusBadge.innerHTML = '<span>🔴 Busy</span>';
+            workloadDesc.textContent = `${activeTasks} task(s) currently in progress`;
+          } else {
+            statusBadge.className = 'duty-status-badge available';
+            statusBadge.innerHTML = '<span>🟢 Available</span>';
+            workloadDesc.textContent = '0 active tasks • Ready for spatial dispatches';
+          }
+
+          // 3. Saved state
+          savedProfile.skill_tags = Array.isArray(p.skill_tags) ? [...p.skill_tags] : [];
+          savedProfile.current_latitude = parseFloat(p.current_latitude) || 3.1578;
+          savedProfile.current_longitude = parseFloat(p.current_longitude) || 101.7119;
+          savedProfile.station_region = p.station_region || 'Persiaran KLCC Central Depot';
+          savedProfile.availability_status = p.availability_status;
+          savedProfile.active_tasks_count = activeTasks;
+
+          // Sync Staged Edit Data
+          editedData = JSON.parse(JSON.stringify(savedProfile));
+
+          // Render Static Views
+          renderStaticView();
+        }
+      } catch (err) {
+        console.error('Error loading crew profile:', err);
+        showToast('⚠️ Could not load profile from server.', true);
+      }
+    }
+
+    const SKILL_NAMES = {
+      'STRUCTURAL': '🏗️ Structural Repairs',
+      'ELECTRICAL': '⚡ Electrical & Lighting',
+      'SANITATION': '🚰 Plumbing & Sanitation',
+      'GENERAL_FACILITY': '🪑 Furniture & Facilities',
+      'OTHER': '🛠️ General / Other Trade'
+    };
+
+    function renderStaticView() {
+      // 1. Render static skills
+      const container = document.getElementById('viewSkillsContainer');
+      if (savedProfile.skill_tags.length === 0) {
+        container.innerHTML = '<span class="no-skills-notice">No trade skills registered yet. Click "Edit Profile" to add skills.</span>';
+      } else {
+        container.innerHTML = savedProfile.skill_tags.map(s => `
+          <span class="static-skill-pill">
+            <span>${SKILL_NAMES[s] || s}</span>
+          </span>
+        `).join('');
+      }
+
+      // 2. Render location text
+      document.getElementById('stationRegionText').textContent = savedProfile.station_region;
+
+      // 3. Render map
+      if (miniMap && baseMarker) {
+        miniMap.setView([savedProfile.current_latitude, savedProfile.current_longitude], 14);
+        baseMarker.setLatLng([savedProfile.current_latitude, savedProfile.current_longitude]);
+        baseMarker.dragging.disable();
+      }
+    }
+
+    function enterEditMode() {
+      isEditMode = true;
+      editedData = JSON.parse(JSON.stringify(savedProfile));
+
+      // Toggle UI panes
+      document.getElementById('viewSkillsContainer').style.display = 'none';
+      document.getElementById('editSkillsContainer').style.display = 'block';
+      document.getElementById('editLocationControls').style.display = 'block';
+
+      document.getElementById('viewActionsGroup').style.display = 'none';
+      document.getElementById('editActionsGroup').style.display = 'flex';
+
+      // Sync checkbox chips
+      syncSkillChips();
+
+      // Enable marker dragging
+      if (baseMarker) {
+        baseMarker.dragging.enable();
+      }
+
+      showToast('✏️ Edit mode enabled. Select skills or search address.');
+    }
+
+    function cancelEditMode() {
+      isEditMode = false;
+      editedData = JSON.parse(JSON.stringify(savedProfile));
+
+      // Toggle UI panes back
+      document.getElementById('viewSkillsContainer').style.display = 'flex';
+      document.getElementById('editSkillsContainer').style.display = 'none';
+      document.getElementById('editLocationControls').style.display = 'none';
+
+      document.getElementById('viewActionsGroup').style.display = 'block';
+      document.getElementById('editActionsGroup').style.display = 'none';
+
+      const dropdown = document.getElementById('addressDropdown');
+      if (dropdown) dropdown.classList.remove('show');
+
+      renderStaticView();
+    }
+
+    function toggleSkillChip(skill) {
+      const idx = editedData.skill_tags.indexOf(skill);
+      if (idx > -1) {
+        editedData.skill_tags.splice(idx, 1);
+      } else {
+        editedData.skill_tags.push(skill);
+      }
+      syncSkillChips();
+    }
+
+    function syncSkillChips() {
+      const allSkills = ['STRUCTURAL', 'ELECTRICAL', 'SANITATION', 'GENERAL_FACILITY', 'OTHER'];
+      allSkills.forEach(s => {
+        const chip = document.getElementById(`chip-${s}`);
+        const input = chip.querySelector('input');
+        if (editedData.skill_tags.includes(s)) {
+          chip.classList.add('selected');
+          input.checked = true;
+        } else {
+          chip.classList.remove('selected');
+          input.checked = false;
+        }
+      });
+    }
+
+    // Address Search via OpenStreetMap Nominatim
+    function handleAddressSearch() {
+      const query = document.getElementById('locationSearchInput').value.trim();
+      const clearBtn = document.getElementById('locationClearBtn');
+      const dropdown = document.getElementById('addressDropdown');
+
+      clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+
+      if (query.length < 3) {
+        dropdown.classList.remove('show');
+        return;
+      }
+
+      clearTimeout(geocodeTimer);
+      geocodeTimer = setTimeout(() => {
+        performAddressSearch(query);
+      }, 350);
+    }
+
+    async function performAddressSearch(query) {
+      const dropdown = document.getElementById('addressDropdown');
+      if (!dropdown) return;
+
+      if (geocodeController) geocodeController.abort();
+      geocodeController = new AbortController();
+
+      dropdown.innerHTML = '<div style="padding:10px; font-size:12px; color:#64748b; text-align:center;">🔍 Searching Malaysian addresses...</div>';
+      dropdown.classList.add('show');
+
+      try {
+        const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=my&limit=5`;
+        const res = await fetch(endpoint, {
+          signal: geocodeController.signal,
+          headers: { 'Accept-Language': 'en,ms' }
+        });
+
+        if (!res.ok) throw new Error('Search failed');
+        const results = await res.json();
+
+        if (!results || results.length === 0) {
+          dropdown.innerHTML = '<div style="padding:10px; font-size:12px; color:#94a3b8; text-align:center;">No matching locations found.</div>';
+          return;
+        }
+
+        dropdown.innerHTML = results.map(item => {
+          const title = item.name || item.display_name.split(',')[0];
+          const sub = item.display_name;
+          const lat = parseFloat(item.lat);
+          const lon = parseFloat(item.lon);
+          return `
+            <div class="location-dropdown-item" onclick="selectSearchedAddress(${lat}, ${lon}, '${escapeJs(title)}')">
+              <span>📍</span>
+              <div style="flex:1; overflow:hidden;">
+                <div style="font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(title)}</div>
+                <div style="font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sub)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        dropdown.innerHTML = '<div style="padding:10px; font-size:12px; color:#ef4444; text-align:center;">Unable to search. Check internet.</div>';
+      }
+    }
+
+    function selectSearchedAddress(lat, lng, title) {
+      const dropdown = document.getElementById('addressDropdown');
+      if (dropdown) dropdown.classList.remove('show');
+
+      document.getElementById('locationSearchInput').value = title;
+      editedData.station_region = title;
+      document.getElementById('stationRegionText').textContent = title;
+
+      setMarkerPosition(lat, lng);
+      showToast(`📍 Base location set: ${title}`);
+    }
+
+    function clearAddressSearch() {
+      document.getElementById('locationSearchInput').value = '';
+      document.getElementById('locationClearBtn').style.display = 'none';
+      const dropdown = document.getElementById('addressDropdown');
+      if (dropdown) dropdown.classList.remove('show');
+    }
+
+    async function reverseGeocode(lat, lng) {
+      try {
+        const endpoint = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+        const res = await fetch(endpoint, { headers: { 'Accept-Language': 'en,ms' } });
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.name || (data.display_name ? data.display_name.split(',')[0] : `Zone (${lat.toFixed(3)}, ${lng.toFixed(3)})`);
+          editedData.station_region = name;
+          document.getElementById('stationRegionText').textContent = name;
+        }
+      } catch (e) {
+        editedData.station_region = `Zone (${lat.toFixed(3)}, ${lng.toFixed(3)})`;
+        document.getElementById('stationRegionText').textContent = editedData.station_region;
+      }
+    }
+
+    function locateCurrentGPS() {
+      if (!navigator.geolocation) {
+        showToast('❌ Geolocation not supported on device.');
+        return;
+      }
+
+      showToast('🛰️ Acquiring GPS satellite fix...');
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setMarkerPosition(lat, lng);
+          await reverseGeocode(lat, lng);
+          showToast(`📍 Set to GPS coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        },
+        (err) => {
+          showToast('⚠️ Could not fetch GPS: ' + err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    // Confirmation Modal
+    function promptSaveConfirmation() {
+      const modal = document.getElementById('confirmModal');
+      const desc = document.getElementById('confirmModalDesc');
+      const skillCount = editedData.skill_tags.length;
+      
+      desc.innerHTML = `
+        You are saving <strong>${skillCount} registered trade skill(s)</strong> and setting your team base station to: <br/>
+        <strong>📍 ${escapeHtml(editedData.station_region)}</strong>.
+      `;
+      modal.classList.add('show');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.remove('show');
+    }
+
+    async function executeSaveProfile() {
+      const btn = document.getElementById('btnExecuteSave');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Saving...</span>';
+
+      try {
+        const payload = {
+          skill_tags: editedData.skill_tags,
+          current_latitude: editedData.current_latitude,
+          current_longitude: editedData.current_longitude,
+          station_region: editedData.station_region
+        };
+
+        const response = await AuthGuard.fetchWithAuth('/api/index.php/api/v1/crew/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const res = await response.json();
+        if (res.status === 'success') {
+          savedProfile.skill_tags = [...editedData.skill_tags];
+          savedProfile.current_latitude = editedData.current_latitude;
+          savedProfile.current_longitude = editedData.current_longitude;
+          savedProfile.station_region = editedData.station_region;
+
+          closeConfirmModal();
+          cancelEditMode();
+          showToast('✓ Crew capabilities & team location saved successfully!');
+        } else {
+          showToast('❌ ' + (res.message || 'Save failed.'));
+        }
+      } catch (err) {
+        showToast('❌ Error saving: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Confirm & Save</span>';
+      }
+    }
+
+    function handleLogout() {
+      if (confirm('Are you sure you want to sign out?')) {
+        AuthGuard.logout();
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toastBanner');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.style.background = isError ? '#ef4444' : '#059669';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeJs(str) {
+      if (!str) return '';
+      return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+      const wrapper = document.querySelector('.location-search-wrapper');
+      const dropdown = document.getElementById('addressDropdown');
+      if (wrapper && dropdown && !wrapper.contains(e.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+  </script>
 </body>
 </html>

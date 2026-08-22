@@ -36,14 +36,32 @@ class ReportDAO
     }
 
     /**
-     * Calculate Priority Score (Pscore)
-     * Formula: Pscore = (Wcat * 0.5) + (Dzone * 0.3) + (log10(Ucount + 1) * 2.0)
+     * Calculate Priority Score (Pscore) with Reporter Reputation Trust Factor
+     * Formula: Pscore = [(Wcat * 0.5) + (Dzone * 0.3) + (log10(Ucount + 1) * 2.0)] * (Reputation / 100.0)
+     * Default reputation is 100 (ratio 1.0). Low-reputation accounts with fake/invalid reports are deprioritized.
      */
-    public static function computePScore(string $category, int $dZone, int $uCount): float
+    public static function computePScore(string $category, int $dZone, int $uCount, int $reputationScore = 100): float
     {
         $wCat = self::getCategoryWeight($category);
-        $score = ($wCat * 0.5) + ($dZone * 0.3) + (log10($uCount + 1) * 2.0);
-        return round($score, 2);
+        $rawScore = ($wCat * 0.5) + ($dZone * 0.3) + (log10($uCount + 1) * 2.0);
+        
+        // Reputation ratio: 100 rep -> 1.0x, 60 rep -> 0.6x, 20 rep -> 0.2x (clamped min 0.1x)
+        $reputationRatio = max(0.1, $reputationScore / 100.0);
+        $finalScore = $rawScore * $reputationRatio;
+
+        return round($finalScore, 2);
+    }
+
+    /**
+     * Fetch reputation score of a reporter (defaults to 100).
+     */
+    public function getReporterReputation(?string $userId): int
+    {
+        if (empty($userId)) return 100;
+        $stmt = $this->db->prepare("SELECT reputation_score FROM tourist_profiles WHERE user_id = :id");
+        $stmt->execute(['id' => $userId]);
+        $row = $stmt->fetch();
+        return $row ? (int)$row['reputation_score'] : 100;
     }
 
     /**
@@ -87,14 +105,18 @@ class ReportDAO
             $initialUpvotes = max(1, $report->getUpvoteCount());
             $report->setUpvoteCount($initialUpvotes);
 
-            // 2. Calculate local hotspot density (Dzone within 200m)
+            // 2. Fetch reporter's reputation trust score
+            $repScore = $this->getReporterReputation($report->getUserId());
+
+            // 3. Calculate local hotspot density (Dzone within 200m)
             $dZone = $this->countNearbyUnresolvedReports($report->getLatitude(), $report->getLongitude(), 200.0);
 
-            // 3. Compute initial Pscore
+            // 4. Compute initial Pscore (weighted by reputation)
             $pScore = self::computePScore(
                 $report->getCategory()->value,
                 $dZone,
-                $initialUpvotes
+                $initialUpvotes,
+                $repScore
             );
             $report->setPriorityScore($pScore);
 
@@ -255,7 +277,7 @@ class ReportDAO
                 throw new Exception("Report update failed");
             }
 
-            // 5. Recalculate Dzone & Pscore
+            // 5. Recalculate Dzone & Pscore (weighted by reporter's reputation)
             $dZone = $this->countNearbyUnresolvedReports(
                 (float)$updatedData['latitude'],
                 (float)$updatedData['longitude'],
@@ -263,10 +285,13 @@ class ReportDAO
                 $reportId
             );
 
+            $repScore = $this->getReporterReputation($reportData['user_id']);
+
             $newPScore = self::computePScore(
                 $updatedData['category'],
                 $dZone,
-                (int)$updatedData['upvote_count']
+                (int)$updatedData['upvote_count'],
+                $repScore
             );
 
             $updateScore = "UPDATE damage_reports SET priority_score = :pscore WHERE report_id = :report_id";

@@ -283,6 +283,123 @@ class UserDAO
         ]);
     }
 
+
+    /**
+     * Helper to serialize PHP array into PostgreSQL array string format.
+     */
+    public static function toPgArray(array $arr): string
+    {
+        if (empty($arr)) {
+            return '{}';
+        }
+        $sanitized = array_map(function($item) {
+            return '"' . addslashes(strtoupper(trim($item))) . '"';
+        }, $arr);
+        return '{' . implode(',', $sanitized) . '}';
+    }
+
+    /**
+     * Retrieve complete maintenance crew profile and auto-initialize if record is missing.
+     */
+    public function getCrewProfile(string $crewId): ?array
+    {
+        $sql = "SELECT u.user_id, u.email, u.full_name, u.role, u.is_active,
+                       mc.skill_tags, mc.availability_status, mc.performance_score,
+                       mc.current_latitude, mc.current_longitude, mc.station_region
+                FROM users u
+                LEFT JOIN maintenance_crews mc ON u.user_id = mc.crew_id
+                WHERE u.user_id = :crew_id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['crew_id' => $crewId]);
+        $crew = $stmt->fetch();
+
+        if (!$crew) {
+            return null;
+        }
+
+        // Auto-create maintenance_crews record if not initialized yet
+        if ($crew['availability_status'] === null) {
+            $insert = "INSERT INTO maintenance_crews 
+                       (crew_id, skill_tags, availability_status, performance_score, current_latitude, current_longitude, station_region)
+                       VALUES (:id, '{}', 'AVAILABLE', 100.00, 3.1578, 101.7119, 'Kuala Lumpur')
+                       ON CONFLICT (crew_id) DO NOTHING";
+            $instStmt = $this->db->prepare($insert);
+            $instStmt->execute(['id' => $crewId]);
+
+            $crew['skill_tags'] = [];
+            $crew['availability_status'] = 'AVAILABLE';
+            $crew['performance_score'] = 100.00;
+            $crew['current_latitude'] = 3.1578;
+            $crew['current_longitude'] = 101.7119;
+            $crew['station_region'] = 'Kuala Lumpur';
+        } else {
+            $crew['skill_tags'] = self::parsePgArray($crew['skill_tags']);
+        }
+
+        // Dynamically compute availability based on active in-progress tasks
+        $taskCheck = "SELECT COUNT(*) as active_cnt 
+                      FROM maintenance_tasks t
+                      JOIN damage_reports r ON t.report_id = r.report_id
+                      WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+        $taskStmt = $this->db->prepare($taskCheck);
+        $taskStmt->execute(['crew_id' => $crewId]);
+        $activeCnt = (int)($taskStmt->fetch()['active_cnt'] ?? 0);
+        $computedStatus = ($activeCnt > 0) ? 'BUSY' : 'AVAILABLE';
+
+        if ($crew['availability_status'] !== $computedStatus) {
+            $updateStatus = "UPDATE maintenance_crews SET availability_status = :status WHERE crew_id = :crew_id";
+            $uStmt = $this->db->prepare($updateStatus);
+            $uStmt->execute(['status' => $computedStatus, 'crew_id' => $crewId]);
+            $crew['availability_status'] = $computedStatus;
+        }
+
+        $crew['active_tasks_count'] = $activeCnt;
+        $crew['performance_score'] = (float)$crew['performance_score'];
+        $crew['current_latitude'] = (float)$crew['current_latitude'];
+        $crew['current_longitude'] = (float)$crew['current_longitude'];
+
+        return $crew;
+    }
+
+    /**
+     * Update maintenance crew trade capabilities, station region, or base location.
+     * Note: Availability status is managed automatically by active task workload.
+     */
+    public function updateCrewProfile(string $crewId, array $data): bool
+    {
+        // Ensure crew record exists
+        $this->getCrewProfile($crewId);
+
+        $fields = [];
+        $params = ['crew_id' => $crewId];
+
+        if (isset($data['skill_tags']) && is_array($data['skill_tags'])) {
+            $fields[] = "skill_tags = :skill_tags::skill_category[]";
+            $params['skill_tags'] = self::toPgArray($data['skill_tags']);
+        }
+
+        if (isset($data['current_latitude']) && isset($data['current_longitude'])) {
+            $fields[] = "current_latitude = :lat";
+            $fields[] = "current_longitude = :lng";
+            $params['lat'] = (float)$data['current_latitude'];
+            $params['lng'] = (float)$data['current_longitude'];
+        }
+
+        if (isset($data['station_region'])) {
+            $fields[] = "station_region = :region";
+            $params['region'] = trim($data['station_region']);
+        }
+
+        if (empty($fields)) {
+            return true;
+        }
+
+        $sql = "UPDATE maintenance_crews SET " . implode(', ', $fields) . " WHERE crew_id = :crew_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
     /**
      * Update crew availability status ('AVAILABLE' or 'BUSY').
      */

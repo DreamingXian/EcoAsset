@@ -3,6 +3,8 @@ require_once __DIR__ . '/../src/autoload.php';
 
 use App\Controllers\AuthController;
 use App\Controllers\ReportController;
+use App\Controllers\CrewController;
+use App\Controllers\TaskController;
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -54,7 +56,13 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/user/activity' || $uri === '/api/v1/user/activity')) {
     (new ReportController())->getUserActivity();
 
-// 4. API Welcome / Root Route
+// 4. Maintenance Crew Profile & Capabilities Routes
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/crew/profile' || $uri === '/api/v1/crew/profile')) {
+    (new CrewController())->getProfile();
+} elseif (($method === 'PUT' || $method === 'POST') && ($cleanUri === '/api/v1/crew/profile' || $uri === '/api/v1/crew/profile')) {
+    (new CrewController())->updateProfile();
+
+// 5. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
     echo json_encode([
         "name" => "EcoAsset REST API",
