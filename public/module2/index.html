@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EcoAsset - Module 2: Algorithmic Prioritization Engine Visualizer</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Global Styles -->
+  <link rel="stylesheet" href="../css/global.css">
+  <style>
+    .math-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 16px;
+    }
+
+    .formula-banner {
+      background: #0f172a;
+      color: #34d399;
+      font-family: monospace;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--color-primary);
+    }
+
+    .live-score-result {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(5, 150, 105, 0.35);
+      margin-bottom: 16px;
+    }
+
+    .score-number {
+      font-family: var(--font-heading);
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+      margin: 8px 0;
+    }
+
+    .queue-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    .queue-table th {
+      text-align: left;
+      padding: 8px 6px;
+      color: #64748b;
+      font-size: 11px;
+      text-transform: uppercase;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+
+    .queue-table td {
+      padding: 10px 6px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-viewport-wrapper">
+    <div class="mobile-device-shell">
+      
+      <!-- Mobile Device Status Bar -->
+      <div class="mobile-status-bar">
+        <span>9:41</span>
+        <div class="status-bar-icons">
+          <span>📶</span>
+          <span>5G</span>
+          <span>🔋 88%</span>
+        </div>
+      </div>
+
+      <!-- App Header -->
+      <header class="app-header" style="position: relative; top: 0; padding: 12px 18px 0;">
+        <div class="header-card" style="width: 100%; justify-content: space-between;">
+          <div class="logo-badge">
+            <span>⚙️</span>
+            <span>Module 2 Engine</span>
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; color: #059669;">Prioritization Math</span>
+        </div>
+      </header>
+
+      <main style="flex: 1; overflow-y: auto; padding: 16px 18px calc(var(--nav-height) + 16px);">
+        
+        <!-- Formula Explanation Card -->
+        <div class="math-card">
+          <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; margin-bottom: 6px;">
+            Dynamic Priority Score Formula
+          </h3>
+          <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
+            Every ticket is dynamically ranked using category weights, 200m spatial incident density, and log-scaled public upvotes.
+          </p>
+
+          <div class="formula-banner">
+            Pscore = (Wcat × 0.5) + (Dzone × 0.3) + (log10(Ucount + 1) × 2.0)
+          </div>
+
+          <!-- Variable Sliders -->
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Hazard Category (Wcat)</span>
+              <span id="valWcat" style="color: var(--color-primary); font-weight: 800;">Critical Safety (10)</span>
+            </div>
+            <select class="form-control" id="catSelect" onchange="recalculateScore()" style="margin-bottom: 0;">
+              <option value="10">Critical Safety (Wcat = 10)</option>
+              <option value="7">Operational Blockage (Wcat = 7)</option>
+              <option value="4">Aesthetic Issue (Wcat = 4)</option>
+            </select>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Hotspot Density within 200m (Dzone)</span>
+              <span id="valDzone" style="color: #ea580c; font-weight: 800;">4 Reports</span>
+            </div>
+            <input type="range" id="sliderDzone" min="0" max="15" value="4" oninput="recalculateScore()">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Unique Upvotes (Ucount)</span>
+              <span id="valUcount" style="color: #3b82f6; font-weight: 800;">47 Upvotes</span>
+            </div>
+            <input type="range" id="sliderUcount" min="0" max="100" value="47" oninput="recalculateScore()">
+          </div>
+        </div>
+
+        <!-- Calculated Live Result -->
+        <div class="live-score-result">
+          <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Calculated Priority Index</span>
+          <div class="score-number" id="calculatedPScore">9.56</div>
+          <div style="font-size: 11px; opacity: 0.9;" id="formulaBreakdown">
+            (10 × 0.5) + (4 × 0.3) + (log10(48) × 2.0) = 5.0 + 1.2 + 3.36
+          </div>
+        </div>
+
+        <!-- Live Simulated Prioritized Queue -->
+        <div class="math-card">
+          <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; margin-bottom: 10px;">
+            Simulated Prioritized Queue Order
+          </h4>
+          <table class="queue-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Incident</th>
+                <th>Category</th>
+                <th>P-Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>#1</strong></td>
+                <td>Pedestrian Bridge Handrail</td>
+                <td><span class="badge badge-critical">Critical</span></td>
+                <td><span class="badge badge-pscore">P 9.2</span></td>
+              </tr>
+              <tr>
+                <td><strong>#2</strong></td>
+                <td>Blocked Drainage Pipe</td>
+                <td><span class="badge badge-operational">Operational</span></td>
+                <td><span class="badge badge-pscore" style="background:#ea580c;">P 8.9</span></td>
+              </tr>
+              <tr>
+                <td><strong>#3</strong></td>
+                <td>Dangling Wire Junction</td>
+                <td><span class="badge badge-operational">Operational</span></td>
+                <td><span class="badge badge-pscore" style="background:#ea580c;">P 8.5</span></td>
+              </tr>
+              <tr>
+                <td><strong>#4</strong></td>
+                <td>Broken Concrete Step</td>
+                <td><span class="badge badge-critical">Critical</span></td>
+                <td><span class="badge badge-pscore" style="background:#ea580c;">P 8.1</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+
+      <!-- Bottom Navigation Bar -->
+      <nav class="bottom-nav">
+        <a href="../module1/index.html" class="nav-item">
+          <span>🗺️</span>
+          <span>Public Map</span>
+        </a>
+        <a href="../module3/index.html" class="nav-item">
+          <span>🚜</span>
+          <span>Crew Tasks</span>
+        </a>
+        <a href="../index.html" class="nav-item active">
+          <span>⚙️</span>
+          <span>Portal Hub</span>
+        </a>
+      </nav>
+
+    </div>
+  </div>
+
+  <script>
+    function recalculateScore() {
+      const wCat = parseFloat(document.getElementById('catSelect').value);
+      const dZone = parseInt(document.getElementById('sliderDzone').value);
+      const uCount = parseInt(document.getElementById('sliderUcount').value);
+
+      document.getElementById('valDzone').textContent = `${dZone} Reports`;
+      document.getElementById('valUcount').textContent = `${uCount} Upvotes`;
+
+      const part1 = wCat * 0.5;
+      const part2 = dZone * 0.3;
+      const part3 = Math.log10(uCount + 1) * 2.0;
+      const totalScore = (part1 + part2 + part3).toFixed(2);
+
+      document.getElementById('calculatedPScore').textContent = totalScore;
+      document.getElementById('formulaBreakdown').textContent = 
+        `(${wCat} × 0.5) + (${dZone} × 0.3) + (log10(${uCount + 1}) × 2.0) = ${part1.toFixed(1)} + ${part2.toFixed(1)} + ${part3.toFixed(2)}`;
+    }
+
+    recalculateScore();
+  </script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EcoAsset - Public Crowdsourced Damage Reporting Portal</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Global & Module Styles -->
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="module1.css">
+</head>
+<body>
+
+  <!-- Fullscreen Interactive Map Viewport -->
+  <div class="fullscreen-map-wrapper">
+    <div id="map"></div>
+  </div>
+
+  <!-- Floating Top Navbar: Brand Title & Search Bar -->
+  <header class="floating-top-navbar">
+    <a href="../login.html" class="brand-title">
+      <span>🌿</span>
+      <span>EcoAsset</span>
+    </a>
+
+    <div class="search-bar-wrapper">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        id="searchInput" 
+        class="search-input" 
+        placeholder="Search place or issue keyword..." 
+        oninput="handleSearchInput()"
+      >
+      <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()">✕</button>
+    </div>
+  </header>
+
+  <!-- Toast Notification Banner -->
+  <div class="toast-banner" id="toastBanner">
+    <span id="toastMsg">Action completed.</span>
+    <span style="cursor:pointer; font-size:16px;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
+  </div>
+
+  <!-- Zoom Level of Detail (LOD) Threshold Notice Badge -->
+  <div class="zoom-lod-badge" id="zoomLodBadge">
+    <span>🔍 Zoom in closer to view active incident pins</span>
+  </div>
+
+  <!-- Floating Map Controls (Top-Right: Legend & Impact) -->
+  <div class="map-floating-controls">
+    <!-- Status Color Legend Guide -->
+    <div class="map-status-legend">
+      <div class="legend-item">
+        <div class="legend-dot critical"></div>
+        <span>Critical Safety</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot operational"></div>
+        <span>Operational</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot resolved"></div>
+        <span>Resolved (1 wk)</span>
+      </div>
+    </div>
+
+    <!-- Community Impact Trigger Pill -->
+    <button class="btn btn-secondary" style="font-size: 11px; padding: 7px 10px; border-radius: var(--radius-full); box-shadow: var(--shadow-sm); background:#ffffff;" onclick="openImpactDrawer()">
+      <span>🏆 Impact</span>
+    </button>
+  </div>
+
+  <!-- Bottom Floating Action Bar: Self-Locate Button on Left + Centric Report Damage Button -->
+  <div class="bottom-floating-actions-bar">
+    <!-- Google Maps-style Self-Locate Target Button (Bottom-Left above navbar) -->
+    <button class="btn-self-locate" onclick="handleSelfLocate()" title="Center to My GPS Location">
+      <span>🎯</span>
+    </button>
+
+    <!-- Centric Report Damage Floating Action Button -->
+    <button class="btn-centric-report" onclick="openReportModal()">
+      <span>➕ Report Facility Damage</span>
+    </button>
+  </div>
+
+  <!-- Floating Bottom Navigation Bar for Normal Users -->
+  <nav class="floating-bottom-nav">
+    <a href="index.html" class="nav-tab active">
+      <span class="tab-icon">🗺️</span>
+      <span>Public Map</span>
+    </a>
+    <a href="my-reports.html" class="nav-tab">
+      <span class="tab-icon">📋</span>
+      <span>My Activity</span>
+    </a>
+    <a href="profile.html" class="nav-tab">
+      <span class="tab-icon">👤</span>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- ===================================================================
+       INCIDENT DETAIL DRAWER (SLIDE-UP SHEET ON PIN CLICK)
+       =================================================================== -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+  
+  <div class="bottom-drawer" id="incidentDrawer">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      
+      <div class="incident-photo-wrapper">
+        <img id="drawerPhoto" src="" alt="Damage Evidence">
+        <div class="photo-badge-overlay">
+          <span id="drawerCategoryBadge" class="badge badge-critical">Critical Safety</span>
+          <span id="drawerStatusBadge" class="badge badge-operational">In Progress</span>
+        </div>
+      </div>
+
+      <div class="incident-title-row">
+        <h3 id="drawerTitle" style="font-size: 16px; font-family: var(--font-heading); color: #0f172a; font-weight: 700;">
+          Broken Handrail
+        </h3>
+        <span style="font-size: 13px; font-weight: 700; color: #ea580c; display: flex; align-items: center; gap: 4px;">
+          🔥 <span id="drawerUpvoteCount">47</span> Upvotes
+        </span>
+      </div>
+
+      <div class="incident-address" id="drawerAddress">
+        <span>📍</span> Persiaran KLCC, Bukit Bintang
+      </div>
+
+      <p class="incident-desc" id="drawerDesc">
+        Severe structural fracture on metal railing posing high falling hazard for tourists.
+      </p>
+
+      <div class="drawer-actions-row">
+        <button class="btn btn-primary" id="btnUpvote" onclick="handleUpvote()">
+          <span>🔥 +1 Upvote</span>
+        </button>
+        <button class="btn btn-secondary" onclick="handleSharePin()">
+          <span>🔗 Share Pin</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       REPORT FACILITY DAMAGE MODAL OVERLAY (Fixed Fullscreen Overlay)
+       =================================================================== -->
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal-sheet">
+      <div class="drawer-drag-handle" onclick="closeReportModal()" style="cursor: pointer;"></div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 18px; font-family: var(--font-heading); font-weight: 800; color: #0f172a;">Report Facility Problem</h3>
+        <button type="button" class="modal-close-btn" onclick="closeReportModal()" title="Close Form">✕</button>
+      </div>
+
+      <!-- 15-Minute Countdown Decay Banner (ONLY appears after photo is taken) -->
+      <div class="decay-timer-banner" id="decayBanner" style="display: none;">
+        <span>⏱️ Live Photo Cache Expires In:</span>
+        <span id="decayTimerVal" style="font-family: monospace; font-size: 13px; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 6px;">14:58</span>
+      </div>
+
+      <!-- Section 1: Live Photo Capture (Blank initially) -->
+      <label class="form-group-title">1. Live Evidence Capture</label>
+      <div class="photo-capture-frame" id="photoFrame">
+        <div id="photoPlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <span style="font-size: 32px;">📷</span>
+          <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Captured Yet</span>
+          <span style="font-size: 11px; color: #94a3b8;">Physical live camera capture • Gallery disabled</span>
+        </div>
+        <img id="capturedImg" class="photo-preview-img" src="" alt="Captured Evidence">
+      </div>
+
+      <!-- Capture / Retake Button -->
+      <button type="button" class="btn btn-secondary btn-block" id="btnCapturePhoto" onclick="handlePhotoCaptureButton()" style="margin-bottom: 16px;">
+        <span>📷 Take Live Photo</span>
+      </button>
+
+      <!-- Section 2: Confirm Facility Location with Interactive Mini-Map -->
+      <label class="form-group-title">2. Confirm Facility Location & Mini-Map</label>
+      <div style="background: #f8fafc; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 12.5px; font-weight: 700; color: #334155;">Pinned Location:</span>
+          <span class="badge badge-resolved">≤ 50m EXIF Check</span>
+        </div>
+        <p id="selectedLocationLabel" style="font-size: 13px; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 8px;">
+          Persiaran KLCC (3.1578° N, 101.7119° E)
+        </p>
+
+        <!-- Visualized Interactive Leaflet Mini-Map -->
+        <div class="mini-map-box">
+          <div id="reportMiniMap"></div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="resetLocationToGps()">
+            <span>📍 Reset to GPS</span>
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="simulateFarLocationPick()" title="Simulate location mismatch >50m for testing">
+            <span>⚠️ Test >50m Mismatch</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 3: Severity Survey Selection -->
+      <label class="form-group-title">3. How is this damage affecting visitors? (Select one)</label>
+      
+      <div class="survey-question-card selected" onclick="selectSurveyOption(this, 'CRITICAL_SAFETY', 10, 'Critical Safety Hazard')">
+        <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
+        <div>
+          <div class="survey-text-title" style="color: var(--color-critical);">Critical Safety Hazard (High Danger)</div>
+          <div class="survey-text-desc">Immediate risk of serious injury or accident (e.g. collapsed handrail/bridge, exposed live wires, deep open hole).</div>
+        </div>
+      </div>
+
+      <div class="survey-question-card" onclick="selectSurveyOption(this, 'OPERATIONAL', 7, 'Major Facility Blockage')">
+        <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
+        <div>
+          <div class="survey-text-title" style="color: var(--color-operational);">Major Facility Blockage (Unusable)</div>
+          <div class="survey-text-desc">Facility is broken or completely blocked for use (e.g. broken restroom door/toilet, flooded walkway, impassable trail).</div>
+        </div>
+      </div>
+
+      <div class="survey-question-card" onclick="selectSurveyOption(this, 'OPERATIONAL', 6, 'Minor Inconvenience / Partial Damage')">
+        <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
+        <div>
+          <div class="survey-text-title" style="color: #d97706;">Minor Inconvenience (Partially Usable)</div>
+          <div class="survey-text-desc">Damaged but partially functional (e.g. broken park bench slat, loose handrail screw, flickering trail lamp, leaking faucet).</div>
+        </div>
+      </div>
+
+      <div class="survey-question-card" onclick="selectSurveyOption(this, 'AESTHETIC', 4, 'Aesthetic / Cleanliness Issue')">
+        <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
+        <div>
+          <div class="survey-text-title" style="color: var(--color-aesthetic);">Aesthetic or Cleanliness Defect</div>
+          <div class="survey-text-desc">Visual or sanitary defect (e.g. overflowing trash bin, graffiti on monument, peeling signboard paint).</div>
+        </div>
+      </div>
+
+      <!-- Section 4: Required Maintenance Trade (Selectable Cards) -->
+      <label class="form-group-title">4. Required Maintenance Trade</label>
+      <div class="trade-chips-grid">
+        
+        <div class="trade-chip-card selected" onclick="selectTradeCard(this, 'STRUCTURAL')">
+          <span class="trade-chip-icon">🏗️</span>
+          <div>
+            <div class="trade-chip-name">Structural</div>
+            <span style="font-size: 11px; color: var(--text-muted);">Bridges, rails, steps</span>
+          </div>
+        </div>
+
+        <div class="trade-chip-card" onclick="selectTradeCard(this, 'ELECTRICAL')">
+          <span class="trade-chip-icon">⚡</span>
+          <div>
+            <div class="trade-chip-name">Electrical</div>
+            <span style="font-size: 11px; color: var(--text-muted);">Lights, wiring, power</span>
+          </div>
+        </div>
+
+        <div class="trade-chip-card" onclick="selectTradeCard(this, 'SANITATION')">
+          <span class="trade-chip-icon">🧹</span>
+          <div>
+            <div class="trade-chip-name">Sanitation</div>
+            <span style="font-size: 11px; color: var(--text-muted);">Drains, waste, toilets</span>
+          </div>
+        </div>
+
+        <div class="trade-chip-card" onclick="selectTradeCard(this, 'GENERAL_FACILITY')">
+          <span class="trade-chip-icon">🪑</span>
+          <div>
+            <div class="trade-chip-name">Furniture & Grounds</div>
+            <span style="font-size: 11px; color: var(--text-muted);">Benches, signs, lawns</span>
+          </div>
+        </div>
+
+        <div class="trade-chip-card" onclick="selectTradeCard(this, 'NOT_SURE')" style="grid-column: 1 / -1;">
+          <span class="trade-chip-icon">❓</span>
+          <div>
+            <div class="trade-chip-name">Not Sure / Other</div>
+            <span style="font-size: 11px; color: var(--text-muted);">Local dispatcher will classify upon inspection</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Section 5: Description with 500-Character Limit (Clean vertical block) -->
+      <label class="form-group-title">5. Damage Description (Max 500 characters)</label>
+      <textarea 
+        class="form-control" 
+        id="reportDesc" 
+        rows="3" 
+        maxlength="500" 
+        placeholder="Provide specific landmark details (e.g., Near entrance bridge, opposite kiosk 2)..."
+        oninput="handleDescInput(this)"
+      ></textarea>
+      <div class="char-counter"><span id="charCount">0</span> / 500 characters</div>
+
+      <!-- Submit Button -->
+      <button type="button" class="btn btn-primary btn-block" onclick="handleReportSubmitClick(event)">
+        <span>Review & Submit Report</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       50-METER DISTANCE MISMATCH MODAL
+       =================================================================== -->
+  <div class="confirm-dialog-backdrop" id="mismatchModal">
+    <div class="confirm-dialog-card">
+      <div class="confirm-dialog-icon">⚠️</div>
+      <h3 class="confirm-dialog-title" style="color: #dc2626;">Location Distance Mismatch</h3>
+      
+      <div class="distance-mismatch-box" style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:12px; padding:12px; margin-bottom:14px; text-align:left;">
+        <span class="badge badge-critical" id="mismatchDistText" style="font-size:12px; margin-bottom:6px;">180 meters away</span>
+        <p style="font-size: 12px; color: #7f1d1d; line-height: 1.4; margin-top:4px;">
+          <strong>Anti-Fraud Rule:</strong> The selected map location is further than the 50-meter tolerance radius from the live photo's GPS coordinates.
+        </p>
+      </div>
+
+      <p class="confirm-dialog-desc">
+        To maintain high data integrity for municipal field crews, please ensure you are physically at the facility when taking the photo.
+      </p>
+
+      <div class="confirm-dialog-actions">
+        <button class="btn btn-primary" onclick="resetLocationToGps()">
+          <span>Use GPS Pin</span>
+        </button>
+        <button class="btn btn-secondary" onclick="document.getElementById('mismatchModal').classList.remove('active')">
+          <span>Retake Photo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       FINAL SUBMISSION CONFIRMATION PROMPT
+       =================================================================== -->
+  <div class="confirm-dialog-backdrop" id="confirmPromptModal">
+    <div class="confirm-dialog-card">
+      <div class="confirm-dialog-icon">📋</div>
+      <h3 class="confirm-dialog-title">Confirm Report Submission</h3>
+      
+      <div style="background: #f8fafc; border-radius: 12px; padding: 12px; text-align: left; font-size: 12.5px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+        <div style="margin-bottom: 6px;"><strong>Impact:</strong> <span id="confirmSummaryCategory">Critical Safety Hazard</span></div>
+        <div style="margin-bottom: 6px;"><strong>Trade:</strong> <span id="confirmSummaryTrade">Structural</span></div>
+        <div><strong>Location:</strong> <span id="confirmSummaryLocation">Persiaran KLCC</span></div>
+      </div>
+
+      <p class="confirm-dialog-desc">
+        Are you sure you want to submit this damage report into the maintenance queue?
+      </p>
+
+      <div class="confirm-dialog-actions">
+        <button class="btn btn-primary" onclick="confirmFinalSubmission()">
+          <span>Yes, Submit</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeConfirmPrompt()">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       COMMUNITY IMPACT SUMMARY DRAWER
+       =================================================================== -->
+  <div class="bottom-drawer" id="impactDrawer">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #0f172a;">
+          🌱 Community Resolution Impact
+        </h3>
+        <span style="cursor:pointer; color:#64748b; font-size:18px;" onclick="closeDrawer()">✕</span>
+      </div>
+
+      <p style="font-size: 12.5px; color: #64748b; margin-bottom: 16px;">
+        Together keeping Malaysian tourist destinations clean, safe, and sustainable for Visit Malaysia 2026.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+        <div style="background: #ecfdf5; padding: 14px; border-radius: 14px; text-align: center; border: 1px solid #a7f3d0;">
+          <span style="font-size: 26px; font-weight: 800; color: #047857;">138</span>
+          <p style="font-size: 11.5px; font-weight: 700; color: #065f46;">Fixed This Month</p>
+        </div>
+        <div style="background: #eff6ff; padding: 14px; border-radius: 14px; text-align: center; border: 1px solid #bfdbfe;">
+          <span style="font-size: 26px; font-weight: 800; color: #1d4ed8;">3.2 Days</span>
+          <p style="font-size: 11.5px; font-weight: 700; color: #1e40af;">Avg. Turnaround</p>
+        </div>
+      </div>
+
+      <label class="form-group-title">Top Active Maintenance Districts</label>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 10px; font-size: 12.5px; font-weight: 600;">
+          <span>1. KLCC & Bukit Bintang</span>
+          <span style="color: var(--color-primary-dark); font-weight: 700;">64 Resolved</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 10px; font-size: 12.5px; font-weight: 600;">
+          <span>2. Titiwangsa Heritage Park</span>
+          <span style="color: var(--color-primary-dark); font-weight: 700;">42 Resolved</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 10px; font-size: 12.5px; font-weight: 600;">
+          <span>3. Perdana Botanical Garden</span>
+          <span style="color: var(--color-primary-dark); font-weight: 700;">32 Resolved</span>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary btn-block" onclick="closeDrawer()">
+        <span>Close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Module 1 Script -->
+  <script src="module1.js"></script>
+</body>
+</html>

@@ -33,7 +33,8 @@ CREATE TYPE user_role AS ENUM (
 CREATE TYPE skill_category AS ENUM (
     'ELECTRICAL', 
     'STRUCTURAL', 
-    'SANITATION'
+    'SANITATION',
+    'GENERAL_FACILITY'
 );
 
 CREATE TYPE availability_state AS ENUM (

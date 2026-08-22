@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EcoAsset - Maintenance Crew Terminal</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Global & Module Styles -->
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="module3.css">
+</head>
+<body>
+
+  <div class="crew-terminal-wrapper">
+    
+    <!-- Top Crew Header Bar -->
+    <header class="crew-header-bar">
+      <div class="crew-title-block">
+        <h2 class="crew-main-title">Crew Terminal</h2>
+        <div class="crew-sub-desc">
+          <span>👷 Tan Boon Huat (ID: T-004)</span>
+          <span>•</span>
+          <span style="color: #047857; font-weight: 700;">★ 4.8 / 5.0</span>
+        </div>
+      </div>
+
+      <div class="duty-status-badge available" id="dutyBadge" onclick="alert('Duty status: Online for spatial automated dispatches.')">
+        <span>🟢 Available</span>
+      </div>
+    </header>
+
+    <!-- 3 Terminal Navigation Tabs -->
+    <div class="terminal-tabs">
+      <button class="terminal-tab-btn active" data-tab="my-tasks" onclick="switchTerminalTab('my-tasks')">
+        <span>My Tasks</span>
+        <span class="tab-count-pill" id="myTasksBadge">2</span>
+      </button>
+      <button class="terminal-tab-btn" data-tab="open-pool" onclick="switchTerminalTab('open-pool')">
+        <span>Open Pool</span>
+        <span class="tab-count-pill" id="openPoolBadge">1</span>
+      </button>
+      <button class="terminal-tab-btn" data-tab="in-progress" onclick="switchTerminalTab('in-progress')">
+        <span>In Progress</span>
+        <span class="tab-count-pill" id="inProgressBadge">0</span>
+      </button>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div class="toast-banner" id="toastBanner">
+      <span id="toastMsg">Action completed.</span>
+      <span style="cursor:pointer; font-size:16px;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
+    </div>
+
+    <!-- Main Scrollable Content Area -->
+    <main class="terminal-content-area">
+
+      <!-- =================================================================
+           PANE 1: MY TASKS (DISPATCHED ASSIGNMENTS)
+           ================================================================= -->
+      <div class="tab-view-pane active" id="pane-my-tasks">
+        
+        <!-- Task Card 1: Critical Safety (Click to inspect full details) -->
+        <div class="task-card" id="my-task-RPT-2401" onclick="openTaskDetailModal('RPT-2401', 'my-tasks')">
+          <div class="task-card-header">
+            <div class="task-badges-cluster">
+              <span class="badge badge-pscore">P 9.2</span>
+              <span class="badge badge-critical">Critical Safety</span>
+              <span class="badge badge-aesthetic">Structural</span>
+            </div>
+            <div class="sla-badge">
+              <span>⏱️ 2h 14m SLA</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="task-card-title">Persiaran KLCC, Bukit Bintang</h4>
+            <div class="task-card-location">
+              <span class="task-card-distance">📍 0.8 km away</span>
+              <span>• Tap to view full report details</span>
+            </div>
+          </div>
+
+          <p class="task-card-desc">
+            Broken metal handrail on pedestrian bridge, severe fracture posing imminent fall hazard.
+          </p>
+
+          <div class="task-card-footer" onclick="event.stopPropagation();">
+            <button class="btn btn-primary" style="flex: 2;" onclick="promptConfirmAction('ACCEPT', 'RPT-2401')">
+              <span>✓ Accept Task</span>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="promptConfirmAction('DECLINE', 'RPT-2401')">
+              <span>Decline</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Task Card 2: Operational with Admin Rejection Notice -->
+        <div class="task-card" id="my-task-RPT-2389" onclick="openTaskDetailModal('RPT-2389', 'my-tasks')">
+          <div class="task-card-header">
+            <div class="task-badges-cluster">
+              <span class="badge badge-pscore" style="background:#ea580c;">P 8.5</span>
+              <span class="badge badge-operational">Operational</span>
+              <span class="badge badge-aesthetic">Electrical</span>
+            </div>
+            <div class="sla-badge">
+              <span>⏱️ 4h 50m SLA</span>
+            </div>
+          </div>
+
+          <!-- Admin Rejection Notice Banner -->
+          <div class="admin-comment-banner">
+            <span>⚠️</span>
+            <span><strong>Admin Review Note:</strong> Previous photo was blurry. Please capture clear photo of wiring junction box.</span>
+          </div>
+
+          <div>
+            <h4 class="task-card-title">Jalan Ampang, KLCC</h4>
+            <div class="task-card-location">
+              <span class="task-card-distance">📍 1.2 km away</span>
+              <span>• Tap to inspect details</span>
+            </div>
+          </div>
+
+          <p class="task-card-desc">
+            Open electrical junction box with dangling live wires near tourist walking trail.
+          </p>
+
+          <div class="task-card-footer" onclick="event.stopPropagation();">
+            <button class="btn btn-primary" style="flex: 2;" onclick="promptConfirmAction('ACCEPT', 'RPT-2389')">
+              <span>✓ Accept Task</span>
+            </button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="promptConfirmAction('DECLINE', 'RPT-2389')">
+              <span>Decline</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- =================================================================
+           PANE 2: OPEN MAINTENANCE POOL (UNASSIGNED FOR SELF-CLAIM)
+           ================================================================= -->
+      <div class="tab-view-pane" id="pane-open-pool">
+        
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; color: #1e40af; font-weight: 600; grid-column: 1 / -1;">
+          <span>🎯 Filtered by your registered skills: <strong>Structural, Electrical</strong></span>
+        </div>
+
+        <!-- Open Pool Card 1 -->
+        <div class="task-card" id="pool-task-RPT-2340" onclick="openTaskDetailModal('RPT-2340', 'open-pool')">
+          <div class="task-card-header">
+            <div class="task-badges-cluster">
+              <span class="badge badge-pscore" style="background:#ea580c;">P 8.9</span>
+              <span class="badge badge-operational">Operational</span>
+              <span class="badge badge-aesthetic">Structural</span>
+            </div>
+            <span style="font-size: 11.5px; font-weight: 700; color: #475569;">Open for Claim</span>
+          </div>
+
+          <div>
+            <h4 class="task-card-title">Jalan Pahang, Titiwangsa</h4>
+            <div class="task-card-location">
+              <span class="task-card-distance">📍 5.1 km away</span>
+              <span>• Tap to inspect details</span>
+            </div>
+          </div>
+
+          <p class="task-card-desc">
+            Damaged storm drainage grate causing pathway blockage during rain.
+          </p>
+
+          <button class="btn btn-primary btn-block" onclick="event.stopPropagation(); promptConfirmAction('CLAIM', 'RPT-2340')">
+            <span>⚡ Claim Task (Lock & Start)</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- =================================================================
+           PANE 3: IN PROGRESS (MULTI-TASK ACTIVE WORK ORDERS)
+           ================================================================= -->
+      <div class="tab-view-pane" id="pane-in-progress">
+        
+        <!-- Empty State -->
+        <div class="empty-state-card" id="inProgressEmpty">
+          <span style="font-size: 36px;">🔧</span>
+          <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b;">No Active Work Order</h4>
+          <p style="font-size: 12.5px; color: #64748b;">Accept a dispatched task from "My Tasks" or self-claim an open job from the "Open Pool".</p>
+        </div>
+
+        <!-- Active Work Order Card (RPT-2401 - Clickable to open full detail modal) -->
+        <div class="task-card" id="in-prog-RPT-2401" style="display: none;" onclick="openTaskDetailModal('RPT-2401', 'in-progress')">
+          <div class="task-card-header">
+            <div class="task-badges-cluster">
+              <span class="badge badge-pscore">P 9.2</span>
+              <span class="badge badge-critical">Critical Safety</span>
+              <span class="badge badge-resolved">In Progress</span>
+            </div>
+            <div class="sla-badge">
+              <span>⏱️ 2h 14m SLA</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="task-card-title">Persiaran KLCC, Bukit Bintang</h4>
+            <div class="task-card-location">
+              <span class="task-card-distance">📍 0.8 km away</span>
+              <span>• Tap card to view full work order & actions</span>
+            </div>
+          </div>
+
+          <p class="task-card-desc">Broken handrail on pedestrian bridge posing serious fall hazard.</p>
+
+          <!-- Google Maps Launch Navigation Button -->
+          <button class="btn btn-primary btn-block" style="background:#0284c7;" onclick="event.stopPropagation(); launchNavigation(3.1579, 101.7120)">
+            <span>🚀 Launch Navigation in Google Maps</span>
+          </button>
+
+          <!-- 3 Field Execution Lifecycle Actions -->
+          <label class="form-group-title" style="margin-top: 6px;">Field Execution Actions</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;" onclick="event.stopPropagation();">
+            <button class="btn btn-secondary" style="font-size:12px; padding:10px 4px; border:1px solid #10b981; color:#047857; background:#ecfdf5;" onclick="openCompleteModal('RPT-2401')">
+              <span>✅ Mark Done</span>
+            </button>
+            <button class="btn btn-secondary" style="font-size:12px; padding:10px 4px; border:1px solid #f59e0b; color:#b45309; background:#fffbeb;" onclick="openDropModal('RPT-2401')">
+              <span>⚠️ Drop Task</span>
+            </button>
+            <button class="btn btn-secondary" style="font-size:12px; padding:10px 4px; border:1px solid #ef4444; color:#b91c1c; background:#fef2f2;" onclick="openFlagInvalidModal('RPT-2401')">
+              <span>🚩 Flag Invalid</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar for Crew -->
+    <nav class="crew-bottom-nav">
+      <a href="index.html" class="nav-tab active">
+        <span class="tab-icon">🚜</span>
+        <span>Crew Terminal</span>
+      </a>
+      <a href="profile.html" class="nav-tab">
+        <span class="tab-icon">👤</span>
+        <span>Crew Profile</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- ===================================================================
+       TASK DETAIL MODAL (FULL REPORT INSPECTION WITH RESIZED IMAGE)
+       =================================================================== -->
+  <div class="drawer-backdrop" id="taskDetailBackdrop" onclick="closeTaskDetailModal()"></div>
+  
+  <div class="bottom-drawer" id="taskDetailModal">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #0f172a;">Task Work Order Details</h3>
+        <button type="button" class="modal-close-btn" onclick="closeTaskDetailModal()">✕</button>
+      </div>
+
+      <!-- Resized Evidence Photo Frame -->
+      <div class="incident-photo-wrapper">
+        <img id="modalTaskPhoto" src="" alt="Damage Photo">
+        <div class="photo-badge-overlay">
+          <span id="modalCategoryBadge" class="badge badge-critical">Critical</span>
+          <span id="modalTradeBadge" class="badge badge-aesthetic">Structural</span>
+          <span id="modalTaskPScore" class="badge badge-pscore">P 9.2</span>
+        </div>
+      </div>
+
+      <!-- Admin Comment Banner in Modal if applicable -->
+      <div class="admin-comment-banner" id="modalAdminCommentBox" style="margin-bottom: 12px; display: none;">
+        <span>⚠️</span>
+        <span id="modalAdminCommentText">Admin Comment</span>
+      </div>
+
+      <h4 id="modalTaskTitle" style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+        Task Title
+      </h4>
+
+      <div style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 10px;" id="modalTaskLocation">
+        📍 Address
+      </div>
+
+      <label class="form-group-title">Description</label>
+      <p id="modalTaskDesc" style="font-size: 13px; color: #334155; line-height: 1.45; background: #f8fafc; padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 14px; border-left: 3px solid var(--color-primary);">
+        Description
+      </p>
+
+      <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 18px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+        <span>👤 Reported by: <strong id="modalTaskReporter" style="color: #0f172a;">Ahmad</strong></span>
+        <span>🔥 <strong id="modalTaskUpvotes" style="color: #ea580c;">47</strong> Upvotes</span>
+        <span>⏱️ <strong id="modalTaskSla" style="color: #d97706;">2h 14m</strong></span>
+      </div>
+
+      <div id="modalActionFooter" style="display: flex; gap: 8px;">
+        <!-- Dynamically populated buttons -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       CREW ACTION CONFIRMATION PROMPT SYSTEM (z-index 3500 ON TOP OF DRAWERS)
+       =================================================================== -->
+  <div class="confirm-dialog-backdrop" id="crewConfirmModal">
+    <div class="confirm-dialog-card">
+      <div class="confirm-dialog-icon">⚡</div>
+      <h3 class="confirm-dialog-title" id="crewConfirmTitle">Confirm Action</h3>
+      <p class="confirm-dialog-desc" id="crewConfirmDesc">Are you sure you want to proceed with this task action?</p>
+      <div class="confirm-dialog-actions">
+        <button class="btn btn-primary" onclick="executeConfirmedAction()">
+          <span>Yes, Confirm</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeCrewConfirmModal()">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       FIELD LIFECYCLE 1: MARK AS DONE (PRE-COMPLETE ADMIN REVIEW)
+       =================================================================== -->
+  <div class="drawer-backdrop" id="completeModalBackdrop" onclick="closeAllDrawers()"></div>
+  
+  <div class="bottom-drawer" id="completeDrawerModal">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color:#0f172a;">Mark Task as Completed</h3>
+        <button type="button" class="modal-close-btn" onclick="closeAllDrawers()">✕</button>
+      </div>
+
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
+        Capture a live photo of the repaired facility. Status will enter <strong>Pending Admin Review</strong>.
+      </p>
+
+      <!-- Resized After-Repair Photo Proof Frame -->
+      <label class="form-group-title">1. After-Repair Photo Proof (Required)</label>
+      <div class="photo-capture-frame" id="completeFrame">
+        <div id="completePlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <span style="font-size: 32px;">📷</span>
+          <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Taken Yet</span>
+          <span style="font-size: 11px; color: #94a3b8;">Tap below to snap after-repair proof</span>
+        </div>
+        <img id="completeCapturedImg" class="photo-preview-img" src="" alt="After Repair Proof">
+      </div>
+
+      <button type="button" class="btn btn-secondary btn-block" id="btnCompletePhoto" onclick="handleCompletePhotoCapture()" style="margin-bottom: 14px;">
+        <span>📷 Take After-Repair Photo</span>
+      </button>
+
+      <!-- Resolution Notes (Clean vertical placement) -->
+      <label class="form-group-title">2. Resolution Notes (Optional)</label>
+      <textarea 
+        class="form-control" 
+        id="completeNotes" 
+        rows="3" 
+        placeholder="e.g., Replaced broken stainless steel screws, welded structural bracket, and cleaned site..."
+      ></textarea>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+        <button class="btn btn-primary" onclick="submitCompleteTask()">
+          <span>Submit for Review</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeAllDrawers()">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       FIELD LIFECYCLE 2: DROP TASK (WITH 'OTHER' REASON FIELD)
+       =================================================================== -->
+  <div class="drawer-backdrop" id="dropModalBackdrop" onclick="closeAllDrawers()"></div>
+
+  <div class="bottom-drawer" id="dropDrawerModal">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color:#991b1b;">Drop Maintenance Task</h3>
+        <button type="button" class="modal-close-btn" onclick="closeAllDrawers()">✕</button>
+      </div>
+
+      <div class="penalty-warning-box" style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:12px; font-size:12px; color:#991b1b; margin-bottom:14px;">
+        <span>⚠️ <strong>Penalty Notice:</strong> Dropping an accepted work order applies a <strong>-5.00 point deduction</strong> to team rating and releases the job back to the Open Pool.</span>
+      </div>
+
+      <!-- Proper Reason Dropdown -->
+      <label class="form-group-title">Select Reason for Dropping</label>
+      <select class="form-control" id="dropReasonSelect" onchange="handleDropReasonChange(this)">
+        <option value="HEAVY_MACHINERY">Specialized Heavy Machinery Required</option>
+        <option value="WEATHER_HAZARD">Severe Weather / Natural Hazard On-Site</option>
+        <option value="SHIFT_CONFLICT">Unscheduled Emergency Shift Conflict</option>
+        <option value="OUT_OF_STOCK">Replacement Parts Out of Stock</option>
+        <option value="OTHER">Other (Specify Custom Reason)</option>
+      </select>
+
+      <!-- Custom Reason Field when 'Other' is chosen -->
+      <div id="otherReasonContainer" style="display: none; margin-top: -6px; margin-bottom: 8px;">
+        <label class="form-group-title">Please Specify Custom Reason (Required)</label>
+        <input type="text" class="form-control" id="otherReasonInput" placeholder="Enter specific field reason for dropping task...">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+        <button class="btn btn-danger" onclick="submitDropTask()">
+          <span>Confirm Drop</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeAllDrawers()">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       FIELD LIFECYCLE 3: FLAG INVALID (PRE-INVALID ADMIN REVIEW)
+       =================================================================== -->
+  <div class="drawer-backdrop" id="flagModalBackdrop" onclick="closeAllDrawers()"></div>
+
+  <div class="bottom-drawer" id="flagDrawerModal">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color:#b91c1c;">Flag as Invalid / No Fault Found</h3>
+        <button type="button" class="modal-close-btn" onclick="closeAllDrawers()">✕</button>
+      </div>
+
+      <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:12px; font-size:12px; color:#9a3412; margin-bottom:14px;">
+        <span>ℹ️ The original citizen reporter will receive a <strong>-20 credibility penalty</strong> upon municipal administrator validation.</span>
+      </div>
+
+      <!-- Resized Clear Site Evidence Photo Frame -->
+      <label class="form-group-title">1. Clear Site Evidence Photo (Required)</label>
+      <div class="photo-capture-frame" id="flagFrame">
+        <div id="flagPlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <span style="font-size: 32px;">📷</span>
+          <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Taken Yet</span>
+          <span style="font-size: 11px; color: #94a3b8;">Snap on-site clear status proof</span>
+        </div>
+        <img id="flagCapturedImg" class="photo-preview-img" src="" alt="Clear Site Proof">
+      </div>
+
+      <button type="button" class="btn btn-secondary btn-block" id="btnFlagPhoto" onclick="handleFlagPhotoCapture()" style="margin-bottom: 14px;">
+        <span>📷 Capture Clear-Site Photo</span>
+      </button>
+
+      <!-- Inspection Findings (Required and cannot be blank) -->
+      <label class="form-group-title">2. Inspection Findings (Required)</label>
+      <textarea 
+        class="form-control" 
+        id="flagNotes" 
+        rows="3" 
+        placeholder="Explain why this reported facility issue has no damage (e.g., Facility inspected on-site, fully intact and operational)..."
+      ></textarea>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+        <button class="btn btn-danger" onclick="submitFlagInvalid()">
+          <span>Submit Flag</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeAllDrawers()">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 3 Script -->
+  <script src="module3.js"></script>
+</body>
+</html>

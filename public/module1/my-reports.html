@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EcoAsset - My Activity & Reports History</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Global Styles -->
+  <link rel="stylesheet" href="../css/global.css">
+  <style>
+    .user-page-wrapper {
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg-app);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .activity-top-bar {
+      background: #ffffff;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 500;
+    }
+
+    .activity-filter-tabs {
+      background: #ffffff;
+      display: flex;
+      border-bottom: 1.5px solid var(--border-color);
+      padding: 0 24px;
+      position: sticky;
+      top: 61px;
+      z-index: 450;
+    }
+
+    .filter-tab-btn {
+      flex: 1;
+      max-width: 220px;
+      padding: 13px 12px;
+      background: none;
+      border: none;
+      font-family: var(--font-heading);
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .filter-tab-btn.active {
+      color: var(--color-primary-dark);
+    }
+
+    .filter-tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1.5px;
+      left: 0; right: 0;
+      height: 3px;
+      background: var(--color-primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .activity-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px calc(var(--nav-height) + 30px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-pane-view {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    @media (min-width: 768px) {
+      .tab-pane-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+    }
+
+    .activity-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      border: 1.5px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .activity-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .activity-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .activity-card-body {
+      display: flex;
+      gap: 14px;
+    }
+
+    .activity-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .activity-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .activity-title {
+      font-family: var(--font-heading);
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .activity-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .user-bottom-nav {
+      height: var(--nav-height);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 600;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="user-page-wrapper">
+    
+    <!-- Top Header -->
+    <header class="activity-top-bar">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <a href="index.html" style="text-decoration:none; font-size:20px; color:#047857;">🌿</a>
+        <h1 style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: #0f172a;">
+          My Activity & Reports
+        </h1>
+      </div>
+      <a href="index.html" class="btn btn-secondary" style="font-size: 12px; padding: 7px 14px;">
+        <span>🗺️ View Map</span>
+      </a>
+    </header>
+
+    <!-- 3 Filter Tabs: Reports, Upvotes, Resolved Archive (Requirement 2) -->
+    <div class="activity-filter-tabs">
+      <button class="filter-tab-btn active" onclick="switchFilter(this, 'my-reports')">
+        <span>My Reports</span>
+        <span class="badge" style="background:#ecfdf5; color:#047857; font-size:10px;">2</span>
+      </button>
+      <button class="filter-tab-btn" onclick="switchFilter(this, 'upvoted')">
+        <span>Upvoted</span>
+        <span class="badge" style="background:#eff6ff; color:#1d4ed8; font-size:10px;">4</span>
+      </button>
+      <button class="filter-tab-btn" onclick="switchFilter(this, 'archive')">
+        <span>Closed Archive</span>
+        <span class="badge" style="background:#f1f5f9; color:#475569; font-size:10px;">3</span>
+      </button>
+    </div>
+
+    <!-- Activity List Items (Full Screen Grid on PC) -->
+    <main class="activity-list-container">
+
+      <!-- PANE 1: MY REPORTS -->
+      <div id="pane-my-reports" class="tab-pane-view" style="display: flex;">
+        
+        <div class="activity-card">
+          <div class="activity-card-header">
+            <span class="badge badge-critical">Critical Safety</span>
+            <span class="badge badge-operational">In Progress</span>
+          </div>
+          <div class="activity-card-body">
+            <img src="https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Report Thumbnail">
+            <div class="activity-info">
+              <h3 class="activity-title">Broken handrail on pedestrian bridge</h3>
+              <p class="activity-meta">📍 Persiaran KLCC • Reported 2 days ago</p>
+              <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px;">
+                🔥 47 Public Upvotes
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-card">
+          <div class="activity-card-header">
+            <span class="badge badge-operational">Operational</span>
+            <span class="badge" style="background:#fef3c7; color:#b45309;">Pending Dispatch</span>
+          </div>
+          <div class="activity-card-body">
+            <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Report Thumbnail">
+            <div class="activity-info">
+              <h3 class="activity-title">Blocked drainage pipe causing pathway flooding</h3>
+              <p class="activity-meta">📍 Jalan Pahang, Titiwangsa • Reported 5 days ago</p>
+              <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px;">
+                🔥 38 Public Upvotes
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PANE 2: UPVOTED -->
+      <div id="pane-upvoted" class="tab-pane-view" style="display: none;">
+        
+        <div class="activity-card">
+          <div class="activity-card-header">
+            <span class="badge badge-operational">Operational</span>
+            <span class="badge badge-operational">In Progress</span>
+          </div>
+          <div class="activity-card-body">
+            <img src="https://images.unsplash.com/photo-1555680202-c86f0e12f086?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Upvoted Thumbnail">
+            <div class="activity-info">
+              <h3 class="activity-title">Exposed street lighting wiring</h3>
+              <p class="activity-meta">📍 Jalan Ampang, KLCC • You upvoted 1 day ago</p>
+              <div style="font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 4px;">
+                🔥 31 Public Upvotes
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PANE 3: CLOSED ARCHIVE (Resolved or Flagged Invalid - Requirement 2 & 7) -->
+      <div id="pane-archive" class="tab-pane-view" style="display: none;">
+        
+        <!-- Resolved Item -->
+        <div class="activity-card">
+          <div class="activity-card-header">
+            <span class="badge badge-aesthetic">Aesthetic</span>
+            <span class="badge badge-resolved">✓ Completed & Verified</span>
+          </div>
+          <div class="activity-card-body">
+            <img src="https://images.unsplash.com/photo-1605600659908-0ef719419d41?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Resolved Thumbnail">
+            <div class="activity-info">
+              <h3 class="activity-title">Overfilled park waste bins & litter</h3>
+              <p class="activity-meta">📍 Perdana Botanical Garden • Resolved 3 days ago</p>
+              <p style="font-size: 12px; color: #047857; margin-top: 4px; font-weight: 600;">
+                ✓ Fixed by Crew T-004 (Stainless bins installed)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invalid Flagged Item (Only visible in user history - Requirement 7) -->
+        <div class="activity-card" style="border-left: 4px solid #94a3b8;">
+          <div class="activity-card-header">
+            <span class="badge badge-invalid">Invalid / No Fault</span>
+            <span class="badge" style="background:#fee2e2; color:#b91c1c;">Closed (No Fault Found)</span>
+          </div>
+          <div class="activity-card-body">
+            <img src="https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&w=600&q=80" class="activity-thumb" alt="Invalid Thumbnail">
+            <div class="activity-info">
+              <h3 class="activity-title">Reported crack on park bench</h3>
+              <p class="activity-meta">📍 Merdeka Square • Inspected 1 week ago</p>
+              <p style="font-size: 12px; color: #dc2626; margin-top: 4px; font-weight: 600;">
+                Inspection finding: Normal condition (-20 reputation deduction applied).
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar for Normal Users -->
+    <nav class="user-bottom-nav">
+      <a href="index.html" class="nav-tab">
+        <span class="tab-icon">🗺️</span>
+        <span>Public Map</span>
+      </a>
+      <a href="my-reports.html" class="nav-tab active">
+        <span class="tab-icon">📋</span>
+        <span>My Activity</span>
+      </a>
+      <a href="profile.html" class="nav-tab">
+        <span class="tab-icon">👤</span>
+        <span>Profile</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    function switchFilter(btn, tabId) {
+      document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.querySelectorAll('.tab-pane-view').forEach(p => p.style.display = 'none');
+      
+      const targetPane = document.getElementById('pane-' + tabId);
+      if (window.innerWidth >= 768) {
+        targetPane.style.display = 'grid';
+      } else {
+        targetPane.style.display = 'flex';
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      const activeBtn = document.querySelector('.filter-tab-btn.active');
+      if (activeBtn) {
+        const text = activeBtn.innerText.toLowerCase();
+        let id = 'my-reports';
+        if (text.includes('upvoted')) id = 'upvoted';
+        if (text.includes('archive')) id = 'archive';
+        const target = document.getElementById('pane-' + id);
+        if (target) {
+          target.style.display = window.innerWidth >= 768 ? 'grid' : 'flex';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
