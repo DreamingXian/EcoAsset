@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EcoAsset - User Management</title>
-  
+
   <!-- Google Fonts: Inter & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
   <!-- Global Styles -->
   <link rel="stylesheet" href="../css/global.css">
   <style>
@@ -33,7 +36,8 @@
       padding: 0;
     }
 
-    html, body {
+    html,
+    body {
       width: 100% !important;
       min-height: 100vh !important;
       margin: 0 !important;
@@ -48,15 +52,13 @@
 
     /* Outer Desktop Flex Wrapper */
     .admin-desktop-layout {
-      display: flex !important;
-      flex-direction: row !important;
       width: 100%;
       min-height: 100vh;
-      align-items: stretch;
+      position: relative;
     }
 
     /* -------------------------------------------------------------
-       1. Left Desktop Sidebar (Fixed 260px)
+       1. Left Desktop Sidebar (Completely Fixed & Non-Scrollable)
        ------------------------------------------------------------- */
     .admin-sidebar {
       width: 260px;
@@ -69,11 +71,14 @@
       flex-direction: column;
       justify-content: space-between;
       padding: 24px 18px;
-      position: sticky;
+      position: fixed;
       top: 0;
-      z-index: 50;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
       flex-shrink: 0;
       box-sizing: border-box;
+      overflow: hidden;
     }
 
     .sidebar-brand {
@@ -222,13 +227,13 @@
     }
 
     /* -------------------------------------------------------------
-       2. Main Content Area (Right Side, Clean Offset)
+       2. Main Content Area (Offset by 260px sidebar width)
        ------------------------------------------------------------- */
     .admin-main {
-      flex: 1 1 auto;
-      min-width: 0;
-      padding: 32px 40px;
+      margin-left: 260px;
       width: calc(100% - 260px);
+      min-height: 100vh;
+      padding: 32px 40px 60px;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -258,18 +263,19 @@
       font-weight: 500;
     }
 
+    /* Create Account Button with Circled Plus Icon */
     .btn-create-account {
       background-color: var(--primary-green);
       color: #ffffff;
       border: none;
-      border-radius: 20px;
-      padding: 10px 20px;
+      border-radius: 24px;
+      padding: 9px 20px 9px 16px;
       font-size: 13.5px;
       font-weight: 700;
       font-family: inherit;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(30, 74, 56, 0.2);
       transition: all 0.2s ease;
@@ -279,6 +285,20 @@
       background-color: var(--primary-hover);
       transform: translateY(-1px);
       box-shadow: 0 6px 16px rgba(30, 74, 56, 0.28);
+    }
+
+    .btn-icon-circle-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon-circle-wrapper svg {
+      width: 19px;
+      height: 19px;
     }
 
     /* Filters Bar */
@@ -578,8 +598,15 @@
     }
 
     @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.96); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     .modal-header {
@@ -617,7 +644,7 @@
       color: #334155;
     }
 
-    /* Modal Form Controls */
+    /* Modal Form Controls & In-line Errors */
     .form-group {
       display: flex;
       flex-direction: column;
@@ -726,6 +753,47 @@
     .modal-select:focus {
       background-color: #ffffff;
       border-color: var(--primary-green);
+    }
+
+    /* IN-LINE FIELD ERROR STYLES */
+    .form-group.has-error .modal-input,
+    .form-group.has-error .modal-select {
+      background-color: #fff5f5 !important;
+      border-color: #fca5a5 !important;
+      color: #991b1b !important;
+    }
+
+    .form-group.has-error .modal-input:focus,
+    .form-group.has-error .modal-select:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+    }
+
+    .form-group.has-error .modal-input-icon {
+      color: #ef4444 !important;
+    }
+
+    .field-error-text {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      color: #dc2626;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 5px;
+      line-height: 1.3;
+    }
+
+    .form-group.has-error .field-error-text {
+      display: flex;
+    }
+
+    .field-error-text svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
     }
 
     /* Modal Button Rows */
@@ -879,7 +947,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
       z-index: 2000;
       transform: translateY(-50px);
       opacity: 0;
@@ -900,12 +968,13 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Outer Desktop Flex Layout Wrapper -->
   <div class="admin-desktop-layout">
 
-    <!-- Left Desktop Navigation Sidebar -->
+    <!-- Left Desktop Navigation Sidebar (Fixed & Non-Scrollable) -->
     <aside class="admin-sidebar">
       <div>
         <!-- Branding -->
@@ -969,8 +1038,18 @@
           <h1>User Management</h1>
           <p>Internal staff roster · Admin access only</p>
         </div>
+
+        <!-- Create Account Button with Circled Plus Icon -->
         <button type="button" class="btn-create-account" onclick="openCreateModal()">
-          <span style="font-size: 16px;">⊕</span>
+          <span class="btn-icon-circle-wrapper">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.8"></circle>
+              <line x1="12" y1="7.5" x2="12" y2="16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              </line>
+              <line x1="7.5" y1="12" x2="16.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              </line>
+            </svg>
+          </span>
           <span>Create Account</span>
         </button>
       </div>
@@ -984,12 +1063,7 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
           </span>
-          <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="Search by name..."
-          />
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by name..." />
         </div>
 
         <select id="roleFilter" class="filter-select">
@@ -1037,7 +1111,7 @@
   </div> <!-- End .admin-desktop-layout -->
 
   <!-- -------------------------------------------------------------
-       Modal 1: Create Internal Account (Screenshot 4 with Default Password)
+       Modal 1: Create Internal Account (With in-line error feedback)
        ------------------------------------------------------------- -->
   <div id="createModal" class="modal-backdrop">
     <div class="modal-card">
@@ -1050,7 +1124,8 @@
       </div>
 
       <form id="createForm" novalidate>
-        <div class="form-group">
+        <!-- Full Name Field -->
+        <div class="form-group" id="createNameGroup">
           <label class="form-label">Full Name</label>
           <div class="modal-input-wrapper">
             <span class="modal-input-icon">
@@ -1059,11 +1134,20 @@
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </span>
-            <input type="text" id="createFullName" class="modal-input" placeholder="Ahmad bin Kamal" required />
+            <input type="text" id="createFullName" class="modal-input" placeholder="Full Name" required />
+          </div>
+          <div class="field-error-text" id="createNameError">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="createNameErrorText">Please enter staff's full name.</span>
           </div>
         </div>
 
-        <div class="form-group">
+        <!-- Email Address Field -->
+        <div class="form-group" id="createEmailGroup">
           <label class="form-label">Email Address</label>
           <div class="modal-input-wrapper">
             <span class="modal-input-icon">
@@ -1074,9 +1158,18 @@
             </span>
             <input type="email" id="createEmail" class="modal-input" placeholder="staff@dbkl.gov.my" required />
           </div>
+          <div class="field-error-text" id="createEmailError">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="createEmailErrorText">Please enter a valid email address.</span>
+          </div>
         </div>
 
-        <div class="form-group">
+        <!-- Role Field -->
+        <div class="form-group" id="createRoleGroup">
           <label class="form-label">Role</label>
           <select id="createRole" class="modal-select">
             <option value="SITE_RANGER">Site Ranger</option>
@@ -1085,7 +1178,8 @@
           </select>
         </div>
 
-        <div class="form-group">
+        <!-- Default Password Field -->
+        <div class="form-group" id="createPasswordGroup">
           <label class="form-label">Default Password</label>
           <div class="modal-input-wrapper">
             <span class="modal-input-icon">
@@ -1094,15 +1188,26 @@
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </span>
-            <input type="password" id="createPassword" class="modal-input" value="Pass1234!" placeholder="Minimum 8 characters" required />
-            <button type="button" class="btn-input-eye" onclick="togglePasswordVisibility('createPassword', this)" title="Toggle password visibility">
+            <input type="password" id="createPassword" class="modal-input" value="Pass1234!"
+              placeholder="Minimum 8 characters" required />
+            <button type="button" class="btn-input-eye" onclick="togglePasswordVisibility('createPassword', this)"
+              title="Toggle password visibility">
               <svg class="eye-icon" viewBox="0 0 24 24">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="7" r="3"></circle>
               </svg>
             </button>
           </div>
-          <span style="font-size: 11px; color: #64748b; margin-top: 4px;">User will be prompted to update this password upon their first login.</span>
+          <div class="field-error-text" id="createPasswordError">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="createPasswordErrorText">Password must be at least 8 characters.</span>
+          </div>
+          <span style="font-size: 11px; color: #64748b; margin-top: 4px;">User will be prompted to update this password
+            upon their first login.</span>
         </div>
 
         <div class="modal-btn-row">
@@ -1114,7 +1219,7 @@
   </div>
 
   <!-- -------------------------------------------------------------
-       Modal 2: Edit User Details (Screenshot 3)
+       Modal 2: Edit User Details (With in-line error feedback)
        ------------------------------------------------------------- -->
   <div id="editModal" class="modal-backdrop">
     <div class="modal-card">
@@ -1129,7 +1234,8 @@
       <form id="editForm" novalidate>
         <input type="hidden" id="editUserId" />
 
-        <div class="form-group">
+        <!-- Full Name Field -->
+        <div class="form-group" id="editNameGroup">
           <label class="form-label">Full Name</label>
           <div class="modal-input-wrapper">
             <span class="modal-input-icon">
@@ -1140,9 +1246,18 @@
             </span>
             <input type="text" id="editFullName" class="modal-input" required />
           </div>
+          <div class="field-error-text" id="editNameError">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="editNameErrorText">Full name is required.</span>
+          </div>
         </div>
 
-        <div class="form-group">
+        <!-- Email Address Field -->
+        <div class="form-group" id="editEmailGroup">
           <label class="form-label">Email Address</label>
           <div class="modal-input-wrapper">
             <span class="modal-input-icon">
@@ -1153,9 +1268,18 @@
             </span>
             <input type="email" id="editEmail" class="modal-input" required />
           </div>
+          <div class="field-error-text" id="editEmailError">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="editEmailErrorText">Please enter a valid email address.</span>
+          </div>
         </div>
 
-        <div class="form-group">
+        <!-- Role Field -->
+        <div class="form-group" id="editRoleGroup">
           <label class="form-label">Role</label>
           <select id="editRole" class="modal-select">
             <option value="SITE_RANGER">Site Ranger</option>
@@ -1219,7 +1343,8 @@
   <div id="adminToast" class="admin-toast">
     <svg viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" fill="#00a884"></circle>
-      <path d="M8 12.5l2.5 2.5L16 9" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M8 12.5l2.5 2.5L16 9" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      </path>
     </svg>
     <span id="toastText">Action completed successfully.</span>
   </div>
@@ -1357,7 +1482,7 @@
       const input = document.getElementById(inputId);
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
-      
+
       const eyeIcon = btn.querySelector('svg');
       if (isPassword) {
         eyeIcon.innerHTML = `
@@ -1367,45 +1492,99 @@
       } else {
         eyeIcon.innerHTML = `
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
+          <circle cx="12" cy="7" r="3"></circle>
         `;
       }
     }
 
+    // Helper functions for in-line error handling
+    function setFieldError(groupId, errorTextId, message) {
+      const group = document.getElementById(groupId);
+      const textSpan = document.getElementById(errorTextId);
+      if (group) group.classList.add('has-error');
+      if (textSpan) textSpan.textContent = message;
+    }
+
+    function clearFieldError(groupId) {
+      const group = document.getElementById(groupId);
+      if (group) group.classList.remove('has-error');
+    }
+
+    function clearAllCreateErrors() {
+      clearFieldError('createNameGroup');
+      clearFieldError('createEmailGroup');
+      clearFieldError('createPasswordGroup');
+    }
+
+    function clearAllEditErrors() {
+      clearFieldError('editNameGroup');
+      clearFieldError('editEmailGroup');
+    }
+
     // -------------------------------------------------------------
-    // Create Account Modal Logic
+    // Create Account Modal Logic & Validation
     // -------------------------------------------------------------
     const createModal = document.getElementById('createModal');
     const createForm = document.getElementById('createForm');
+    const createFullName = document.getElementById('createFullName');
+    const createEmail = document.getElementById('createEmail');
+    const createPassword = document.getElementById('createPassword');
+
+    createFullName.addEventListener('input', () => clearFieldError('createNameGroup'));
+    createEmail.addEventListener('input', () => clearFieldError('createEmailGroup'));
+    createPassword.addEventListener('input', () => clearFieldError('createPasswordGroup'));
 
     function openCreateModal() {
       createForm.reset();
+      clearAllCreateErrors();
       document.getElementById('createPassword').value = 'Pass1234!';
       document.getElementById('createPassword').type = 'password';
       createModal.classList.add('show');
-      document.getElementById('createFullName').focus();
+      createFullName.focus();
     }
 
     function closeCreateModal() {
       createModal.classList.remove('show');
+      clearAllCreateErrors();
     }
 
     createForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fullName = document.getElementById('createFullName').value.trim();
-      const email = document.getElementById('createEmail').value.trim();
+      clearAllCreateErrors();
+
+      const fullName = createFullName.value.trim();
+      const email = createEmail.value.trim();
       const role = document.getElementById('createRole').value;
-      const password = document.getElementById('createPassword').value;
+      const password = createPassword.value;
 
-      if (!fullName || !email || !password) {
-        alert('Please fill in all required fields.');
-        return;
+      let hasError = false;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!fullName) {
+        setFieldError('createNameGroup', 'createNameErrorText', "Please enter the staff member's full name.");
+        hasError = true;
+      } else if (fullName.length < 2) {
+        setFieldError('createNameGroup', 'createNameErrorText', 'Full name must be at least 2 characters.');
+        hasError = true;
       }
 
-      if (password.length < 8) {
-        alert('Password must be at least 8 characters long.');
-        return;
+      if (!email) {
+        setFieldError('createEmailGroup', 'createEmailErrorText', 'Please enter staff email address.');
+        hasError = true;
+      } else if (!emailRegex.test(email)) {
+        setFieldError('createEmailGroup', 'createEmailErrorText', 'Please enter a valid email address (e.g. name@dbkl.gov.my).');
+        hasError = true;
       }
+
+      if (!password) {
+        setFieldError('createPasswordGroup', 'createPasswordErrorText', 'Default temporary password is required.');
+        hasError = true;
+      } else if (password.length < 8) {
+        setFieldError('createPasswordGroup', 'createPasswordErrorText', 'Password must be at least 8 characters long.');
+        hasError = true;
+      }
+
+      if (hasError) return;
 
       const submitBtn = document.getElementById('createSubmitBtn');
       submitBtn.disabled = true;
@@ -1429,10 +1608,16 @@
           showToast(`✓ Account for ${fullName} created successfully!`);
           await fetchStaffRoster();
         } else {
-          alert(result.message || 'Unable to create staff account.');
+          const errors = result.details?.errors || {};
+          if (errors.full_name) setFieldError('createNameGroup', 'createNameErrorText', errors.full_name);
+          if (errors.email) setFieldError('createEmailGroup', 'createEmailErrorText', errors.email);
+          if (errors.password) setFieldError('createPasswordGroup', 'createPasswordErrorText', errors.password);
+          if (!Object.keys(errors).length) {
+            alert(result.message || 'Unable to create staff account.');
+          }
         }
       } catch (err) {
-        alert('Network error: Unable to create account.');
+        alert('Network error: Unable to connect to server.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account';
@@ -1440,35 +1625,60 @@
     });
 
     // -------------------------------------------------------------
-    // Edit User Details Modal Logic
+    // Edit User Details Modal Logic & Validation
     // -------------------------------------------------------------
     const editModal = document.getElementById('editModal');
     const editForm = document.getElementById('editForm');
+    const editFullName = document.getElementById('editFullName');
+    const editEmail = document.getElementById('editEmail');
+
+    editFullName.addEventListener('input', () => clearFieldError('editNameGroup'));
+    editEmail.addEventListener('input', () => clearFieldError('editEmailGroup'));
 
     function openEditModal(userId, code, fullName, email, role) {
+      clearAllEditErrors();
       document.getElementById('editUserId').value = userId;
       document.getElementById('editUserCode').textContent = code;
-      document.getElementById('editFullName').value = fullName;
-      document.getElementById('editEmail').value = email;
+      editFullName.value = fullName;
+      editEmail.value = email;
       document.getElementById('editRole').value = role;
       editModal.classList.add('show');
     }
 
     function closeEditModal() {
       editModal.classList.remove('show');
+      clearAllEditErrors();
     }
 
     editForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      clearAllEditErrors();
+
       const userId = document.getElementById('editUserId').value;
-      const fullName = document.getElementById('editFullName').value.trim();
-      const email = document.getElementById('editEmail').value.trim();
+      const fullName = editFullName.value.trim();
+      const email = editEmail.value.trim();
       const role = document.getElementById('editRole').value;
 
-      if (!fullName || !email) {
-        alert('Full name and email are required.');
-        return;
+      let hasError = false;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!fullName) {
+        setFieldError('editNameGroup', 'editNameErrorText', 'Full name is required.');
+        hasError = true;
+      } else if (fullName.length < 2) {
+        setFieldError('editNameGroup', 'editNameErrorText', 'Full name must be at least 2 characters.');
+        hasError = true;
       }
+
+      if (!email) {
+        setFieldError('editEmailGroup', 'editEmailErrorText', 'Email address is required.');
+        hasError = true;
+      } else if (!emailRegex.test(email)) {
+        setFieldError('editEmailGroup', 'editEmailErrorText', 'Please enter a valid email address.');
+        hasError = true;
+      }
+
+      if (hasError) return;
 
       const submitBtn = document.getElementById('editSubmitBtn');
       submitBtn.disabled = true;
@@ -1492,7 +1702,12 @@
           showToast(`✓ User details updated successfully!`);
           await fetchStaffRoster();
         } else {
-          alert(result.message || 'Failed to update user.');
+          const errors = result.details?.errors || {};
+          if (errors.full_name) setFieldError('editNameGroup', 'editNameErrorText', errors.full_name);
+          if (errors.email) setFieldError('editEmailGroup', 'editEmailErrorText', errors.email);
+          if (!Object.keys(errors).length) {
+            alert(result.message || 'Failed to update user.');
+          }
         }
       } catch (err) {
         alert('Network error: Unable to update user.');
@@ -1559,4 +1774,5 @@
     }
   </script>
 </body>
+
 </html>

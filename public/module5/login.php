@@ -1226,7 +1226,7 @@
             localStorage.setItem('ecoasset_first_login', 'true');
             showGeneralAlert(`Welcome, ${result.data.user.full_name}! Please update your default password to continue...`, 'success');
             setTimeout(() => {
-              window.location.href = 'module5/update-account.html?first_login=1';
+              window.location.href = 'update-account.html?first_login=1';
             }, 800);
             return;
           }
@@ -1263,23 +1263,22 @@
     function redirectByRole(role) {
       switch (role) {
         case 'TOURIST':
-          window.location.href = 'module1/index.html';
+          window.location.href = '../module1/index.html';
           break;
         case 'SITE_RANGER':
-          window.location.href = 'module1/index.html?role=ranger';
+          window.location.href = '../module1/index.html?role=ranger';
           break;
         case 'MAINTENANCE_CREW':
-          window.location.href = 'module3/index.html';
+          window.location.href = '../module3/index.html';
           break;
         case 'ADMINISTRATOR':
-          window.location.href = 'module5/index.html';
+          window.location.href = 'index.html';
           break;
         default:
-          window.location.href = 'module1/index.html';
+          window.location.href = '../module1/index.html';
           break;
       }
     }
-
 
     function setLoginLoading(isLoading) {
       loginBtn.disabled = isLoading;

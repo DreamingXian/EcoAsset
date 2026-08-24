@@ -14,7 +14,7 @@ if (strpos($uri, '/api') === 0) {
 
 // 2. Root Redirect to Login
 if ($uri === '/' || $uri === '') {
-    header("Location: /login.php");
+    header("Location: /public/module5/login.php");
     exit;
 }
 

@@ -32,7 +32,7 @@ const AuthGuard = {
 
   logout() {
     this.clearSession();
-    const loginUrl = window.location.pathname.includes('/module') ? '../login.php' : 'login.php';
+    const loginUrl = window.location.pathname.includes('/module') ? '../module5/login.php' : 'module5/login.php';
     window.location.href = loginUrl;
   },
 
@@ -40,13 +40,14 @@ const AuthGuard = {
     const token = this.getToken();
     const user = this.getUser();
 
-    const loginUrl = window.location.pathname.includes('/module') ? '../login.php' : 'login.php';
+    const loginUrl = window.location.pathname.includes('/module') ? '../module5/login.php' : 'module5/login.php';
 
     if (!token || !user) {
       this.clearSession();
       window.location.href = loginUrl;
       return null;
     }
+
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
       alert(`Access denied. Your role (${user.role}) is not authorized for this section.`);
@@ -57,6 +58,14 @@ const AuthGuard = {
       }
       return null;
     }
+
+    // Force first-time login users to update password before performing any action
+    if (user.must_change_password === true && !window.location.pathname.includes('update-account.html')) {
+      const updateUrl = window.location.pathname.includes('/module') ? '../module5/update-account.html?first_login=1' : 'module5/update-account.html?first_login=1';
+      window.location.href = updateUrl;
+      return null;
+    }
+
 
     return user;
   },

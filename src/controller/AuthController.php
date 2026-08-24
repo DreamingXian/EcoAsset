@@ -311,8 +311,9 @@ class AuthController
             // 6. Return success (includes simulated link for easy testing)
             ResponseUtil::success([
                 'email' => $user['email'],
-                'reset_link' => "/public/reset_password.php?token=" . urlencode($resetToken) . "&email=" . urlencode($user['email'])
+                'reset_link' => "/public/module5/reset_password.php?token=" . urlencode($resetToken) . "&email=" . urlencode($user['email'])
             ], 'Reset link sent! Check your inbox.');
+
 
         } catch (Exception $e) {
             ResponseUtil::error('Password reset service error: ' . $e->getMessage(), 500);

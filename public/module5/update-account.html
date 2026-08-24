@@ -649,7 +649,15 @@
           <span id="btnText">Save Changes</span>
         </button>
 
+        <!-- Optional Sign Out row on first login -->
+        <div id="firstLoginLogoutRow" style="display: none; text-align: center; margin-top: 14px;">
+          <button type="button" onclick="AuthGuard.logout()" style="background: none; border: none; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; font-family: inherit;">
+            Sign out instead
+          </button>
+        </div>
+
       </form>
+
     </main>
 
     <!-- Role-Aware Dynamic Bottom Navigation -->
@@ -712,6 +720,21 @@
 
       if (isFirstLogin) {
         firstLoginBanner.style.display = 'block';
+        backBtn.style.display = 'none'; // Lock back button
+        dynamicBottomNav.style.display = 'none'; // Lock bottom nav
+        const subtitle = document.querySelector('.header-subtitle');
+        if (subtitle) subtitle.textContent = 'Action Required · Password Update Mandatory';
+        
+        const logoutRow = document.getElementById('firstLoginLogoutRow');
+        if (logoutRow) logoutRow.style.display = 'block';
+
+        // Trap browser back navigation
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function () {
+          history.pushState(null, document.title, location.href);
+          showToast('⚠️ Please update your password to continue.');
+        });
+
         setTimeout(() => {
           currPassInput.focus();
         }, 400);
@@ -828,6 +851,11 @@
       const newPassword = newPassInput.value;
       const confirmPassword = confirmPassInput.value;
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const isFirstLogin = urlParams.get('first_login') === '1' || 
+                           localStorage.getItem('ecoasset_first_login') === 'true' || 
+                           (currentUser && currentUser.must_change_password === true);
+
       let hasError = false;
 
       // 1. Client-side Name Validation
@@ -846,9 +874,34 @@
         hasError = true;
       }
 
-      // 3. Password Validation if changing password
+      // 3. Password Validation
       const isChangingPassword = Boolean(currentPassword || newPassword || confirmPassword);
-      if (isChangingPassword) {
+      if (isFirstLogin) {
+        // Enforce mandatory password update on first login
+        if (!currentPassword) {
+          setFieldError(currPassGroup, currPassErrorText, 'Current default password is required.');
+          hasError = true;
+        }
+
+        if (!newPassword) {
+          setFieldError(newPassGroup, newPassErrorText, 'You must set a new personal password.');
+          hasError = true;
+        } else if (newPassword.length < 8) {
+          setFieldError(newPassGroup, newPassErrorText, 'New password must be at least 8 characters.');
+          hasError = true;
+        } else if (newPassword === currentPassword) {
+          setFieldError(newPassGroup, newPassErrorText, 'New password must be different from your default password.');
+          hasError = true;
+        }
+
+        if (!confirmPassword) {
+          setFieldError(confirmPassGroup, confirmPassErrorText, 'Please confirm your new password.');
+          hasError = true;
+        } else if (newPassword !== confirmPassword) {
+          setFieldError(confirmPassGroup, confirmPassErrorText, 'Passwords do not match.');
+          hasError = true;
+        }
+      } else if (isChangingPassword) {
         if (!currentPassword) {
           setFieldError(currPassGroup, currPassErrorText, 'Current password is required.');
           hasError = true;
@@ -870,6 +923,7 @@
           hasError = true;
         }
       }
+
 
       if (hasError) return;
 
