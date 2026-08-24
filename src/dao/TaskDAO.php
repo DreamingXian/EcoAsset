@@ -54,7 +54,7 @@ class TaskDAO
                 JOIN damage_reports r ON t.report_id = r.report_id
                 LEFT JOIN users u ON r.user_id = u.user_id
                 WHERE t.assigned_crew_id = :crew_id
-                  AND r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS')
+                  AND r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS', 'PRECOMPLETE', 'DROPPED', 'PRE_INVALID', 'COMPLETED')
                 ORDER BY r.priority_score DESC, r.created_at ASC";
 
         $stmt = $this->db->prepare($sql);
@@ -218,14 +218,14 @@ class TaskDAO
     }
 
     /**
-     * Mark task as completed with live "After-Repair" photo proof.
+     * Mark task as completed with live "After-Repair" photo proof -> transitions to PRECOMPLETE.
      */
     public function completeTask(string $taskId, string $photoUrl, string $notes): bool
     {
         try {
             $this->db->beginTransaction();
 
-            // Fetch assigned crew ID
+            // Fetch assigned crew ID and report ID
             $fetchSql = "SELECT assigned_crew_id, report_id FROM maintenance_tasks WHERE task_id = :task_id";
             $fetchStmt = $this->db->prepare($fetchSql);
             $fetchStmt->execute(['task_id' => $taskId]);
@@ -235,11 +235,10 @@ class TaskDAO
                 throw new Exception("Task not found.");
             }
 
-            // 1. Update task record
+            // 1. Update task record with completion proof (completed_at remains NULL until admin approval)
             $taskSql = "UPDATE maintenance_tasks 
                         SET completion_photo_url = :photo,
-                            resolution_notes = :notes,
-                            completed_at = CURRENT_TIMESTAMP
+                            resolution_notes = :notes
                         WHERE task_id = :task_id";
             $taskStmt = $this->db->prepare($taskSql);
             $taskStmt->execute([
@@ -248,16 +247,25 @@ class TaskDAO
                 'task_id' => $taskId
             ]);
 
-            // 2. Mark report COMPLETED
-            $repSql = "UPDATE damage_reports SET status = 'COMPLETED' WHERE report_id = :report_id";
+            // 2. Mark report PRECOMPLETE (waiting for admin validation)
+            $repSql = "UPDATE damage_reports SET status = 'PRECOMPLETE' WHERE report_id = :report_id";
             $repStmt = $this->db->prepare($repSql);
             $repStmt->execute(['report_id' => $task['report_id']]);
 
-            // 3. Reset crew back to AVAILABLE
+            // 3. Sync crew availability: if no other IN_PROGRESS tasks, set to AVAILABLE
             if (!empty($task['assigned_crew_id'])) {
-                $crewSql = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
-                $crewStmt = $this->db->prepare($crewSql);
-                $crewStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                $crewCheck = "SELECT COUNT(*) as cnt 
+                              FROM maintenance_tasks t 
+                              JOIN damage_reports r ON t.report_id = r.report_id 
+                              WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+                $cStmt = $this->db->prepare($crewCheck);
+                $cStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                $cnt = (int)($cStmt->fetch()['cnt'] ?? 0);
+                if ($cnt === 0) {
+                    $crewSql = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
+                    $crewStmt = $this->db->prepare($crewSql);
+                    $crewStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                }
             }
 
             $this->db->commit();
@@ -270,17 +278,16 @@ class TaskDAO
     }
 
     /**
-     * Drop an accepted task due to field complications (-5 penalty to crew, returns to Open Pool).
+     * Drop an accepted task due to field complications (-10 penalty to crew, status -> DROPPED).
      */
-    public function dropTask(string $taskId, string $crewId, string $dropReason, float $penalty = 5.0): bool
+    public function dropTask(string $taskId, string $crewId, string $dropReason, float $penalty = 10.0): bool
     {
         try {
             $this->db->beginTransaction();
 
-            // 1. Update task with drop reason and release crew lock
+            // 1. Update task with drop reason
             $taskSql = "UPDATE maintenance_tasks 
-                        SET assigned_crew_id = NULL,
-                            drop_reason = :reason
+                        SET drop_reason = :reason
                         WHERE task_id = :task_id AND assigned_crew_id = :crew_id";
             $taskStmt = $this->db->prepare($taskSql);
             $taskStmt->execute([
@@ -289,23 +296,36 @@ class TaskDAO
                 'crew_id' => $crewId
             ]);
 
-            // 2. Return report to Open Maintenance Pool
+            // 2. Transition report status to DROPPED (for admin review)
             $repSql = "UPDATE damage_reports 
-                       SET status = 'OPEN_FOR_CLAIM' 
+                       SET status = 'DROPPED' 
                        WHERE report_id = (SELECT report_id FROM maintenance_tasks WHERE task_id = :task_id)";
             $repStmt = $this->db->prepare($repSql);
             $repStmt->execute(['task_id' => $taskId]);
 
-            // 3. Apply performance penalty and set crew to AVAILABLE
+            // 3. Apply performance penalty (-10 points)
             $crewSql = "UPDATE maintenance_crews 
-                        SET performance_score = GREATEST(0.0, performance_score - :penalty),
-                            availability_status = 'AVAILABLE'
+                        SET performance_score = GREATEST(0.0, performance_score - :penalty)
                         WHERE crew_id = :crew_id";
             $crewStmt = $this->db->prepare($crewSql);
             $crewStmt->execute([
                 'penalty' => $penalty,
                 'crew_id' => $crewId
             ]);
+
+            // 4. Sync crew availability: if 0 active in-progress jobs, set to AVAILABLE
+            $crewCheck = "SELECT COUNT(*) as cnt 
+                          FROM maintenance_tasks t 
+                          JOIN damage_reports r ON t.report_id = r.report_id 
+                          WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+            $cStmt = $this->db->prepare($crewCheck);
+            $cStmt->execute(['crew_id' => $crewId]);
+            $cnt = (int)($cStmt->fetch()['cnt'] ?? 0);
+            if ($cnt === 0) {
+                $cUpdate = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
+                $cuStmt = $this->db->prepare($cUpdate);
+                $cuStmt->execute(['crew_id' => $crewId]);
+            }
 
             $this->db->commit();
             return true;
@@ -317,14 +337,14 @@ class TaskDAO
     }
 
     /**
-     * Flag incident as Invalid / No Fault Found with clear-site photo proof (-20 penalty to reporter).
+     * Flag incident as Invalid / No Fault Found with clear-site photo proof -> transitions to PRE_INVALID.
      */
-    public function flagInvalidTask(string $taskId, string $crewId, string $photoUrl, string $notes, int $penalty = 20): bool
+    public function flagInvalidTask(string $taskId, string $crewId, string $photoUrl, string $notes): bool
     {
         try {
             $this->db->beginTransaction();
 
-            // Fetch reporter ID and report ID
+            // Fetch report ID
             $fetchSql = "SELECT t.report_id, r.user_id as reporter_id
                          FROM maintenance_tasks t
                          JOIN damage_reports r ON t.report_id = r.report_id
@@ -337,11 +357,10 @@ class TaskDAO
                 throw new Exception("Task record not found.");
             }
 
-            // 1. Update task with invalid resolution
+            // 1. Update task with clear-site proof & findings
             $taskSql = "UPDATE maintenance_tasks 
                         SET flag_invalid_photo_url = :photo,
-                            flag_invalid_notes = :notes,
-                            completed_at = CURRENT_TIMESTAMP
+                            flag_invalid_notes = :notes
                         WHERE task_id = :task_id";
             $taskStmt = $this->db->prepare($taskSql);
             $taskStmt->execute([
@@ -350,27 +369,24 @@ class TaskDAO
                 'task_id' => $taskId
             ]);
 
-            // 2. Mark report INVALID_RESOLVED
-            $repSql = "UPDATE damage_reports SET status = 'INVALID_RESOLVED' WHERE report_id = :report_id";
+            // 2. Mark report PRE_INVALID (waiting for admin validation)
+            $repSql = "UPDATE damage_reports SET status = 'PRE_INVALID' WHERE report_id = :report_id";
             $repStmt = $this->db->prepare($repSql);
             $repStmt->execute(['report_id' => $info['report_id']]);
 
-            // 3. Deduct reputation from original reporter
-            if (!empty($info['reporter_id'])) {
-                $userSql = "UPDATE tourist_profiles 
-                            SET reputation_score = GREATEST(0, reputation_score - :penalty) 
-                            WHERE user_id = :reporter_id";
-                $userStmt = $this->db->prepare($userSql);
-                $userStmt->execute([
-                    'penalty'     => $penalty,
-                    'reporter_id' => $info['reporter_id']
-                ]);
+            // 3. Sync crew availability: if 0 active in-progress jobs, set to AVAILABLE
+            $crewCheck = "SELECT COUNT(*) as cnt 
+                          FROM maintenance_tasks t 
+                          JOIN damage_reports r ON t.report_id = r.report_id 
+                          WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+            $cStmt = $this->db->prepare($crewCheck);
+            $cStmt->execute(['crew_id' => $crewId]);
+            $cnt = (int)($cStmt->fetch()['cnt'] ?? 0);
+            if ($cnt === 0) {
+                $crewSql = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
+                $crewStmt = $this->db->prepare($crewSql);
+                $crewStmt->execute(['crew_id' => $crewId]);
             }
-
-            // 4. Reset crew to AVAILABLE
-            $crewSql = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
-            $crewStmt = $this->db->prepare($crewSql);
-            $crewStmt->execute(['crew_id' => $crewId]);
 
             $this->db->commit();
             return true;

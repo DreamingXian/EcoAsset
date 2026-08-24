@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
   <!-- Global & Module Styles -->
-  <link rel="stylesheet" href="../css/global.css">
-  <link rel="stylesheet" href="module3.css?v=3.0">
+  <link rel="stylesheet" href="../css/global.css?v=4.1">
+  <link rel="stylesheet" href="module3.css?v=4.1">
   <style>
     .skill-filter-bar {
       display: flex;
@@ -288,6 +288,11 @@
        =================================================================== -->
   <div class="drawer-backdrop" id="completeModalBackdrop" onclick="closeAllDrawers()"></div>
   
+  <!-- ===================================================================
+       FIELD LIFECYCLE 1: MARK AS DONE (PRECOMPLETE ADMIN VALIDATION)
+       =================================================================== -->
+  <div class="drawer-backdrop" id="completeModalBackdrop" onclick="closeAllDrawers()"></div>
+  
   <div class="bottom-drawer" id="completeDrawerModal">
     <div class="drawer-drag-handle"></div>
     <div class="drawer-content">
@@ -297,29 +302,30 @@
       </div>
 
       <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
-        Upload a live photo of the completed repairs. Status will be marked <strong>COMPLETED</strong>.
+        Upload a live photo of completed repairs and enter resolution notes. Work order will enter <strong>PRECOMPLETE</strong> status for municipal administrator validation.
       </p>
 
       <label class="form-group-title">1. After-Repair Photo Proof (Required)</label>
-      <div class="photo-capture-frame" id="completeFrame">
+      <input type="file" id="completeFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleCompleteFileSelected(event)">
+      <div class="photo-capture-frame" id="completeFrame" onclick="document.getElementById('completeFileInput').click()" style="cursor: pointer;">
         <div id="completePlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
           <span style="font-size: 32px;">📷</span>
           <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Taken Yet</span>
-          <span style="font-size: 11px; color: #94a3b8;">Tap below to snap after-repair proof</span>
+          <span style="font-size: 11px; color: #94a3b8;">Tap to upload or snap after-repair proof</span>
         </div>
         <img id="completeCapturedImg" class="photo-preview-img" src="" alt="After Repair Proof" style="display: none;">
       </div>
 
-      <button type="button" class="btn btn-secondary btn-block" id="btnCompletePhoto" onclick="handleCompletePhotoCapture()" style="margin-bottom: 14px;">
-        <span>📷 Take After-Repair Photo</span>
+      <button type="button" class="btn btn-secondary btn-block" id="btnCompletePhoto" onclick="document.getElementById('completeFileInput').click()" style="margin-bottom: 14px;">
+        <span>📷 Take / Upload After-Repair Photo</span>
       </button>
 
-      <label class="form-group-title">2. Resolution Notes</label>
+      <label class="form-group-title">2. Resolution Notes (Required)</label>
       <textarea 
         class="form-control" 
         id="completeNotes" 
         rows="3" 
-        placeholder="e.g., Welded fractured steel joint and restored safety coating..."
+        placeholder="e.g., Replaced broken railing bracket, fastened with stainless steel bolts, cleaned work area..."
       ></textarea>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
@@ -334,7 +340,7 @@
   </div>
 
   <!-- ===================================================================
-       FIELD LIFECYCLE 2: DROP TASK (-5 PENALTY)
+       FIELD LIFECYCLE 2: DROP TASK (-10 PENALTY)
        =================================================================== -->
   <div class="drawer-backdrop" id="dropModalBackdrop" onclick="closeAllDrawers()"></div>
 
@@ -347,10 +353,10 @@
       </div>
 
       <div class="penalty-warning-box" style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:12px; font-size:12px; color:#991b1b; margin-bottom:14px;">
-        <span>⚠️ <strong>Penalty Notice:</strong> Dropping an accepted work order incurs a <strong>-5.00 point deduction</strong> to your performance score and returns the job to the Open Pool.</span>
+        <span>⚠️ <strong>Penalty Notice:</strong> Dropping an accepted work order incurs a <strong>-10.00 point deduction</strong> to your performance score and transitions status to <strong>DROPPED</strong> for administrative review.</span>
       </div>
 
-      <label class="form-group-title">Select Reason for Dropping</label>
+      <label class="form-group-title">Select Reason for Dropping (Required)</label>
       <select class="form-control" id="dropReasonSelect" onchange="handleDropReasonChange(this)">
         <option value="HEAVY_MACHINERY">Specialized Heavy Machinery Required</option>
         <option value="WEATHER_HAZARD">Severe Weather / Natural Hazard On-Site</option>
@@ -376,7 +382,7 @@
   </div>
 
   <!-- ===================================================================
-       FIELD LIFECYCLE 3: FLAG INVALID (-20 CITIZEN REPUTATION)
+       FIELD LIFECYCLE 3: FLAG INVALID (PRE_INVALID STATUS)
        =================================================================== -->
   <div class="drawer-backdrop" id="flagModalBackdrop" onclick="closeAllDrawers()"></div>
 
@@ -389,21 +395,22 @@
       </div>
 
       <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:12px; font-size:12px; color:#9a3412; margin-bottom:14px;">
-        <span>ℹ️ The original citizen reporter will receive a <strong>-20 credibility penalty</strong> upon verification.</span>
+        <span>ℹ️ Submitting this evidence will transition the work order to <strong>PRE_INVALID</strong> status for municipal administrator validation.</span>
       </div>
 
       <label class="form-group-title">1. Clear Site Evidence Photo (Required)</label>
-      <div class="photo-capture-frame" id="flagFrame">
+      <input type="file" id="flagFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleFlagFileSelected(event)">
+      <div class="photo-capture-frame" id="flagFrame" onclick="document.getElementById('flagFileInput').click()" style="cursor: pointer;">
         <div id="flagPlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
           <span style="font-size: 32px;">📷</span>
           <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Taken Yet</span>
-          <span style="font-size: 11px; color: #94a3b8;">Snap on-site clear status proof</span>
+          <span style="font-size: 11px; color: #94a3b8;">Tap to upload or snap clear-site proof</span>
         </div>
         <img id="flagCapturedImg" class="photo-preview-img" src="" alt="Clear Site Proof" style="display: none;">
       </div>
 
-      <button type="button" class="btn btn-secondary btn-block" id="btnFlagPhoto" onclick="handleFlagPhotoCapture()" style="margin-bottom: 14px;">
-        <span>📷 Capture Clear-Site Photo</span>
+      <button type="button" class="btn btn-secondary btn-block" id="btnFlagPhoto" onclick="document.getElementById('flagFileInput').click()" style="margin-bottom: 14px;">
+        <span>📷 Take / Upload Clear-Site Photo</span>
       </button>
 
       <label class="form-group-title">2. Inspection Findings (Required)</label>
@@ -426,7 +433,7 @@
   </div>
 
   <!-- Auth Guard & Terminal Script -->
-  <script src="../js/auth-guard.js?v=3.0"></script>
-  <script src="terminal.js?v=3.0"></script>
+  <script src="../js/auth-guard.js?v=4.0"></script>
+  <script src="terminal.js?v=4.0"></script>
 </body>
 </html>

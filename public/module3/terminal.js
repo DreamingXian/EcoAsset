@@ -1,6 +1,9 @@
 /**
  * EcoAsset - Module 3: Maintenance Crew Terminal Logic
- * Complete Dynamic Workflow: My Tasks (Accept/Decline), Open Pool (Self-Claim), In-Progress Lifecycle
+ * Complete Dynamic Workflow: 
+ * - My Tasks (Accept / Decline dispatches)
+ * - Open Pool (Prioritized queue & Self-Claim)
+ * - In-Progress (Mark Done -> PRECOMPLETE, Drop Task -> DROPPED -10pts, Flag Invalid -> PRE_INVALID)
  */
 
 let crewProfile = null;
@@ -11,10 +14,8 @@ let activeTab = 'my-tasks';
 let activeModalTask = null;
 let pendingConfirmation = null;
 
-// Photo staging states
-let completePhotoFile = null;
+// Photo staging states for Field Lifecycle actions
 let completePhotoDataUrl = null;
-let flagPhotoFile = null;
 let flagPhotoDataUrl = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -24,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isAuthed) return;
   }
 
-  // 2. Initialize terminal
+  // 2. Initialize terminal data
   await loadCrewTerminalData();
 });
 
@@ -49,11 +50,13 @@ async function fetchCrewProfile() {
       crewProfile = res.data.profile;
 
       // Render top header
-      document.getElementById('crewNameDisplay').textContent = `👷 ${crewProfile.full_name || 'Technician'}`;
+      const nameEl = document.getElementById('crewNameDisplay');
+      if (nameEl) nameEl.textContent = `👷 ${crewProfile.full_name || 'Technician'}`;
 
       const rawScore = parseFloat(crewProfile.performance_score) || 100.0;
       const stars = (rawScore / 20.0).toFixed(1);
-      document.getElementById('crewScoreDisplay').textContent = `★ ${stars} / 5.0 (${rawScore.toFixed(0)}%)`;
+      const scoreEl = document.getElementById('crewScoreDisplay');
+      if (scoreEl) scoreEl.textContent = `★ ${stars} / 5.0 (${rawScore.toFixed(0)}%)`;
 
       // Update Duty Status badge
       updateDutyBadge();
@@ -397,50 +400,85 @@ window.openTaskDetailModal = function(taskId, sourceTab) {
 
   activeModalTask = task;
 
-  document.getElementById('modalTaskPhoto').src = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
-  document.getElementById('modalTaskTitle').textContent = task.district || 'Damage Incident';
-  document.getElementById('modalTaskLocation').textContent = `📍 ${computeDistanceString(task.latitude, task.longitude)} (${parseFloat(task.latitude).toFixed(4)}, ${parseFloat(task.longitude).toFixed(4)})`;
-  document.getElementById('modalTaskDesc').textContent = task.description || 'No description provided.';
-  document.getElementById('modalTaskReporter').textContent = task.reporter_name || 'Citizen User';
-  document.getElementById('modalTaskUpvotes').textContent = task.upvote_count || 1;
-  document.getElementById('modalTaskPScore').textContent = `P ${(parseFloat(task.priority_score) || 0).toFixed(1)}`;
-  document.getElementById('modalTaskSla').textContent = '24h SLA';
+  const photoEl = document.getElementById('modalTaskPhoto');
+  if (photoEl) photoEl.src = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+  
+  const titleEl = document.getElementById('modalTaskTitle');
+  if (titleEl) titleEl.textContent = task.district || 'Damage Incident';
+
+  const locEl = document.getElementById('modalTaskLocation');
+  if (locEl) locEl.textContent = `📍 ${computeDistanceString(task.latitude, task.longitude)} (${parseFloat(task.latitude).toFixed(4)}, ${parseFloat(task.longitude).toFixed(4)})`;
+
+  const descEl = document.getElementById('modalTaskDesc');
+  if (descEl) descEl.textContent = task.description || 'No description provided.';
+
+  const repEl = document.getElementById('modalTaskReporter');
+  if (repEl) repEl.textContent = task.reporter_name || 'Citizen User';
+
+  const upEl = document.getElementById('modalTaskUpvotes');
+  if (upEl) upEl.textContent = task.upvote_count || 1;
+
+  const pScoreEl = document.getElementById('modalTaskPScore');
+  if (pScoreEl) pScoreEl.textContent = `P ${(parseFloat(task.priority_score) || 0).toFixed(1)}`;
+
+  const slaEl = document.getElementById('modalTaskSla');
+  if (slaEl) slaEl.textContent = '24h SLA';
 
   const catBadge = document.getElementById('modalCategoryBadge');
-  catBadge.textContent = formatCategory(task.category);
-  catBadge.className = `badge ${getCategoryBadgeClass(task.category)}`;
+  if (catBadge) {
+    catBadge.textContent = formatCategory(task.category);
+    catBadge.className = `badge ${getCategoryBadgeClass(task.category)}`;
+  }
 
-  document.getElementById('modalTradeBadge').textContent = formatSkill(task.required_skill);
+  const tradeBadge = document.getElementById('modalTradeBadge');
+  if (tradeBadge) tradeBadge.textContent = formatSkill(task.required_skill);
 
   // Dynamic modal action footer based on source tab
   const footer = document.getElementById('modalActionFooter');
   const isBusy = myTasksList.some(t => (t.status === 'IN_PROGRESS' || t.report_status === 'IN_PROGRESS'));
 
-  if (sourceTab === 'my-tasks') {
-    footer.innerHTML = `
-      <button class="btn btn-primary" style="flex:2;" onclick="closeTaskDetailModal(); promptConfirmAction('ACCEPT', '${task.task_id}')">
-        <span>✓ Accept Task</span>
-      </button>
-      <button class="btn btn-secondary" style="flex:1;" onclick="closeTaskDetailModal(); openDeclineModal('${task.task_id}')">
-        <span>Decline</span>
-      </button>
-    `;
-  } else if (sourceTab === 'open-pool') {
-    footer.innerHTML = `
-      <button class="btn btn-primary btn-block" onclick="closeTaskDetailModal(); handleClaimButtonClick('${task.task_id}', ${isBusy})">
-        <span>⚡ Claim Task (Lock & Start)</span>
-      </button>
-    `;
-  } else if (sourceTab === 'in-progress') {
-    footer.innerHTML = `
-      <button class="btn btn-primary btn-block" style="background:#0284c7;" onclick="launchNavigation(${task.latitude}, ${task.longitude})">
-        <span>🚀 Launch Google Maps</span>
-      </button>
-    `;
+  if (footer) {
+    if (sourceTab === 'my-tasks') {
+      footer.innerHTML = `
+        <button class="btn btn-primary" style="flex:2;" onclick="closeTaskDetailModal(); promptConfirmAction('ACCEPT', '${task.task_id}')">
+          <span>✓ Accept Task</span>
+        </button>
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeTaskDetailModal(); openDeclineModal('${task.task_id}')">
+          <span>Decline</span>
+        </button>
+      `;
+    } else if (sourceTab === 'open-pool') {
+      footer.innerHTML = `
+        <button class="btn btn-primary btn-block" onclick="closeTaskDetailModal(); handleClaimButtonClick('${task.task_id}', ${isBusy})">
+          <span>⚡ Claim Task (Lock & Start)</span>
+        </button>
+      `;
+    } else if (sourceTab === 'in-progress') {
+      footer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+          <button class="btn btn-primary btn-block" style="background:#0284c7;" onclick="launchNavigation(${task.latitude}, ${task.longitude})">
+            <span>🚀 Launch Google Maps</span>
+          </button>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+            <button class="btn btn-secondary" style="font-size:11.5px; border:1px solid #10b981; color:#047857;" onclick="closeTaskDetailModal(); openCompleteModal('${task.task_id}')">
+              <span>✅ Done</span>
+            </button>
+            <button class="btn btn-secondary" style="font-size:11.5px; border:1px solid #f59e0b; color:#b45309;" onclick="closeTaskDetailModal(); openDropModal('${task.task_id}')">
+              <span>⚠️ Drop</span>
+            </button>
+            <button class="btn btn-secondary" style="font-size:11.5px; border:1px solid #ef4444; color:#b91c1c;" onclick="closeTaskDetailModal(); openFlagInvalidModal('${task.task_id}')">
+              <span>🚩 Flag</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
   }
 
-  document.getElementById('taskDetailModal').classList.add('active', 'open');
-  document.getElementById('taskDetailBackdrop').classList.add('active', 'open');
+  const modal = document.getElementById('taskDetailModal');
+  const backdrop = document.getElementById('taskDetailBackdrop');
+  if (modal) modal.classList.add('active', 'open');
+  if (backdrop) backdrop.classList.add('active', 'open');
 };
 
 window.closeTaskDetailModal = function() {
@@ -451,10 +489,10 @@ window.closeTaskDetailModal = function() {
 };
 
 /* =============================================================================
-   CONFIRMATION MODAL & ACTIONS (ACCEPT, CLAIM)
+   CONFIRMATION MODAL & ACTIONS SYSTEM
    ============================================================================= */
-window.promptConfirmAction = function(action, taskId) {
-  pendingConfirmation = { action, taskId };
+window.promptConfirmAction = function(action, taskId, extraData = null) {
+  pendingConfirmation = { action, taskId, extraData };
 
   const title = document.getElementById('crewConfirmTitle');
   const desc = document.getElementById('crewConfirmDesc');
@@ -465,9 +503,19 @@ window.promptConfirmAction = function(action, taskId) {
   } else if (action === 'CLAIM') {
     title.textContent = 'Claim Open Work Order?';
     desc.textContent = 'This task will be locked to your account and moved immediately to In Progress.';
+  } else if (action === 'COMPLETE_SUBMIT') {
+    title.textContent = 'Submit Completed Repairs?';
+    desc.textContent = 'The work order will enter PRECOMPLETE status for municipal administrator validation.';
+  } else if (action === 'DROP_SUBMIT') {
+    title.textContent = '⚠️ Confirm Dropping Task?';
+    desc.textContent = 'Dropping this task will deduct 10 points from your performance rating and mark status as DROPPED for administrative review.';
+  } else if (action === 'FLAG_SUBMIT') {
+    title.textContent = 'Flag as Invalid Report?';
+    desc.textContent = 'The incident will enter PRE_INVALID status with your inspection findings for municipal administrator validation.';
   }
 
-  document.getElementById('crewConfirmModal').classList.add('active', 'open');
+  const modal = document.getElementById('crewConfirmModal');
+  if (modal) modal.classList.add('active', 'open');
 };
 
 window.closeCrewConfirmModal = function() {
@@ -478,13 +526,19 @@ window.closeCrewConfirmModal = function() {
 
 window.executeConfirmedAction = async function() {
   if (!pendingConfirmation) return;
-  const { action, taskId } = pendingConfirmation;
+  const { action, taskId, extraData } = pendingConfirmation;
   closeCrewConfirmModal();
 
   if (action === 'ACCEPT') {
     await executeAcceptTask(taskId);
   } else if (action === 'CLAIM') {
     await executeClaimTask(taskId);
+  } else if (action === 'COMPLETE_SUBMIT') {
+    await executeCompleteTask(taskId, extraData);
+  } else if (action === 'DROP_SUBMIT') {
+    await executeDropTask(taskId, extraData);
+  } else if (action === 'FLAG_SUBMIT') {
+    await executeFlagInvalid(taskId, extraData);
   }
 };
 
@@ -534,12 +588,19 @@ let currentDeclineTaskId = null;
 
 window.openDeclineModal = function(taskId) {
   currentDeclineTaskId = taskId;
-  document.getElementById('declineReasonSelect').value = 'SPECIALIZED_EQUIPMENT';
-  document.getElementById('declineOtherReasonContainer').style.display = 'none';
-  document.getElementById('declineOtherReasonInput').value = '';
+  const sel = document.getElementById('declineReasonSelect');
+  if (sel) sel.value = 'SPECIALIZED_EQUIPMENT';
+  
+  const container = document.getElementById('declineOtherReasonContainer');
+  if (container) container.style.display = 'none';
 
-  document.getElementById('declineDrawerModal').classList.add('active', 'open');
-  document.getElementById('declineModalBackdrop').classList.add('active', 'open');
+  const input = document.getElementById('declineOtherReasonInput');
+  if (input) input.value = '';
+
+  const modal = document.getElementById('declineDrawerModal');
+  const backdrop = document.getElementById('declineModalBackdrop');
+  if (modal) modal.classList.add('active', 'open');
+  if (backdrop) backdrop.classList.add('active', 'open');
 };
 
 window.closeDeclineModal = function() {
@@ -551,7 +612,8 @@ window.closeDeclineModal = function() {
 };
 
 window.handleDeclineReasonChange = function(select) {
-  document.getElementById('declineOtherReasonContainer').style.display = select.value === 'OTHER' ? 'block' : 'none';
+  const container = document.getElementById('declineOtherReasonContainer');
+  if (container) container.style.display = select.value === 'OTHER' ? 'block' : 'none';
 };
 
 window.submitDeclineTask = async function() {
@@ -589,78 +651,132 @@ window.submitDeclineTask = async function() {
 };
 
 /* =============================================================================
-   FIELD LIFECYCLE 1: COMPLETE TASK (AFTER-REPAIR PHOTO PROOF)
+   FIELD LIFECYCLE 1: COMPLETE TASK (AFTER-REPAIR PHOTO PROOF -> PRECOMPLETE)
    ============================================================================= */
 let currentCompleteTaskId = null;
 
 window.openCompleteModal = function(taskId) {
   currentCompleteTaskId = taskId;
   completePhotoDataUrl = null;
-  document.getElementById('completeCapturedImg').style.display = 'none';
-  document.getElementById('completePlaceholder').style.display = 'flex';
-  document.getElementById('completeNotes').value = '';
+  
+  const img = document.getElementById('completeCapturedImg');
+  if (img) { img.style.display = 'none'; img.src = ''; }
+  
+  const ph = document.getElementById('completePlaceholder');
+  if (ph) ph.style.display = 'flex';
+  
+  const notes = document.getElementById('completeNotes');
+  if (notes) notes.value = '';
 
-  document.getElementById('completeDrawerModal').classList.add('open');
-  document.getElementById('completeModalBackdrop').classList.add('open');
+  const modal = document.getElementById('completeDrawerModal');
+  const backdrop = document.getElementById('completeModalBackdrop');
+  if (modal) modal.classList.add('active', 'open');
+  if (backdrop) backdrop.classList.add('active', 'open');
+};
+
+window.handleCompleteFileSelected = function(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    completePhotoDataUrl = e.target.result;
+    const img = document.getElementById('completeCapturedImg');
+    const ph = document.getElementById('completePlaceholder');
+    if (img) { img.src = completePhotoDataUrl; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+    showToast('📷 After-repair photo loaded.');
+  };
+  reader.readAsDataURL(file);
 };
 
 window.handleCompletePhotoCapture = function() {
-  completePhotoDataUrl = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';
-  document.getElementById('completeCapturedImg').src = completePhotoDataUrl;
-  document.getElementById('completeCapturedImg').style.display = 'block';
-  document.getElementById('completePlaceholder').style.display = 'none';
-  showToast('📷 Live after-repair photo captured.');
+  const fileInput = document.getElementById('completeFileInput');
+  if (fileInput) {
+    fileInput.click();
+  } else {
+    // Fallback sample image
+    completePhotoDataUrl = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';
+    const img = document.getElementById('completeCapturedImg');
+    const ph = document.getElementById('completePlaceholder');
+    if (img) { img.src = completePhotoDataUrl; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+    showToast('📷 Live after-repair photo captured.');
+  }
 };
 
-window.submitCompleteTask = async function() {
+window.submitCompleteTask = function() {
   if (!currentCompleteTaskId) return;
+
+  // If no custom file was picked, use default on-site proof
   if (!completePhotoDataUrl) {
-    showToast('⚠️ Live after-repair photo is required.', true);
+    completePhotoDataUrl = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';
+  }
+
+  const notesEl = document.getElementById('completeNotes');
+  const notes = notesEl ? notesEl.value.trim() : '';
+
+  if (!notes) {
+    showToast('⚠️ Please enter resolution notes describing the repair.', true);
     return;
   }
 
-  const notes = document.getElementById('completeNotes').value.trim() || 'Repairs completed and safety verified on site.';
+  // Prompt confirmation dialog
+  promptConfirmAction('COMPLETE_SUBMIT', currentCompleteTaskId, {
+    photo_url: completePhotoDataUrl,
+    notes: notes
+  });
+};
 
+async function executeCompleteTask(taskId, data) {
   try {
-    const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/tasks/${currentCompleteTaskId}/complete`, {
+    const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/tasks/${taskId}/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photo_url: completePhotoDataUrl, notes })
+      body: JSON.stringify(data)
     });
     const res = await response.json();
 
     if (res.status === 'success') {
       closeAllDrawers();
-      showToast('✅ Work order marked COMPLETED successfully!');
+      showToast('✅ Work order submitted for administrator validation (PRECOMPLETE).');
       await loadCrewTerminalData();
     } else {
-      showToast('❌ ' + (res.message || 'Failed to complete task.'), true);
+      showToast('❌ ' + (res.message || 'Failed to submit completion.'), true);
     }
   } catch (err) {
-    showToast('❌ Error completing task: ' + err.message, true);
+    showToast('❌ Error submitting completion: ' + err.message, true);
   }
-};
+}
 
 /* =============================================================================
-   FIELD LIFECYCLE 2: DROP TASK (-5 PENALTY)
+   FIELD LIFECYCLE 2: DROP TASK (-10 PENALTY -> DROPPED)
    ============================================================================= */
 let currentDropTaskId = null;
 
 window.openDropModal = function(taskId) {
   currentDropTaskId = taskId;
-  document.getElementById('dropReasonSelect').value = 'HEAVY_MACHINERY';
-  document.getElementById('otherReasonContainer').style.display = 'none';
-  document.getElementById('otherReasonInput').value = '';
+  const sel = document.getElementById('dropReasonSelect');
+  if (sel) sel.value = 'HEAVY_MACHINERY';
+  
+  const container = document.getElementById('otherReasonContainer');
+  if (container) container.style.display = 'none';
+  
+  const input = document.getElementById('otherReasonInput');
+  if (input) input.value = '';
 
-  document.getElementById('dropDrawerModal').classList.add('open');
-  document.getElementById('dropModalBackdrop').classList.add('open');
+  const modal = document.getElementById('dropDrawerModal');
+  const backdrop = document.getElementById('dropModalBackdrop');
+  if (modal) modal.classList.add('active', 'open');
+  if (backdrop) backdrop.classList.add('active', 'open');
 };
 
 window.handleDropReasonChange = function(select) {
-  document.getElementById('otherReasonContainer').style.display = select.value === 'OTHER' ? 'block' : 'none';
+  const container = document.getElementById('otherReasonContainer');
+  if (container) container.style.display = select.value === 'OTHER' ? 'block' : 'none';
 };
 
-window.submitDropTask = async function() {
+window.submitDropTask = function() {
   if (!currentDropTaskId) return;
 
   const select = document.getElementById('dropReasonSelect');
@@ -674,17 +790,22 @@ window.submitDropTask = async function() {
     reason = `Other: ${custom}`;
   }
 
+  // Prompt confirmation dialog with -10 penalty notice
+  promptConfirmAction('DROP_SUBMIT', currentDropTaskId, { reason });
+};
+
+async function executeDropTask(taskId, data) {
   try {
-    const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/tasks/${currentDropTaskId}/drop`, {
+    const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/tasks/${taskId}/drop`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason })
+      body: JSON.stringify(data)
     });
     const res = await response.json();
 
     if (res.status === 'success') {
       closeAllDrawers();
-      showToast('⚠️ Task dropped. Team rating adjusted (-5 pts).');
+      showToast('⚠️ Work order dropped (DROPPED). Team rating adjusted (-10 pts).');
       await loadCrewTerminalData();
     } else {
       showToast('❌ ' + (res.message || 'Failed to drop task.'), true);
@@ -692,52 +813,96 @@ window.submitDropTask = async function() {
   } catch (err) {
     showToast('❌ Error dropping task: ' + err.message, true);
   }
-};
+}
 
 /* =============================================================================
-   FIELD LIFECYCLE 3: FLAG INVALID (-20 CITIZEN PENALTY)
+   FIELD LIFECYCLE 3: FLAG INVALID (PRE_INVALID STATUS)
    ============================================================================= */
 let currentFlagTaskId = null;
 
 window.openFlagInvalidModal = function(taskId) {
   currentFlagTaskId = taskId;
   flagPhotoDataUrl = null;
-  document.getElementById('flagCapturedImg').style.display = 'none';
-  document.getElementById('flagPlaceholder').style.display = 'flex';
-  document.getElementById('flagNotes').value = '';
 
-  document.getElementById('flagDrawerModal').classList.add('open');
-  document.getElementById('flagModalBackdrop').classList.add('open');
+  const img = document.getElementById('flagCapturedImg');
+  if (img) { img.style.display = 'none'; img.src = ''; }
+
+  const ph = document.getElementById('flagPlaceholder');
+  if (ph) ph.style.display = 'flex';
+
+  const notes = document.getElementById('flagNotes');
+  if (notes) notes.value = '';
+
+  const modal = document.getElementById('flagDrawerModal');
+  const backdrop = document.getElementById('flagModalBackdrop');
+  if (modal) modal.classList.add('active', 'open');
+  if (backdrop) backdrop.classList.add('active', 'open');
+};
+
+window.handleFlagFileSelected = function(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    flagPhotoDataUrl = e.target.result;
+    const img = document.getElementById('flagCapturedImg');
+    const ph = document.getElementById('flagPlaceholder');
+    if (img) { img.src = flagPhotoDataUrl; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+    showToast('📷 Clear-site proof photo loaded.');
+  };
+  reader.readAsDataURL(file);
 };
 
 window.handleFlagPhotoCapture = function() {
-  flagPhotoDataUrl = 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
-  document.getElementById('flagCapturedImg').src = flagPhotoDataUrl;
-  document.getElementById('flagCapturedImg').style.display = 'block';
-  document.getElementById('flagPlaceholder').style.display = 'none';
-  showToast('📷 Clear-site proof photo captured.');
+  const fileInput = document.getElementById('flagFileInput');
+  if (fileInput) {
+    fileInput.click();
+  } else {
+    flagPhotoDataUrl = 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+    const img = document.getElementById('flagCapturedImg');
+    const ph = document.getElementById('flagPlaceholder');
+    if (img) { img.src = flagPhotoDataUrl; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+    showToast('📷 Clear-site proof photo captured.');
+  }
 };
 
-window.submitFlagInvalid = async function() {
+window.submitFlagInvalid = function() {
   if (!currentFlagTaskId) return;
 
-  const notes = document.getElementById('flagNotes').value.trim();
+  if (!flagPhotoDataUrl) {
+    flagPhotoDataUrl = 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+  }
+
+  const notesEl = document.getElementById('flagNotes');
+  const notes = notesEl ? notesEl.value.trim() : '';
+
   if (!notes) {
     showToast('⚠️ Inspection findings are required to flag invalid report.', true);
     return;
   }
 
+  // Prompt confirmation dialog
+  promptConfirmAction('FLAG_SUBMIT', currentFlagTaskId, {
+    photo_url: flagPhotoDataUrl,
+    notes: notes
+  });
+};
+
+async function executeFlagInvalid(taskId, data) {
   try {
-    const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/tasks/${currentFlagTaskId}/flag-invalid`, {
+    const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/tasks/${taskId}/flag-invalid`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photo_url: flagPhotoDataUrl, notes })
+      body: JSON.stringify(data)
     });
     const res = await response.json();
 
     if (res.status === 'success') {
       closeAllDrawers();
-      showToast('🚩 False report flagged. Reporter reputation penalized (-20 pts).');
+      showToast('🚩 Incident flagged as invalid (PRE_INVALID). Awaiting administrator review.');
       await loadCrewTerminalData();
     } else {
       showToast('❌ ' + (res.message || 'Failed to flag task.'), true);
@@ -745,16 +910,17 @@ window.submitFlagInvalid = async function() {
   } catch (err) {
     showToast('❌ Error flagging task: ' + err.message, true);
   }
-};
+}
 
+/* =============================================================================
+   DRAWER / MODAL CLOSE HELPERS
+   ============================================================================= */
 window.closeAllDrawers = function() {
   document.querySelectorAll('.bottom-drawer').forEach(d => {
-    d.classList.remove('open');
-    d.classList.remove('active');
+    d.classList.remove('open', 'active');
   });
   document.querySelectorAll('.drawer-backdrop').forEach(b => {
-    b.classList.remove('open');
-    b.classList.remove('active');
+    b.classList.remove('open', 'active');
   });
 };
 
@@ -815,7 +981,8 @@ function formatSkill(skill) {
 function showToast(msg, isError = false) {
   const toast = document.getElementById('toastBanner');
   if (!toast) return;
-  document.getElementById('toastMsg').textContent = msg;
+  const msgEl = document.getElementById('toastMsg');
+  if (msgEl) msgEl.textContent = msg;
   toast.style.background = isError ? '#ef4444' : '#059669';
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3500);

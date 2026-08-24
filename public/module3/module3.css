@@ -547,3 +547,9 @@ select.form-control {
   z-index: 600;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
 }
+
+/* Toast Banner Override: Ensure Always in Front of Drawers and Modals */
+.toast-banner {
+  z-index: 9999 !important;
+}
+

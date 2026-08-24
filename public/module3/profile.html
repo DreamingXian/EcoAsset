@@ -636,7 +636,7 @@
       </div>
 
       <!-- Edit Mode Buttons -->
-      <div id="editActionsGroup" style="display: none; display: flex; flex-direction: column; gap: 8px;">
+      <div id="editActionsGroup" style="display: none; flex-direction: column; gap: 8px;">
         <button class="btn-save-profile" onclick="promptSaveConfirmation()">
           <span>💾 Save Changes</span>
         </button>
@@ -834,6 +834,13 @@
         baseMarker.setLatLng([savedProfile.current_latitude, savedProfile.current_longitude]);
         baseMarker.dragging.disable();
       }
+
+      // 4. Ensure initial view mode button states
+      document.getElementById('viewSkillsContainer').style.display = 'flex';
+      document.getElementById('editSkillsContainer').style.display = 'none';
+      document.getElementById('editLocationControls').style.display = 'none';
+      document.getElementById('viewActionsGroup').style.display = 'block';
+      document.getElementById('editActionsGroup').style.display = 'none';
     }
 
     function enterEditMode() {

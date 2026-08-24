@@ -231,10 +231,10 @@ class TaskController
         try {
             $ok = $this->taskDAO->completeTask($taskId, $photoUrl, $notes);
             if ($ok) {
-                $this->auditLogDAO->log($user['user_id'], 'TASK_COMPLETED', "Crew completed task {$taskId}");
-                ResponseUtil::success(['task_id' => $taskId, 'status' => 'COMPLETED', 'photo_url' => $photoUrl], 'Task marked COMPLETED successfully.');
+                $this->auditLogDAO->log($user['user_id'], 'TASK_PRECOMPLETE_SUBMITTED', "Crew submitted task {$taskId} for completion review.");
+                ResponseUtil::success(['task_id' => $taskId, 'status' => 'PRECOMPLETE', 'photo_url' => $photoUrl], 'Task completion submitted for administrator validation.');
             } else {
-                ResponseUtil::error('Failed to complete task.', 400);
+                ResponseUtil::error('Failed to submit completion.', 400);
             }
         } catch (Exception $e) {
             ResponseUtil::error('Error completing task: ' . $e->getMessage(), 500);
@@ -242,7 +242,7 @@ class TaskController
     }
 
     /**
-     * Drop an accepted in-progress task (-5 penalty) (POST /api/v1/tasks/{id}/drop).
+     * Drop an accepted in-progress task (-10 penalty) (POST /api/v1/tasks/{id}/drop).
      */
     public function dropTask(string $taskId): void
     {
@@ -256,10 +256,10 @@ class TaskController
         $reason = trim($input['reason'] ?? ($_POST['reason'] ?? 'Dropped by crew technician due to field roadblocks'));
 
         try {
-            $ok = $this->taskDAO->dropTask($taskId, $user['user_id'], $reason);
+            $ok = $this->taskDAO->dropTask($taskId, $user['user_id'], $reason, 10.0);
             if ($ok) {
-                $this->auditLogDAO->log($user['user_id'], 'TASK_DROPPED', "Crew dropped task {$taskId}: {$reason}");
-                ResponseUtil::success(['task_id' => $taskId, 'status' => 'OPEN_FOR_CLAIM'], 'Task dropped back to Open Pool. Performance rating updated.');
+                $this->auditLogDAO->log($user['user_id'], 'TASK_DROPPED', "Crew dropped task {$taskId}: {$reason} (-10 pts)");
+                ResponseUtil::success(['task_id' => $taskId, 'status' => 'DROPPED'], 'Task dropped. Performance score adjusted (-10 pts).');
             } else {
                 ResponseUtil::error('Failed to drop task.', 400);
             }
@@ -269,7 +269,7 @@ class TaskController
     }
 
     /**
-     * Flag incident as Invalid / No Fault Found with clear-site proof (-20 penalty to reporter) (POST /api/v1/tasks/{id}/flag-invalid).
+     * Flag incident as Invalid / No Fault Found with clear-site proof (POST /api/v1/tasks/{id}/flag-invalid).
      */
     public function flagInvalid(string $taskId): void
     {
@@ -288,19 +288,22 @@ class TaskController
             }
         } elseif (!empty($_POST['photo_url'])) {
             $photoUrl = trim($_POST['photo_url']);
+        } else {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+            $photoUrl = $input['photo_url'] ?? null;
         }
 
         if (empty($photoUrl)) {
             $photoUrl = 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
         }
 
-        $notes = $_POST['notes'] ?? 'Inspected on site: No damage or hazard found. False report flagged.';
+        $notes = $_POST['notes'] ?? ($input['notes'] ?? 'Inspected on site: No damage or hazard found. False report flagged.');
 
         try {
             $ok = $this->taskDAO->flagInvalidTask($taskId, $user['user_id'], $photoUrl, $notes);
             if ($ok) {
-                $this->auditLogDAO->log($user['user_id'], 'TASK_FLAGGED_INVALID', "Crew flagged task {$taskId} as invalid.");
-                ResponseUtil::success(['task_id' => $taskId, 'status' => 'INVALID_RESOLVED'], 'Incident marked INVALID_RESOLVED. Reporter reputation adjusted.');
+                $this->auditLogDAO->log($user['user_id'], 'TASK_FLAGGED_INVALID', "Crew flagged task {$taskId} as PRE_INVALID.");
+                ResponseUtil::success(['task_id' => $taskId, 'status' => 'PRE_INVALID'], 'Report flagged as invalid. Awaiting administrator review.');
             } else {
                 ResponseUtil::error('Failed to flag task as invalid.', 400);
             }

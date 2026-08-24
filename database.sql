@@ -55,6 +55,9 @@ CREATE TYPE report_status AS ENUM (
     'OPEN_FOR_CLAIM',
     'PENDING_ACCEPTANCE',
     'IN_PROGRESS',
+    'PRECOMPLETE',
+    'DROPPED',
+    'PRE_INVALID',
     'COMPLETED',
     'INVALID_RESOLVED'
 );
@@ -146,6 +149,7 @@ CREATE TABLE maintenance_tasks (
     drop_reason TEXT,
     flag_invalid_photo_url TEXT,
     flag_invalid_notes TEXT,
+    admin_return_reason TEXT,
     completed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
