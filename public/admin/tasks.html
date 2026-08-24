@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoAsset - Municipal Task Control Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="admin.css?v=1.0">
+</head>
+<body>
+
+  <!-- Toast Notification Banner -->
+  <div class="toast-banner" id="toastBanner">
+    <span id="toastMsg">Action executed successfully.</span>
+    <span style="cursor: pointer;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
+  </div>
+
+  <!-- Top Executive Navbar -->
+  <header class="admin-navbar">
+    <div class="admin-nav-left">
+      <a href="index.html" class="admin-brand">
+        <div class="brand-badge-icon">🏛️</div>
+        <div class="brand-text-block">
+          <span class="brand-title">EcoAsset Admin</span>
+          <span class="brand-subtitle">Municipal Operations Suite</span>
+        </div>
+      </a>
+
+      <nav class="admin-nav-links">
+        <a href="index.html" class="nav-link-item">
+          <span>🏠 Overview</span>
+        </a>
+        <a href="tasks.html" class="nav-link-item active">
+          <span>🛠️ Task Control</span>
+        </a>
+        <a href="reports.html" class="nav-link-item">
+          <span>📊 Reports</span>
+        </a>
+        <a href="users.html" class="nav-link-item">
+          <span>👥 User Management</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="admin-nav-right">
+      <div class="admin-clock-pill" id="liveClockDisplay">
+        <span>🕒 Mon 14:00:00</span>
+      </div>
+
+      <a href="profile.html" class="admin-user-pill" title="View Admin Profile">
+        <div class="user-avatar-dot" id="navAvatarInitials">AD</div>
+        <span style="font-size: 13px; font-weight: 700;" id="navAdminName">Administrator</span>
+      </a>
+
+      <button class="btn-nav-logout" onclick="handleLogout()">
+        <span>🚪 Sign Out</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="admin-container">
+    
+    <!-- Top Header Row -->
+    <div class="task-control-header">
+      <div>
+        <h1 class="page-title">Municipal Task Control Dashboard</h1>
+        <p class="page-subtitle">
+          Supervise active work order pipeline, trigger automated spatial dispatches, manually reassign technicians, and verify lifecycle completions.
+        </p>
+      </div>
+      <div>
+        <button class="btn-batch-dispatch" onclick="triggerBatchAutoDispatch()">
+          <span>⚡ Run Batch Auto-Dispatch</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 8 Status KPI Metric Cards Grid -->
+    <section class="kpi-metrics-grid">
+      <div class="kpi-card active" onclick="filterByStatus('ALL', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiAll">8</div>
+          <div class="kpi-card-lbl">All Tasks</div>
+        </div>
+        <span class="kpi-card-icon">📋</span>
+      </div>
+
+      <div class="kpi-card kpi-open" onclick="filterByStatus('OPEN_FOR_CLAIM', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiOpen">2</div>
+          <div class="kpi-card-lbl">Open for Claim</div>
+        </div>
+        <span class="kpi-card-icon">📦</span>
+      </div>
+
+      <div class="kpi-card kpi-pending" onclick="filterByStatus('PENDING_ACCEPTANCE', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiPending">1</div>
+          <div class="kpi-card-lbl">Pending Review</div>
+        </div>
+        <span class="kpi-card-icon">🟡</span>
+      </div>
+
+      <div class="kpi-card kpi-progress" onclick="filterByStatus('IN_PROGRESS', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiProgress">2</div>
+          <div class="kpi-card-lbl">In Progress</div>
+        </div>
+        <span class="kpi-card-icon">🔧</span>
+      </div>
+
+      <div class="kpi-card kpi-precomplete" onclick="filterByStatus('PRECOMPLETE', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiPrecomplete" style="color: #7c3aed;">1</div>
+          <div class="kpi-card-lbl">Pre-Complete</div>
+        </div>
+        <span class="kpi-card-icon">⚖️</span>
+      </div>
+
+      <div class="kpi-card kpi-dropped" onclick="filterByStatus('DROPPED', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiDropped" style="color: #d97706;">1</div>
+          <div class="kpi-card-lbl">Dropped</div>
+        </div>
+        <span class="kpi-card-icon">⚠️</span>
+      </div>
+
+      <div class="kpi-card kpi-preinvalid" onclick="filterByStatus('PRE_INVALID', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiPreinvalid" style="color: #e11d48;">1</div>
+          <div class="kpi-card-lbl">Pre-Invalid</div>
+        </div>
+        <span class="kpi-card-icon">🚩</span>
+      </div>
+
+      <div class="kpi-card kpi-completed" onclick="filterByStatus('COMPLETED', this)">
+        <div>
+          <div class="kpi-card-val" id="kpiCompleted" style="color: #059669;">1</div>
+          <div class="kpi-card-lbl">Completed</div>
+        </div>
+        <span class="kpi-card-icon">✅</span>
+      </div>
+    </section>
+
+    <!-- Toolbar: Search, Status Chips & Sorting -->
+    <div class="admin-toolbar">
+      <div class="toolbar-row-top">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input-field" 
+            placeholder="Search tasks by ID, description, location, reporter name, or assigned crew..."
+            oninput="handleSearchFilter()"
+          >
+        </div>
+
+        <div class="toolbar-controls">
+          <select id="categoryFilter" class="control-select" onchange="handleCategoryFilter(this.value)">
+            <option value="ALL">All Categories</option>
+            <option value="STRUCTURAL">🏗️ Structural</option>
+            <option value="ELECTRICAL">⚡ Electrical</option>
+            <option value="SANITATION">🚰 Sanitation</option>
+            <option value="GENERAL_FACILITY">🪑 Facilities</option>
+            <option value="OTHER">🛠️ Other</option>
+          </select>
+
+          <select id="sortSelector" class="control-select" onchange="handleSortChange(this.value)">
+            <option value="priority_desc">🔥 Highest Priority (P-Score)</option>
+            <option value="created_asc">⏱️ Earliest Incomplete (Urgency)</option>
+            <option value="upvotes_desc">👍 Most Upvotes</option>
+            <option value="newest_desc">📅 Newest Created</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Status Categorization Filter Chips -->
+      <div class="status-filter-chips">
+        <button class="filter-chip-btn active" data-status="ALL" onclick="filterByStatus('ALL', this)">All (8)</button>
+        <button class="filter-chip-btn" data-status="PRECOMPLETE" onclick="filterByStatus('PRECOMPLETE', this)" style="border-color: #c4b5fd; color: #6d28d9;">⚖️ Pre-Complete (1)</button>
+        <button class="filter-chip-btn" data-status="DROPPED" onclick="filterByStatus('DROPPED', this)" style="border-color: #fde68a; color: #b45309;">⚠️ Dropped (1)</button>
+        <button class="filter-chip-btn" data-status="PRE_INVALID" onclick="filterByStatus('PRE_INVALID', this)" style="border-color: #fecdd3; color: #be123c;">🚩 Pre-Invalid (1)</button>
+        <button class="filter-chip-btn" data-status="OPEN_FOR_CLAIM" onclick="filterByStatus('OPEN_FOR_CLAIM', this)">📦 Open Pool (2)</button>
+        <button class="filter-chip-btn" data-status="PENDING_ACCEPTANCE" onclick="filterByStatus('PENDING_ACCEPTANCE', this)">🟡 Pending (1)</button>
+        <button class="filter-chip-btn" data-status="IN_PROGRESS" onclick="filterByStatus('IN_PROGRESS', this)">🔧 In Progress (2)</button>
+        <button class="filter-chip-btn" data-status="COMPLETED" onclick="filterByStatus('COMPLETED', this)">✅ Completed (1)</button>
+      </div>
+    </div>
+
+    <!-- Task Cards Grid -->
+    <section class="tasks-grid-container" id="taskCardsContainer">
+      <!-- Dynamically Rendered Sample Task Cards -->
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODAL 1: VERIFY COMPLETION (PRECOMPLETE)
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="verifyCompleteModal">
+    <div class="admin-modal-box wide-modal">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title">⚖️ Verify Work Order Completion Proof</h3>
+        <button class="modal-close-btn" onclick="closeModal('verifyCompleteModal')">✕</button>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">
+        Compare the original reported damage with the technician's after-repair evidence photo and resolution notes before approving.
+      </p>
+
+      <div class="photo-compare-grid">
+        <div class="photo-compare-card">
+          <div class="photo-compare-title">1. Original Incident Photo</div>
+          <img id="modalBeforeImg" class="photo-compare-img" src="" alt="Before Repair">
+          <div style="font-size: 11.5px; color: #64748b; margin-top: 6px;" id="modalBeforeDesc">Reported Damage</div>
+        </div>
+        <div class="photo-compare-card" style="border-color: #c4b5fd; background: #faf5ff;">
+          <div class="photo-compare-title" style="color: #6d28d9;">2. Live After-Repair Photo Proof</div>
+          <img id="modalAfterImg" class="photo-compare-img" src="" alt="After Repair">
+          <div style="font-size: 11.5px; color: #6d28d9; margin-top: 6px;" id="modalAfterNotes">Resolution Notes</div>
+        </div>
+      </div>
+
+      <label class="form-label">Admin Return / Rejection Reason (Required only if rejecting)</label>
+      <textarea id="verifyRejectReason" class="form-textarea" rows="2" placeholder="e.g., Weld seam not smoothed; safety coating missing on bottom bracket..."></textarea>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+        <button class="btn-action btn-primary" style="background: #059669; padding: 12px;" onclick="handleApproveCompletion()">
+          <span>✅ Approve Completion (+5 Crew Points)</span>
+        </button>
+        <button class="btn-action btn-secondary" style="color: #b91c1c; border-color: #fca5a5;" onclick="handleRejectCompletion()">
+          <span>↩️ Return to Crew</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: RESCHEDULE DROPPED TASK (DROPPED)
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="rescheduleDroppedModal">
+    <div class="admin-modal-box">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title">🔄 Reschedule Dropped Work Order</h3>
+        <button class="modal-close-btn" onclick="closeModal('rescheduleDroppedModal')">✕</button>
+      </div>
+
+      <div style="background: #fffbeb; border: 1.5px solid #fde68a; padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 18px;">
+        <div style="font-size: 12px; font-weight: 800; color: #92400e; text-transform: uppercase; margin-bottom: 4px;">
+          Technician Drop Reason
+        </div>
+        <p style="font-size: 13.5px; color: #78350f; font-weight: 600;" id="modalDropReasonText">
+          Specialized Heavy Machinery Required for Excavation
+        </p>
+      </div>
+
+      <p style="font-size: 13px; color: #475569; margin-bottom: 18px;">
+        Select an administrative rescheduling action for this task:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn-action btn-primary" onclick="handleRescheduleAction('AUTO_DISPATCH')">
+          <span>⚡ Run Automated Spatial Re-Dispatch</span>
+        </button>
+        <button class="btn-action btn-secondary" onclick="openManualCrewPickerModal()">
+          <span>👤 Manually Assign to Another Technician</span>
+        </button>
+        <button class="btn-action btn-secondary" onclick="handleRescheduleAction('RETURN_OPEN_POOL')">
+          <span>📦 Return to Open Maintenance Pool</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: VERIFY INVALID FLAG (PRE_INVALID)
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="verifyInvalidModal">
+    <div class="admin-modal-box wide-modal">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title">🚩 Validate Incident Flag: No Fault Found</h3>
+        <button class="modal-close-btn" onclick="closeModal('verifyInvalidModal')">✕</button>
+      </div>
+
+      <div class="photo-compare-grid">
+        <div class="photo-compare-card">
+          <div class="photo-compare-title">Original Citizen Report</div>
+          <img id="modalInvalidReportImg" class="photo-compare-img" src="" alt="Reported Photo">
+          <div style="font-size: 12px; color: #334155; margin-top: 6px;" id="modalInvalidReportDesc">Report Description</div>
+        </div>
+        <div class="photo-compare-card" style="border-color: #fecdd3; background: #fff1f2;">
+          <div class="photo-compare-title" style="color: #be123c;">Technician Clear-Site Evidence</div>
+          <img id="modalInvalidClearImg" class="photo-compare-img" src="" alt="Clear Site Proof">
+          <div style="font-size: 12px; color: #9f1239; margin-top: 6px;" id="modalInvalidNotes">Inspection Findings</div>
+        </div>
+      </div>
+
+      <label class="form-label">Administrative Action</label>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <button class="btn-action" style="background: #e11d48; color: #ffffff; padding: 12px;" onclick="handleApproveInvalid()">
+          <span>🚩 Confirm Invalid (-20 Citizen Penalty)</span>
+        </button>
+        <button class="btn-action btn-secondary" onclick="handleRejectInvalid()">
+          <span>↩️ Reject Flag & Resume Work Order</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4: MANUAL CREW SELECTION (UNCONSTRAINED ASSIGNMENT)
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="manualCrewPickerModal">
+    <div class="admin-modal-box">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title">👤 Select Technician for Manual Assignment</h3>
+        <button class="modal-close-btn" onclick="closeModal('manualCrewPickerModal')">✕</button>
+      </div>
+
+      <p style="font-size: 12.5px; color: #64748b; margin-bottom: 14px;">
+        Administrative override enabled: Technicians may be assigned regardless of their current availability status.
+      </p>
+
+      <div class="crew-picker-roster" id="crewRosterList">
+        <!-- Sample Crew Items -->
+        <div class="crew-picker-item" onclick="handleAssignCrewToTask('crew1')">
+          <div class="crew-item-left">
+            <div class="crew-item-avatar">C1</div>
+            <div>
+              <div class="crew-item-name">Crew 1 (Ahmad Razak)</div>
+              <div class="crew-item-sub">🏗️ Structural, 🪑 Facilities • 📍 2.4 km away</div>
+            </div>
+          </div>
+          <div>
+            <span class="status-badge-pill pill-progress">🔴 BUSY (1 on task)</span>
+          </div>
+        </div>
+
+        <div class="crew-picker-item" onclick="handleAssignCrewToTask('crew2')">
+          <div class="crew-item-left">
+            <div class="crew-item-avatar" style="background:#0284c7;">C2</div>
+            <div>
+              <div class="crew-item-name">Crew 2 (Siti Sarah)</div>
+              <div class="crew-item-sub">⚡ Electrical, 🚰 Sanitation • 📍 5.1 km away</div>
+            </div>
+          </div>
+          <div>
+            <span class="status-badge-pill pill-open">🟢 AVAILABLE</span>
+          </div>
+        </div>
+
+        <div class="crew-picker-item" onclick="handleAssignCrewToTask('crew3')">
+          <div class="crew-item-left">
+            <div class="crew-item-avatar" style="background:#7c3aed;">C3</div>
+            <div>
+              <div class="crew-item-name">Crew 3 (Kumar Raman)</div>
+              <div class="crew-item-sub">🛠️ General, 🏗️ Structural • 📍 8.3 km away</div>
+            </div>
+          </div>
+          <div>
+            <span class="status-badge-pill pill-open">🟢 AVAILABLE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 5: TASK FULL DETAIL INSPECTION
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="taskDetailModal">
+    <div class="admin-modal-box">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title" id="detailModalTitle">Task Work Order Inspection</h3>
+        <button class="modal-close-btn" onclick="closeModal('taskDetailModal')">✕</button>
+      </div>
+
+      <img id="detailModalImg" src="" alt="Task Photo" style="width:100%; height:220px; object-fit:cover; border-radius:12px; margin-bottom:14px;">
+
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;" id="detailModalBadges">
+        <!-- Badges -->
+      </div>
+
+      <label class="form-label">Description</label>
+      <p id="detailModalDesc" style="font-size: 13px; color: #334155; line-height: 1.5; background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+        Description text...
+      </p>
+
+      <div class="profile-info-grid" style="margin-bottom: 18px; padding: 14px;">
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Location</span>
+          <span class="profile-info-val" id="detailModalLocation">Titiwangsa Lake Park</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Reporter</span>
+          <span class="profile-info-val" id="detailModalReporter">Citizen (Reputation: 100)</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Assigned Fleet</span>
+          <span class="profile-info-val" id="detailModalCrew">Crew 1 (Ahmad Razak)</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">SLA Deadline</span>
+          <span class="profile-info-val" style="color: #d97706;" id="detailModalSla">24 Hours Remaining</span>
+        </div>
+      </div>
+
+      <button class="btn-action btn-secondary" style="width: 100%;" onclick="closeModal('taskDetailModal')">
+        <span>Close Inspection</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/auth-guard.js?v=4.1"></script>
+  <script>
+    // =========================================================================
+    // SAMPLE DEMO WORK ORDER RECORDS (Covering All Flows & States)
+    // =========================================================================
+    const SAMPLE_TASKS = [
+      {
+        task_id: 'TASK-8291',
+        category: 'CRITICAL_SAFETY',
+        required_skill: 'STRUCTURAL',
+        description: 'Fractured suspension bridge handrail with sharp rusted edges near the main lake crossing.',
+        district: 'Titiwangsa Lake Park, KL',
+        latitude: 3.1764,
+        longitude: 101.7071,
+        priority_score: 9.4,
+        status: 'PRECOMPLETE',
+        reporter_name: 'Alice Tan',
+        reporter_reputation: 100,
+        upvote_count: 5,
+        created_at: '2026-08-24 09:15:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=600&q=80',
+        completion_photo_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+        completion_notes: 'Replaced broken railing bracket, welded steel reinforcement, and applied weather-resistant anti-rust coating.',
+        assigned_crew_name: 'Crew 1 (Ahmad Razak)',
+        assigned_crew_id: 'crew1'
+      },
+      {
+        task_id: 'TASK-9042',
+        category: 'MAJOR_BLOCKAGE',
+        required_skill: 'ELECTRICAL',
+        description: 'Deep underground high-voltage power conduit severed by falling oak root system, power blackout on east pathway.',
+        district: 'Perdana Botanical Gardens, KL',
+        latitude: 3.1438,
+        longitude: 101.6836,
+        priority_score: 8.8,
+        status: 'DROPPED',
+        reporter_name: 'Marcus Lee',
+        reporter_reputation: 95,
+        upvote_count: 4,
+        created_at: '2026-08-24 08:30:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=600&q=80',
+        drop_reason: 'Specialized Heavy Machinery & Trench Digger Required for Excavation',
+        assigned_crew_name: 'Crew 2 (Siti Sarah)',
+        assigned_crew_id: 'crew2'
+      },
+      {
+        task_id: 'TASK-7140',
+        category: 'MINOR_DEFECT',
+        required_skill: 'ELECTRICAL',
+        description: 'Reported stolen solar lamp post unit near forest trail viewpoint.',
+        district: 'Bukit Nanas Forest Reserve, KL',
+        latitude: 3.1512,
+        longitude: 101.7029,
+        priority_score: 7.2,
+        status: 'PRE_INVALID',
+        reporter_name: 'David Wong',
+        reporter_reputation: 80,
+        upvote_count: 1,
+        created_at: '2026-08-24 10:00:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
+        flag_invalid_photo_url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
+        flag_invalid_notes: 'Site inspected thoroughly. Solar lamp post was recently relocated 10m north by park management, intact and operational. No theft or defect found.',
+        assigned_crew_name: 'Crew 3 (Kumar Raman)',
+        assigned_crew_id: 'crew3'
+      },
+      {
+        task_id: 'TASK-6201',
+        category: 'CRITICAL_SAFETY',
+        required_skill: 'STRUCTURAL',
+        description: 'Large fallen tree trunk blocking high-traffic hiking pathway #4 after thunderstorm.',
+        district: 'KL Forest Eco Park, KL',
+        latitude: 3.1508,
+        longitude: 101.7011,
+        priority_score: 9.1,
+        status: 'OPEN_FOR_CLAIM',
+        reporter_name: 'Sarah Lim',
+        reporter_reputation: 100,
+        upvote_count: 6,
+        created_at: '2026-08-24 11:20:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80',
+        assigned_crew_name: 'Unassigned (Open Pool)',
+        assigned_crew_id: null
+      },
+      {
+        task_id: 'TASK-5519',
+        category: 'MINOR_DEFECT',
+        required_skill: 'GENERAL_FACILITY',
+        description: 'Cracked concrete bench with exposed reinforcing rebar wire on picnic lawn.',
+        district: 'Lake Gardens, KL',
+        latitude: 3.1420,
+        longitude: 101.6880,
+        priority_score: 6.8,
+        status: 'OPEN_FOR_CLAIM',
+        reporter_name: 'Jason Lee',
+        reporter_reputation: 100,
+        upvote_count: 2,
+        created_at: '2026-08-24 12:10:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80',
+        assigned_crew_name: 'Unassigned (Open Pool)',
+        assigned_crew_id: null
+      },
+      {
+        task_id: 'TASK-4402',
+        category: 'MAJOR_BLOCKAGE',
+        required_skill: 'SANITATION',
+        description: 'Severe drainage blockage causing rainwater overflow onto visitor pavilion terrace.',
+        district: 'Taman Rimba Kiara, KL',
+        latitude: 3.1492,
+        longitude: 101.6294,
+        priority_score: 8.5,
+        status: 'IN_PROGRESS',
+        reporter_name: 'Emily Tan',
+        reporter_reputation: 100,
+        upvote_count: 3,
+        created_at: '2026-08-24 07:45:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1584467735876-82088f114674?auto=format&fit=crop&w=600&q=80',
+        assigned_crew_name: 'Crew 1 (Ahmad Razak)',
+        assigned_crew_id: 'crew1'
+      },
+      {
+        task_id: 'TASK-3310',
+        category: 'MINOR_DEFECT',
+        required_skill: 'ELECTRICAL',
+        description: 'Flickering LED bollard light fixture near park gazebo.',
+        district: 'KLCC Park, KL',
+        latitude: 3.1553,
+        longitude: 101.7145,
+        priority_score: 5.8,
+        status: 'PENDING_ACCEPTANCE',
+        reporter_name: 'Zul Hakim',
+        reporter_reputation: 100,
+        upvote_count: 1,
+        created_at: '2026-08-24 13:00:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
+        assigned_crew_name: 'Crew 2 (Siti Sarah) [Dispatched]',
+        assigned_crew_id: 'crew2'
+      },
+      {
+        task_id: 'TASK-1002',
+        category: 'AESTHETIC',
+        required_skill: 'GENERAL_FACILITY',
+        description: 'Graffiti vandalism removed and restored with anti-graffiti enamel coating.',
+        district: 'Central Park Deck, KL',
+        latitude: 3.1570,
+        longitude: 101.7120,
+        priority_score: 4.2,
+        status: 'COMPLETED',
+        reporter_name: 'Nurul Izzah',
+        reporter_reputation: 100,
+        upvote_count: 2,
+        created_at: '2026-08-23 15:30:00',
+        report_photo_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+        assigned_crew_name: 'Crew 3 (Kumar Raman)',
+        assigned_crew_id: 'crew3'
+      }
+    ];
+
+    let currentStatusFilter = 'ALL';
+    let currentCategoryFilter = 'ALL';
+    let currentSearchTerm = '';
+    let currentSortOrder = 'priority_desc';
+    let activeActionTaskId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Enforce Admin Authorization
+      const user = await AuthGuard.requireAuth(['ADMINISTRATOR']);
+      if (!user) return;
+
+      const name = user.full_name || 'Municipal Administrator';
+      document.getElementById('navAdminName').textContent = name;
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
+      document.getElementById('navAvatarInitials').textContent = initials;
+
+      // 2. Clock
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      // 3. Render Sample Task Cards
+      renderTaskCards();
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const dayStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const el = document.getElementById('liveClockDisplay');
+      if (el) el.innerHTML = `<span>🕒 ${dayStr} ${timeStr}</span>`;
+    }
+
+    // =========================================================================
+    // FILTERING & RENDERING LOGIC
+    // =========================================================================
+    function filterByStatus(status, el) {
+      currentStatusFilter = status;
+      
+      // Update filter chips & KPI cards
+      document.querySelectorAll('.filter-chip-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.status === status);
+      });
+      document.querySelectorAll('.kpi-card').forEach(card => {
+        card.classList.remove('active');
+      });
+      if (el && el.classList.contains('kpi-card')) {
+        el.classList.add('active');
+      }
+
+      renderTaskCards();
+    }
+
+    function handleCategoryFilter(category) {
+      currentCategoryFilter = category;
+      renderTaskCards();
+    }
+
+    function handleSearchFilter() {
+      currentSearchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+      renderTaskCards();
+    }
+
+    function handleSortChange(sort) {
+      currentSortOrder = sort;
+      renderTaskCards();
+    }
+
+    function renderTaskCards() {
+      const container = document.getElementById('taskCardsContainer');
+      if (!container) return;
+
+      let filtered = SAMPLE_TASKS.filter(task => {
+        if (currentStatusFilter !== 'ALL' && task.status !== currentStatusFilter) return false;
+        if (currentCategoryFilter !== 'ALL' && task.required_skill !== currentCategoryFilter) return false;
+        if (currentSearchTerm) {
+          const matchId = task.task_id.toLowerCase().includes(currentSearchTerm);
+          const matchDesc = task.description.toLowerCase().includes(currentSearchTerm);
+          const matchDist = task.district.toLowerCase().includes(currentSearchTerm);
+          const matchRep = task.reporter_name.toLowerCase().includes(currentSearchTerm);
+          const matchCrew = task.assigned_crew_name.toLowerCase().includes(currentSearchTerm);
+          if (!matchId && !matchDesc && !matchDist && !matchRep && !matchCrew) return false;
+        }
+        return true;
+      });
+
+      // Sorting
+      filtered.sort((a, b) => {
+        if (currentSortOrder === 'priority_desc') return b.priority_score - a.priority_score;
+        if (currentSortOrder === 'created_asc') return new Date(a.created_at) - new Date(b.created_at);
+        if (currentSortOrder === 'upvotes_desc') return b.upvote_count - a.upvote_count;
+        if (currentSortOrder === 'newest_desc') return new Date(b.created_at) - new Date(a.created_at);
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; background: #ffffff; padding: 48px; border-radius: 18px; text-align: center; border: 1.5px solid #e2e8f0;">
+            <span style="font-size: 36px;">🔍</span>
+            <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 8px;">No Tasks Found</h3>
+            <p style="font-size: 13px; color: #64748b;">No maintenance tasks match the selected filter criteria.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(task => renderTaskCardHtml(task)).join('');
+    }
+
+    function renderTaskCardHtml(task) {
+      let cardClass = 'admin-task-card';
+      if (task.status === 'PRECOMPLETE') cardClass += ' card-precomplete';
+      if (task.status === 'DROPPED') cardClass += ' card-dropped';
+      if (task.status === 'PRE_INVALID') cardClass += ' card-preinvalid';
+
+      const statusPill = getStatusPill(task.status);
+      const catClass = task.category === 'CRITICAL_SAFETY' ? 'badge-critical' : (task.category === 'MAJOR_BLOCKAGE' ? 'badge-operational' : 'badge-aesthetic');
+
+      // State-specific Alert Box
+      let alertBoxHtml = '';
+      if (task.status === 'PRECOMPLETE') {
+        alertBoxHtml = `
+          <div class="card-action-alert-box alert-precomplete">
+            <span>⚖️</span>
+            <span>Completion Proof Submitted by Crew • Verification Required</span>
+          </div>
+        `;
+      } else if (task.status === 'DROPPED') {
+        alertBoxHtml = `
+          <div class="card-action-alert-box alert-dropped">
+            <span>⚠️</span>
+            <span>Task Dropped: ${escapeHtml(task.drop_reason || 'Field road block')}</span>
+          </div>
+        `;
+      } else if (task.status === 'PRE_INVALID') {
+        alertBoxHtml = `
+          <div class="card-action-alert-box alert-preinvalid">
+            <span>🚩</span>
+            <span>Clear-Site Proof Submitted: Flagged as No Fault Found</span>
+          </div>
+        `;
+      }
+
+      // Action Buttons tailored to state
+      let actionsHtml = '';
+      if (task.status === 'PRECOMPLETE') {
+        actionsHtml = `
+          <button class="btn-action btn-verify-complete" onclick="openVerifyCompleteModal('${task.task_id}')">
+            <span>⚖️ Review Completion Proof</span>
+          </button>
+          <button class="btn-action btn-secondary" onclick="openTaskDetailModal('${task.task_id}')">
+            <span>🔍 Inspect</span>
+          </button>
+        `;
+      } else if (task.status === 'DROPPED') {
+        actionsHtml = `
+          <button class="btn-action btn-reschedule" onclick="openRescheduleDroppedModal('${task.task_id}')">
+            <span>🔄 Reschedule Dropped Task</span>
+          </button>
+          <button class="btn-action btn-secondary" onclick="openTaskDetailModal('${task.task_id}')">
+            <span>🔍 Inspect</span>
+          </button>
+        `;
+      } else if (task.status === 'PRE_INVALID') {
+        actionsHtml = `
+          <button class="btn-action btn-verify-invalid" onclick="openVerifyInvalidModal('${task.task_id}')">
+            <span>🚩 Review Invalid Evidence</span>
+          </button>
+          <button class="btn-action btn-secondary" onclick="openTaskDetailModal('${task.task_id}')">
+            <span>🔍 Inspect</span>
+          </button>
+        `;
+      } else if (task.status === 'OPEN_FOR_CLAIM') {
+        actionsHtml = `
+          <button class="btn-action btn-primary" onclick="handleAutoDispatchSingle('${task.task_id}')">
+            <span>⚡ Auto-Dispatch</span>
+          </button>
+          <button class="btn-action btn-secondary" onclick="openManualCrewPickerModal('${task.task_id}')">
+            <span>👤 Assign Crew</span>
+          </button>
+        `;
+      } else if (task.status === 'IN_PROGRESS' || task.status === 'PENDING_ACCEPTANCE') {
+        actionsHtml = `
+          <button class="btn-action btn-secondary" onclick="openManualCrewPickerModal('${task.task_id}')" style="flex:1;">
+            <span>👤 Reassign Crew</span>
+          </button>
+          <button class="btn-action btn-secondary" onclick="openTaskDetailModal('${task.task_id}')">
+            <span>🔍 Inspect</span>
+          </button>
+        `;
+      } else {
+        actionsHtml = `
+          <button class="btn-action btn-secondary" style="width:100%;" onclick="openTaskDetailModal('${task.task_id}')">
+            <span>🔍 View Audit Details</span>
+          </button>
+        `;
+      }
+
+      return `
+        <div class="${cardClass}">
+          <div>
+            <div class="card-header-cluster">
+              <div class="card-badges-row">
+                <span class="badge-tag badge-pscore">P ${task.priority_score.toFixed(1)}</span>
+                <span class="badge-tag ${catClass}">${formatCategory(task.category)}</span>
+                <span class="badge-tag badge-aesthetic">${formatSkill(task.required_skill)}</span>
+              </div>
+              <div>${statusPill}</div>
+            </div>
+
+            <div class="card-body-section">
+              <img src="${task.report_photo_url}" class="card-thumb-img" alt="Task Thumbnail">
+              <div class="card-main-info">
+                <h4 class="card-task-title">${escapeHtml(task.district)}</h4>
+                <div class="card-task-loc">📍 ID: <strong style="font-family:var(--font-mono); color:#0f172a;">${task.task_id}</strong></div>
+                <p class="card-task-desc">${escapeHtml(task.description)}</p>
+              </div>
+            </div>
+
+            ${alertBoxHtml}
+
+            <div class="card-meta-row">
+              <span>👤 Reporter: <strong>${escapeHtml(task.reporter_name)}</strong></span>
+              <span>👷 Crew: <strong>${escapeHtml(task.assigned_crew_name)}</strong></span>
+            </div>
+          </div>
+
+          <div class="card-actions-row">
+            ${actionsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // MODAL HANDLERS & SIMULATED DEMO FLOWS
+    // =========================================================================
+    window.openVerifyCompleteModal = function(taskId) {
+      activeActionTaskId = taskId;
+      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      if (!task) return;
+
+      document.getElementById('modalBeforeImg').src = task.report_photo_url;
+      document.getElementById('modalBeforeDesc').textContent = `Reported: ${task.description}`;
+      document.getElementById('modalAfterImg').src = task.completion_photo_url || task.report_photo_url;
+      document.getElementById('modalAfterNotes').textContent = `Technician Notes: ${task.completion_notes || 'Repairs completed.'}`;
+      document.getElementById('verifyRejectReason').value = '';
+
+      openModal('verifyCompleteModal');
+    };
+
+    window.handleApproveCompletion = function() {
+      closeModal('verifyCompleteModal');
+      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      if (task) {
+        task.status = 'COMPLETED';
+        renderTaskCards();
+        showToast(`✅ Task ${activeActionTaskId} approved! Crew rewarded +5 points.`);
+      }
+    };
+
+    window.handleRejectCompletion = function() {
+      const reason = document.getElementById('verifyRejectReason').value.trim();
+      if (!reason) {
+        showToast('⚠️ Please specify a rejection / return reason for the technician.', true);
+        return;
+      }
+      closeModal('verifyCompleteModal');
+      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      if (task) {
+        task.status = 'IN_PROGRESS';
+        renderTaskCards();
+        showToast(`↩️ Work order returned to ${task.assigned_crew_name} with return notes.`);
+      }
+    };
+
+    window.openRescheduleDroppedModal = function(taskId) {
+      activeActionTaskId = taskId;
+      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      if (!task) return;
+
+      document.getElementById('modalDropReasonText').textContent = task.drop_reason || 'Specialized Heavy Machinery Required';
+      openModal('rescheduleDroppedModal');
+    };
+
+    window.handleRescheduleAction = function(action) {
+      closeModal('rescheduleDroppedModal');
+      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      if (!task) return;
+
+      if (action === 'AUTO_DISPATCH') {
+        task.status = 'PENDING_ACCEPTANCE';
+        task.assigned_crew_name = 'Crew 1 (Ahmad Razak) [Re-Dispatched]';
+        showToast(`⚡ Task ${activeActionTaskId} spatial re-dispatch triggered.`);
+      } else if (action === 'RETURN_OPEN_POOL') {
+        task.status = 'OPEN_FOR_CLAIM';
+        task.assigned_crew_name = 'Unassigned (Open Pool)';
+        showToast(`📦 Task ${activeActionTaskId} returned to Open Maintenance Pool.`);
+      }
+      renderTaskCards();
+    };
+
+    window.openVerifyInvalidModal = function(taskId) {
+      activeActionTaskId = taskId;
+      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      if (!task) return;
+
+      document.getElementById('modalInvalidReportImg').src = task.report_photo_url;
+      document.getElementById('modalInvalidReportDesc').textContent = task.description;
+      document.getElementById('modalInvalidClearImg').src = task.flag_invalid_photo_url || task.report_photo_url;
+      document.getElementById('modalInvalidNotes').textContent = task.flag_invalid_notes || 'Clear site proof submitted.';
+
+      openModal('verifyInvalidModal');
+    };
+
+    window.handleApproveInvalid = function() {
+      closeModal('verifyInvalidModal');
+      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      if (task) {
+        task.status = 'INVALID_RESOLVED';
+        renderTaskCards();
+        showToast(`🚩 Task ${activeActionTaskId} confirmed as Invalid. Reporter penalized (-20 pts).`);
+      }
+    };
+
+    window.handleRejectInvalid = function() {
+      closeModal('verifyInvalidModal');
+      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      if (task) {
+        task.status = 'IN_PROGRESS';
+        renderTaskCards();
+        showToast(`↩️ Invalid flag rejected. Work order resumed in progress.`);
+      }
+    };
+
+    window.openManualCrewPickerModal = function(taskId) {
+      if (taskId) activeActionTaskId = taskId;
+      openModal('manualCrewPickerModal');
+    };
+
+    window.handleAssignCrewToTask = function(crewId) {
+      closeModal('manualCrewPickerModal');
+      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      if (!task) return;
+
+      const crewNames = {
+        'crew1': 'Crew 1 (Ahmad Razak)',
+        'crew2': 'Crew 2 (Siti Sarah)',
+        'crew3': 'Crew 3 (Kumar Raman)'
+      };
+
+      task.assigned_crew_name = crewNames[crewId] || 'Assigned Crew';
+      task.assigned_crew_id = crewId;
+      task.status = 'IN_PROGRESS';
+
+      renderTaskCards();
+      showToast(`👤 Task ${activeActionTaskId} manually assigned to ${task.assigned_crew_name}. Status -> In Progress.`);
+    };
+
+    window.handleAutoDispatchSingle = function(taskId) {
+      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      if (task) {
+        task.status = 'PENDING_ACCEPTANCE';
+        task.assigned_crew_name = 'Crew 2 (Siti Sarah) [Auto-Dispatched]';
+        renderTaskCards();
+        showToast(`⚡ Single-task auto-dispatch executed: Assigned to nearest matching crew.`);
+      }
+    };
+
+    window.triggerBatchAutoDispatch = function() {
+      let count = 0;
+      SAMPLE_TASKS.forEach(t => {
+        if (t.status === 'OPEN_FOR_CLAIM') {
+          t.status = 'PENDING_ACCEPTANCE';
+          t.assigned_crew_name = 'Crew 1 (Ahmad Razak) [Batch Assigned]';
+          count++;
+        }
+      });
+      renderTaskCards();
+      showToast(`⚡ Batch auto-dispatch executed! ${count} open task(s) dispatched to available fleets.`);
+    };
+
+    window.openTaskDetailModal = function(taskId) {
+      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      if (!task) return;
+
+      document.getElementById('detailModalTitle').textContent = `Work Order ${task.task_id}`;
+      document.getElementById('detailModalImg').src = task.report_photo_url;
+      document.getElementById('detailModalDesc').textContent = task.description;
+      document.getElementById('detailModalLocation').textContent = `${task.district} (${task.latitude.toFixed(4)}, ${task.longitude.toFixed(4)})`;
+      document.getElementById('detailModalReporter').textContent = `${task.reporter_name} (Reputation: ${task.reporter_reputation})`;
+      document.getElementById('detailModalCrew').textContent = task.assigned_crew_name;
+      document.getElementById('detailModalSla').textContent = '24h SLA Active';
+
+      const catClass = task.category === 'CRITICAL_SAFETY' ? 'badge-critical' : 'badge-operational';
+      document.getElementById('detailModalBadges').innerHTML = `
+        <span class="badge-tag badge-pscore">P ${task.priority_score.toFixed(1)}</span>
+        <span class="badge-tag ${catClass}">${formatCategory(task.category)}</span>
+        <span class="badge-tag badge-aesthetic">${formatSkill(task.required_skill)}</span>
+        ${getStatusPill(task.status)}
+      `;
+
+      openModal('taskDetailModal');
+    };
+
+    // =========================================================================
+    // MODAL OPEN / CLOSE UTILITIES
+    // =========================================================================
+    function openModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.add('show');
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.remove('show');
+    }
+
+    function getStatusPill(status) {
+      switch (status) {
+        case 'OPEN_FOR_CLAIM': return '<span class="status-badge-pill pill-open">📦 OPEN POOL</span>';
+        case 'PENDING_ACCEPTANCE': return '<span class="status-badge-pill pill-pending">🟡 PENDING</span>';
+        case 'IN_PROGRESS': return '<span class="status-badge-pill pill-progress">🔧 IN PROGRESS</span>';
+        case 'PRECOMPLETE': return '<span class="status-badge-pill pill-precomplete">⚖️ PRE-COMPLETE</span>';
+        case 'DROPPED': return '<span class="status-badge-pill pill-dropped">⚠️ DROPPED</span>';
+        case 'PRE_INVALID': return '<span class="status-badge-pill pill-preinvalid">🚩 PRE-INVALID</span>';
+        case 'COMPLETED': return '<span class="status-badge-pill pill-completed">✅ COMPLETED</span>';
+        case 'INVALID_RESOLVED': return '<span class="status-badge-pill pill-invalid">⚪ INVALID RESOLVED</span>';
+        default: return `<span class="status-badge-pill">${status}</span>`;
+      }
+    }
+
+    function formatCategory(cat) {
+      switch (cat) {
+        case 'CRITICAL_SAFETY': return 'Critical Safety';
+        case 'MAJOR_BLOCKAGE': return 'Major Blockage';
+        case 'MINOR_DEFECT': return 'Minor Defect';
+        case 'AESTHETIC': return 'Aesthetic';
+        default: return cat;
+      }
+    }
+
+    function formatSkill(skill) {
+      switch (skill) {
+        case 'STRUCTURAL': return 'Structural';
+        case 'ELECTRICAL': return 'Electrical';
+        case 'SANITATION': return 'Sanitation';
+        case 'GENERAL_FACILITY': return 'Facilities';
+        case 'OTHER': return 'Other';
+        default: return skill;
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toastBanner');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.style.background = isError ? '#ef4444' : '#059669';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function handleLogout() {
+      if (confirm('Are you sure you want to sign out from the Administrator Portal?')) {
+        AuthGuard.logout();
+      }
+    }
+  </script>
+</body>
+</html>
