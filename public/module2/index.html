@@ -2,262 +2,878 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>EcoAsset - Module 2: Algorithmic Prioritization Engine Visualizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoAsset - Module 2: Automated Spatial Prioritization & Dispatch Engine</title>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
   <!-- Global Styles -->
   <link rel="stylesheet" href="../css/global.css">
   <style>
-    .math-card {
-      background: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e2e8f0;
-      margin-bottom: 16px;
+    :root {
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
-    .formula-banner {
+    body {
       background: #0f172a;
-      color: #34d399;
-      font-family: monospace;
-      padding: 12px 14px;
-      border-radius: var(--radius-md);
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      line-height: 1.4;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    .slider-row {
+    /* Top Navigation Header */
+    .engine-header {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #334155;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .engine-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #ffffff;
+    }
+
+    .engine-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .engine-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .header-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-chip-link {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .nav-chip-link:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Hero Metrics & Action Banner */
+    .control-hero-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1.5px solid #334155;
+      border-radius: 24px;
+      padding: 24px 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .hero-info-block {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .hero-heading {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .hero-desc {
+      font-size: 13.5px;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Trigger Button */
+    .btn-trigger-dispatch {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: #ffffff;
+      padding: 16px 28px;
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 800;
+      border-radius: 18px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(5, 150, 105, 0.45);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-trigger-dispatch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(5, 150, 105, 0.6);
+    }
+
+    .btn-trigger-dispatch:active {
+      transform: scale(0.98);
+    }
+
+    /* Stats Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-value {
+      font-family: var(--font-heading);
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .metric-foot {
+      font-size: 11.5px;
+      color: #64748b;
+    }
+
+    /* Mathematical Formulas Banner */
+    .math-formula-card {
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 20px;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .math-formula-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .formula-block {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-bottom: 14px;
     }
 
-    .slider-header {
+    .formula-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .formula-code {
+      background: #030712;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: #34d399;
+      line-height: 1.4;
+    }
+
+    .formula-explain {
+      font-size: 11.5px;
+      color: #9ca3af;
+      line-height: 1.4;
+    }
+
+    /* Content Tables Section */
+    .dashboard-section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 24px;
+      padding: 22px 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .section-header-row {
       display: flex;
       justify-content: space-between;
-      font-size: 12.5px;
-      font-weight: 700;
-      color: #334155;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--color-primary);
-    }
-
-    .live-score-result {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      color: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(5, 150, 105, 0.35);
+      align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
-    .score-number {
+    .section-heading {
       font-family: var(--font-heading);
-      font-size: 48px;
+      font-size: 16px;
       font-weight: 800;
-      line-height: 1;
-      margin: 8px 0;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .queue-table {
+    .badge-counter {
+      background: #334155;
+      color: #f1f5f9;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    /* Responsive Table */
+    .table-scroll-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      background: #0f172a;
+    }
+
+    .engine-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12.5px;
-    }
-
-    .queue-table th {
       text-align: left;
-      padding: 8px 6px;
-      color: #64748b;
-      font-size: 11px;
-      text-transform: uppercase;
-      border-bottom: 1.5px solid #e2e8f0;
     }
 
-    .queue-table td {
-      padding: 10px 6px;
-      border-bottom: 1px solid #f1f5f9;
-      color: #1e293b;
+    .engine-table th {
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 14px;
+      border-bottom: 1.5px solid #334155;
+      white-space: nowrap;
+    }
+
+    .engine-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e293b;
+      color: #e2e8f0;
+      vertical-align: middle;
+    }
+
+    .engine-table tr:hover {
+      background: #1e293b80;
+    }
+
+    /* Pscore Badges */
+    .pscore-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .pscore-high {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .pscore-med {
+      background: rgba(249, 115, 22, 0.2);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+
+    .pscore-low {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    /* Crew Skill Chips in Table */
+    .table-skill-tag {
+      display: inline-block;
+      background: #334155;
+      color: #cbd5e1;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    /* Status Pills */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+
+    .status-available {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .status-busy {
+      background: rgba(249, 115, 22, 0.15);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .status-open {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .status-pending {
+      background: rgba(234, 179, 8, 0.15);
+      color: #facc15;
+      border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+
+    /* Execution Log Feed */
+    .match-log-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .match-log-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-log-card.success {
+      border-left: 4px solid #10b981;
+    }
+
+    .match-log-card.skipped {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .match-log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .match-log-details {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
 
-  <div class="app-viewport-wrapper">
-    <div class="mobile-device-shell">
-      
-      <!-- Mobile Device Status Bar -->
-      <div class="mobile-status-bar">
-        <span>9:41</span>
-        <div class="status-bar-icons">
-          <span>📶</span>
-          <span>5G</span>
-          <span>🔋 88%</span>
-        </div>
+  <!-- Top Navigation Header -->
+  <header class="engine-header">
+    <a href="../login.html" class="engine-brand">
+      <span style="font-size: 24px;">⚡</span>
+      <div>
+        <div class="engine-title">EcoAsset Dispatch Visualizer</div>
+        <div class="engine-subtitle">Module 2: Algorithmic Prioritization & Spatial Engine</div>
       </div>
+    </a>
 
-      <!-- App Header -->
-      <header class="app-header" style="position: relative; top: 0; padding: 12px 18px 0;">
-        <div class="header-card" style="width: 100%; justify-content: space-between;">
-          <div class="logo-badge">
-            <span>⚙️</span>
-            <span>Module 2 Engine</span>
-          </div>
-          <span style="font-size: 11.5px; font-weight: 700; color: #059669;">Prioritization Math</span>
-        </div>
-      </header>
-
-      <main style="flex: 1; overflow-y: auto; padding: 16px 18px calc(var(--nav-height) + 16px);">
-        
-        <!-- Formula Explanation Card -->
-        <div class="math-card">
-          <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; margin-bottom: 6px;">
-            Dynamic Priority Score Formula
-          </h3>
-          <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
-            Every ticket is dynamically ranked using category weights, 200m spatial incident density, and log-scaled public upvotes.
-          </p>
-
-          <div class="formula-banner">
-            Pscore = (Wcat × 0.5) + (Dzone × 0.3) + (log10(Ucount + 1) × 2.0)
-          </div>
-
-          <!-- Variable Sliders -->
-          <div class="slider-row">
-            <div class="slider-header">
-              <span>Hazard Category (Wcat)</span>
-              <span id="valWcat" style="color: var(--color-primary); font-weight: 800;">Critical Safety (10)</span>
-            </div>
-            <select class="form-control" id="catSelect" onchange="recalculateScore()" style="margin-bottom: 0;">
-              <option value="10">Critical Safety (Wcat = 10)</option>
-              <option value="7">Operational Blockage (Wcat = 7)</option>
-              <option value="4">Aesthetic Issue (Wcat = 4)</option>
-            </select>
-          </div>
-
-          <div class="slider-row">
-            <div class="slider-header">
-              <span>Hotspot Density within 200m (Dzone)</span>
-              <span id="valDzone" style="color: #ea580c; font-weight: 800;">4 Reports</span>
-            </div>
-            <input type="range" id="sliderDzone" min="0" max="15" value="4" oninput="recalculateScore()">
-          </div>
-
-          <div class="slider-row">
-            <div class="slider-header">
-              <span>Unique Upvotes (Ucount)</span>
-              <span id="valUcount" style="color: #3b82f6; font-weight: 800;">47 Upvotes</span>
-            </div>
-            <input type="range" id="sliderUcount" min="0" max="100" value="47" oninput="recalculateScore()">
-          </div>
-        </div>
-
-        <!-- Calculated Live Result -->
-        <div class="live-score-result">
-          <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Calculated Priority Index</span>
-          <div class="score-number" id="calculatedPScore">9.56</div>
-          <div style="font-size: 11px; opacity: 0.9;" id="formulaBreakdown">
-            (10 × 0.5) + (4 × 0.3) + (log10(48) × 2.0) = 5.0 + 1.2 + 3.36
-          </div>
-        </div>
-
-        <!-- Live Simulated Prioritized Queue -->
-        <div class="math-card">
-          <h4 style="font-family: var(--font-heading); font-size: 14px; font-weight: 700; margin-bottom: 10px;">
-            Simulated Prioritized Queue Order
-          </h4>
-          <table class="queue-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Incident</th>
-                <th>Category</th>
-                <th>P-Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>#1</strong></td>
-                <td>Pedestrian Bridge Handrail</td>
-                <td><span class="badge badge-critical">Critical</span></td>
-                <td><span class="badge badge-pscore">P 9.2</span></td>
-              </tr>
-              <tr>
-                <td><strong>#2</strong></td>
-                <td>Blocked Drainage Pipe</td>
-                <td><span class="badge badge-operational">Operational</span></td>
-                <td><span class="badge badge-pscore" style="background:#ea580c;">P 8.9</span></td>
-              </tr>
-              <tr>
-                <td><strong>#3</strong></td>
-                <td>Dangling Wire Junction</td>
-                <td><span class="badge badge-operational">Operational</span></td>
-                <td><span class="badge badge-pscore" style="background:#ea580c;">P 8.5</span></td>
-              </tr>
-              <tr>
-                <td><strong>#4</strong></td>
-                <td>Broken Concrete Step</td>
-                <td><span class="badge badge-critical">Critical</span></td>
-                <td><span class="badge badge-pscore" style="background:#ea580c;">P 8.1</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-      </main>
-
-      <!-- Bottom Navigation Bar -->
-      <nav class="bottom-nav">
-        <a href="../module1/index.html" class="nav-item">
-          <span>🗺️</span>
-          <span>Public Map</span>
-        </a>
-        <a href="../module3/index.html" class="nav-item">
-          <span>🚜</span>
-          <span>Crew Tasks</span>
-        </a>
-        <a href="../index.html" class="nav-item active">
-          <span>⚙️</span>
-          <span>Portal Hub</span>
-        </a>
-      </nav>
-
+    <div class="header-nav-links">
+      <a href="../module1/index.html" class="nav-chip-link">🗺️ Public Map</a>
+      <a href="../module3/index.html" class="nav-chip-link">🚜 Crew Terminal</a>
+      <a href="../module3/profile.html" class="nav-chip-link">👤 Crew Profile</a>
     </div>
+  </header>
+
+  <!-- Toast Notification Banner -->
+  <div class="toast-banner" id="toastBanner">
+    <span id="toastMsg">Action completed.</span>
+    <span style="cursor:pointer; font-size:16px;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
   </div>
 
+  <div class="dashboard-container">
+
+    <!-- 1. Hero Control & Trigger Card -->
+    <div class="control-hero-card">
+      <div class="hero-info-block">
+        <span class="hero-badge">
+          <span>⚙️ Automated Spatial Engine</span>
+        </span>
+        <h1 class="hero-heading">Prioritization & Crew Routing Engine</h1>
+        <p class="hero-desc">
+          Evaluates all unassigned damage reports by $P_{score}$ and automatically routes the highest urgency jobs to the nearest eligible maintenance crews using spatial Haversine distance and performance ratings.
+        </p>
+      </div>
+
+      <button class="btn-trigger-dispatch" id="btnTriggerDispatch" onclick="triggerDispatchRun()">
+        <span style="font-size: 20px;">⚡</span>
+        <span>Trigger Auto-Dispatch Engine Now</span>
+      </button>
+    </div>
+
+    <!-- 2. Live Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">Unassigned Queue</span>
+        <span class="metric-value" id="metricUnassignedCount">0</span>
+        <span class="metric-foot">Awaiting spatial dispatch</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Peak Priority ($P_{score}$)</span>
+        <span class="metric-value" id="metricPeakPScore" style="color: #f87171;">0.0</span>
+        <span class="metric-foot">Highest urgency in queue</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Active Crew Fleet</span>
+        <span class="metric-value" id="metricActiveCrewsCount" style="color: #34d399;">0</span>
+        <span class="metric-foot" id="metricAvailableCrewsText">0 Available for dispatch</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Batch Schedule</span>
+        <span class="metric-value" style="font-size: 24px; color: #38bdf8;">8AM & 1PM</span>
+        <span class="metric-foot">Automated daily cron sync</span>
+      </div>
+    </div>
+
+    <!-- 3. Mathematical Formula Visualizer -->
+    <div class="math-formula-card">
+      <div class="formula-block">
+        <span class="formula-title">1. Priority Score Formula ($P_{score}$)</span>
+        <div class="formula-code">
+          P_score = [(W_cat × 0.5) + (D_zone × 0.3) + (log10(U_count + 1) × 2.0)] × (Reputation / 100.0)
+        </div>
+        <p class="formula-explain">
+          <strong>$W_{cat}$</strong>: Safety=10.0, Blockage=7.0, Minor=4.0, Aesthetic=2.0 • <strong>$D_{zone}$</strong>: 200m density count • <strong>$U_{count}$</strong>: Citizen upvotes • <strong>Reputation</strong>: Trust multiplier (fake reporters discounted).
+        </p>
+      </div>
+
+      <div class="formula-block">
+        <span class="formula-title">2. Spatial Match Score Formula ($S_{dispatch}$)</span>
+        <div class="formula-code">
+          S_dispatch = Performance_Score (0 - 100) / [Distance_km (Haversine) + 0.1]
+        </div>
+        <p class="formula-explain">
+          Filters candidate crews with matching trade capability and availability status. The crew with the highest $S_{dispatch}$ receives the job assignment with a 24-hour SLA.
+        </p>
+      </div>
+    </div>
+
+    <!-- 4. Table 1: Unassigned Incident Queue (Sorted by Pscore Descending) -->
+    <div class="dashboard-section">
+      <div class="section-header-row">
+        <h3 class="section-heading">
+          <span>📋 Unassigned Incident Queue</span>
+          <span class="badge-counter" id="queueTableCount">0 Reports</span>
+        </h3>
+        <button class="nav-chip-link" onclick="loadDashboardData()">🔄 Refresh Queue</button>
+      </div>
+
+      <div class="table-scroll-wrapper">
+        <table class="engine-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Priority Score</th>
+              <th>Category & Weight</th>
+              <th>Required Trade</th>
+              <th>Description / Location</th>
+              <th>Hotspot Density ($D_{zone}$)</th>
+              <th>Upvotes ($U_{count}$)</th>
+              <th>Reporter Trust ($R_{user}$)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="queueTableBody">
+            <tr>
+              <td colspan="9" class="empty-state">Loading prioritization queue...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. Table 2: Active Maintenance Crew Fleet Status -->
+    <div class="dashboard-section">
+      <div class="section-header-row">
+        <h3 class="section-heading">
+          <span>👷 Maintenance Crew Fleet Status</span>
+          <span class="badge-counter" id="crewTableCount">0 Crews</span>
+        </h3>
+      </div>
+
+      <div class="table-scroll-wrapper">
+        <table class="engine-table">
+          <thead>
+            <tr>
+              <th>Crew Technician</th>
+              <th>Registered Trade Capabilities</th>
+              <th>Base Station / Location</th>
+              <th>Duty Status</th>
+              <th>Performance Rating</th>
+              <th>Active Tasks</th>
+            </tr>
+          </thead>
+          <tbody id="crewsTableBody">
+            <tr>
+              <td colspan="6" class="empty-state">Loading crew fleet status...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 6. Match Execution Log Feed -->
+    <div class="dashboard-section" id="matchLogSection" style="display: none;">
+      <div class="section-header-row">
+        <h3 class="section-heading">
+          <span>⚡ Live Dispatch Execution Results</span>
+          <span class="badge-counter" id="matchLogCount">0 Matches</span>
+        </h3>
+      </div>
+
+      <div class="match-log-grid" id="matchLogGrid">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Auth Guard Script -->
+  <script src="../js/auth-guard.js"></script>
+
   <script>
-    function recalculateScore() {
-      const wCat = parseFloat(document.getElementById('catSelect').value);
-      const dZone = parseInt(document.getElementById('sliderDzone').value);
-      const uCount = parseInt(document.getElementById('sliderUcount').value);
+    let queueData = [];
+    let crewsData = [];
 
-      document.getElementById('valDzone').textContent = `${dZone} Reports`;
-      document.getElementById('valUcount').textContent = `${uCount} Upvotes`;
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadDashboardData();
+    });
 
-      const part1 = wCat * 0.5;
-      const part2 = dZone * 0.3;
-      const part3 = Math.log10(uCount + 1) * 2.0;
-      const totalScore = (part1 + part2 + part3).toFixed(2);
+    async function loadDashboardData() {
+      try {
+        const response = await fetch('/api/index.php/api/v1/dispatch/queue');
+        const res = await response.json();
 
-      document.getElementById('calculatedPScore').textContent = totalScore;
-      document.getElementById('formulaBreakdown').textContent = 
-        `(${wCat} × 0.5) + (${dZone} × 0.3) + (log10(${uCount + 1}) × 2.0) = ${part1.toFixed(1)} + ${part2.toFixed(1)} + ${part3.toFixed(2)}`;
+        if (res.status === 'success' && res.data) {
+          queueData = res.data.queue || [];
+          crewsData = res.data.crews || [];
+
+          renderMetrics();
+          renderQueueTable();
+          renderCrewsTable();
+        }
+      } catch (err) {
+        console.error('Failed to load dispatch queue:', err);
+        showToast('⚠️ Could not connect to dispatch queue API.', true);
+      }
     }
 
-    recalculateScore();
+    function renderMetrics() {
+      document.getElementById('metricUnassignedCount').textContent = queueData.length;
+      document.getElementById('queueTableCount').textContent = `${queueData.length} Reports`;
+
+      const maxPScore = queueData.length > 0 ? Math.max(...queueData.map(r => r.priority_score || 0)) : 0;
+      document.getElementById('metricPeakPScore').textContent = maxPScore.toFixed(2);
+
+      document.getElementById('metricActiveCrewsCount').textContent = crewsData.length;
+      document.getElementById('crewTableCount').textContent = `${crewsData.length} Crews`;
+
+      const availableCount = crewsData.filter(c => c.computed_status === 'AVAILABLE').length;
+      document.getElementById('metricAvailableCrewsText').textContent = `${availableCount} Available for dispatch`;
+    }
+
+    function renderQueueTable() {
+      const tbody = document.getElementById('queueTableBody');
+      if (queueData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">🎉 All incidents have been assigned or resolved! Queue is empty.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = queueData.map((item, idx) => {
+        const pScore = parseFloat(item.priority_score) || 0;
+        let pClass = 'pscore-low';
+        if (pScore >= 7.0) pClass = 'pscore-high';
+        else if (pScore >= 5.0) pClass = 'pscore-med';
+
+        return `
+          <tr>
+            <td style="font-weight: 800; color: #94a3b8;">#${idx + 1}</td>
+            <td>
+              <span class="pscore-badge ${pClass}">
+                ⚡ P ${pScore.toFixed(2)}
+              </span>
+            </td>
+            <td>
+              <strong>${formatCategory(item.category)}</strong>
+              <div style="font-size: 11px; color: #94a3b8;">Weight: ${item.hazard_weight || 1.0}</div>
+            </td>
+            <td>
+              <span class="table-skill-tag">${item.required_skill || 'OTHER'}</span>
+            </td>
+            <td style="max-width: 280px;">
+              <div style="font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${escapeHtml(item.description || 'Facility incident')}
+              </div>
+              <div style="font-size: 11px; color: #94a3b8;">📍 ${item.district || 'Kuala Lumpur'}</div>
+            </td>
+            <td>
+              <span style="font-family: var(--font-mono); font-weight: 700;">200m Hotspot</span>
+            </td>
+            <td>
+              <span style="font-weight: 700; color: #fb923c;">🔥 ${item.upvote_count || 1}</span>
+            </td>
+            <td>
+              <span style="font-weight: 700; color: #34d399;">🛡️ ${item.reporter_reputation || 100} Rep</span>
+            </td>
+            <td>
+              <span class="status-pill status-open">OPEN FOR CLAIM</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderCrewsTable() {
+      const tbody = document.getElementById('crewsTableBody');
+      if (crewsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No registered maintenance crew technicians found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = crewsData.map(crew => {
+        let statusBadge = '<span class="status-pill status-available">🟢 AVAILABLE</span>';
+        if (crew.computed_status === 'BUSY') {
+          statusBadge = '<span class="status-pill status-busy">🔴 BUSY</span>';
+        } else if (crew.computed_status === 'PENDING_ACCEPTANCE') {
+          statusBadge = '<span class="status-pill status-pending">🟡 PENDING ACCEPTANCE</span>';
+        }
+
+        const rawScore = parseFloat(crew.performance_score) || 100.0;
+        const stars = (rawScore / 20.0).toFixed(1);
+
+        const skillsHtml = (crew.skill_tags || []).length > 0
+          ? crew.skill_tags.map(s => `<span class="table-skill-tag">${s}</span>`).join('')
+          : '<span style="color:#64748b; font-size:11px;">General / All Trades</span>';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 700; color: #ffffff;">${escapeHtml(crew.full_name || 'Crew Member')}</div>
+              <div style="font-size: 11px; color: #94a3b8;">${escapeHtml(crew.email || '')}</div>
+            </td>
+            <td>${skillsHtml}</td>
+            <td>
+              <div style="font-weight: 600;">📍 ${escapeHtml(crew.station_region || 'Kuala Lumpur')}</div>
+              <div style="font-size: 10.5px; font-family: var(--font-mono); color: #64748b;">
+                ${crew.current_latitude?.toFixed(4)}, ${crew.current_longitude?.toFixed(4)}
+              </div>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+              <span style="font-weight: 800; color: #34d399;">★ ${stars} / 5.0</span>
+              <span style="font-size: 11px; color: #94a3b8;"> (${rawScore.toFixed(0)}%)</span>
+            </td>
+            <td>
+              <div style="font-family: var(--font-mono); font-size: 11.5px;">
+                <span style="color: #60a5fa;">${crew.active_tasks_count || 0} In Progress</span><br>
+                <span style="color: #facc15;">${crew.pending_tasks_count || 0} Pending</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function triggerDispatchRun() {
+      const btn = document.getElementById('btnTriggerDispatch');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Executing Spatial Match Engine...</span>';
+
+      try {
+        const response = await fetch('/api/index.php/api/v1/dispatch/run', {
+          method: 'POST'
+        });
+        const res = await response.json();
+
+        if (res.status === 'success' && res.data) {
+          showToast(`✓ Engine Executed: ${res.data.assigned_count} jobs assigned to crews!`);
+          renderMatchLog(res.data.matches || []);
+          await loadDashboardData();
+        } else {
+          showToast('❌ ' + (res.message || 'Dispatch execution failed.'), true);
+        }
+      } catch (err) {
+        showToast('❌ Error executing dispatch engine: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span style="font-size: 20px;">⚡</span><span>Trigger Auto-Dispatch Engine Now</span>';
+      }
+    }
+
+    function renderMatchLog(matches) {
+      const section = document.getElementById('matchLogSection');
+      const grid = document.getElementById('matchLogGrid');
+      const count = document.getElementById('matchLogCount');
+
+      if (matches.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+      count.textContent = `${matches.length} Records Evaluated`;
+
+      grid.innerHTML = matches.map(m => {
+        if (m.status === 'ASSIGNED') {
+          return `
+            <div class="match-log-card success">
+              <div class="match-log-header">
+                <span style="color: #34d399; font-weight: 800;">✓ ASSIGNED TO CREW</span>
+                <span class="pscore-badge pscore-high" style="font-size:11px; padding:2px 6px;">P ${m.priority_score}</span>
+              </div>
+              <div class="match-log-details">
+                <div><strong>Incident:</strong> ${formatCategory(m.category)} (${m.required_skill})</div>
+                <div><strong>Assigned Crew:</strong> 👷 ${escapeHtml(m.matched_crew_name)}</div>
+                <div style="font-size: 11px; color: #38bdf8; margin-top: 4px;">
+                  📍 Distance: <strong>${m.distance_km} km</strong> • Match Score: <strong>${m.suitability_score}</strong>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="match-log-card skipped">
+              <div class="match-log-header">
+                <span style="color: #fb923c; font-weight: 800;">⚠️ SKIPPED (UNASSIGNED)</span>
+                <span class="pscore-badge pscore-med" style="font-size:11px; padding:2px 6px;">P ${m.priority_score}</span>
+              </div>
+              <div class="match-log-details">
+                <div><strong>Incident:</strong> ${formatCategory(m.category)} (${m.required_skill})</div>
+                <div style="color: #fca5a5; font-size: 11.5px; margin-top: 4px;">
+                  ${escapeHtml(m.reason || 'No available matching crew')}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function formatCategory(cat) {
+      switch (cat) {
+        case 'CRITICAL_SAFETY': return '⚡ Critical Safety';
+        case 'MAJOR_BLOCKAGE':
+        case 'OPERATIONAL': return '🚧 Major Blockage';
+        case 'MINOR_DEFECT': return '⚠️ Minor Defect';
+        case 'AESTHETIC': return '🧹 Aesthetic';
+        default: return cat;
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toastBanner');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.style.background = isError ? '#ef4444' : '#059669';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
   </script>
 </body>
 </html>

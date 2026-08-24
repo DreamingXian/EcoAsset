@@ -16,6 +16,7 @@ enum SkillCategory: string
     case STRUCTURAL = 'STRUCTURAL';
     case SANITATION = 'SANITATION';
     case GENERAL_FACILITY = 'GENERAL_FACILITY';
+    case OTHER = 'OTHER';
 }
 
 enum AvailabilityState: string
@@ -27,17 +28,20 @@ enum AvailabilityState: string
 enum IssueCategory: string
 {
     case CRITICAL_SAFETY = 'CRITICAL_SAFETY';
-    case OPERATIONAL = 'OPERATIONAL';
+    case MAJOR_BLOCKAGE = 'MAJOR_BLOCKAGE';
+    case MINOR_DEFECT = 'MINOR_DEFECT';
     case AESTHETIC = 'AESTHETIC';
+    case OPERATIONAL = 'OPERATIONAL';
 }
 
 enum ReportStatus: string
 {
-    case PENDING_VALIDATION = 'PENDING_VALIDATION';
-    case VERIFIED = 'VERIFIED';
+    case OPEN_FOR_CLAIM = 'OPEN_FOR_CLAIM';
     case PENDING_ACCEPTANCE = 'PENDING_ACCEPTANCE';
     case IN_PROGRESS = 'IN_PROGRESS';
-    case OPEN_FOR_CLAIM = 'OPEN_FOR_CLAIM';
+    case PRECOMPLETE = 'PRECOMPLETE';
+    case DROPPED = 'DROPPED';
+    case PRE_INVALID = 'PRE_INVALID';
     case COMPLETED = 'COMPLETED';
     case INVALID_RESOLVED = 'INVALID_RESOLVED';
 }
