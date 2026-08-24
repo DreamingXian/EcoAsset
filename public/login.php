@@ -1188,6 +1188,9 @@
         case 'MAINTENANCE_CREW':
           window.location.href = 'module3/index.html';
           break;
+        case 'ADMINISTRATOR':
+          window.location.href = 'admin/index.html';
+          break;
         default:
           window.location.href = 'module1/index.html';
           break;

@@ -30,17 +30,25 @@ const AuthGuard = {
     localStorage.removeItem(this.USER_KEY);
   },
 
+  getLoginUrl() {
+    const path = window.location.pathname;
+    if (path.includes('/module3/admin/') || path.includes('/module5/admin/')) {
+      return '../../login.php';
+    } else if (path.includes('/admin/') || path.includes('/module1/') || path.includes('/module2/') || path.includes('/module3/') || path.includes('/module4/') || path.includes('/module5/')) {
+      return '../login.php';
+    }
+    return 'login.php';
+  },
+
   logout() {
     this.clearSession();
-    const loginUrl = window.location.pathname.includes('/module') ? '../login.php' : 'login.php';
-    window.location.href = loginUrl;
+    window.location.href = this.getLoginUrl();
   },
 
   requireAuth(allowedRoles = []) {
     const token = this.getToken();
     const user = this.getUser();
-
-    const loginUrl = window.location.pathname.includes('/module') ? '../login.php' : 'login.php';
+    const loginUrl = this.getLoginUrl();
 
     if (!token || !user) {
       this.clearSession();
@@ -50,10 +58,33 @@ const AuthGuard = {
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
       alert(`Access denied. Your role (${user.role}) is not authorized for this section.`);
-      if (user.role === 'MAINTENANCE_CREW') {
-        window.location.href = window.location.pathname.includes('/module') ? '../module3/index.html' : 'module3/index.html';
+      if (user.role === 'ADMINISTRATOR') {
+        const path = window.location.pathname;
+        if (path.includes('/module3/admin/') || path.includes('/module5/admin/')) {
+          window.location.href = '../../admin/index.html';
+        } else if (path.includes('/module')) {
+          window.location.href = '../admin/index.html';
+        } else {
+          window.location.href = 'admin/index.html';
+        }
+      } else if (user.role === 'MAINTENANCE_CREW') {
+        const path = window.location.pathname;
+        if (path.includes('/module3/admin/') || path.includes('/module5/admin/')) {
+          window.location.href = '../../module3/index.html';
+        } else if (path.includes('/module') || path.includes('/admin')) {
+          window.location.href = '../module3/index.html';
+        } else {
+          window.location.href = 'module3/index.html';
+        }
       } else {
-        window.location.href = window.location.pathname.includes('/module') ? '../module1/index.html' : 'module1/index.html';
+        const path = window.location.pathname;
+        if (path.includes('/module3/admin/') || path.includes('/module5/admin/')) {
+          window.location.href = '../../module1/index.html';
+        } else if (path.includes('/module') || path.includes('/admin')) {
+          window.location.href = '../module1/index.html';
+        } else {
+          window.location.href = 'module1/index.html';
+        }
       }
       return null;
     }
