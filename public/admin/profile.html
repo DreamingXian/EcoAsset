@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoAsset - Administrator Profile</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="admin.css?v=1.0">
+</head>
+
+<body>
+
+  <!-- Toast Notification Banner -->
+  <div class="toast-banner" id="toastBanner">
+    <span id="toastMsg">Action executed successfully.</span>
+    <span style="cursor: pointer;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
+  </div>
+
+  <!-- Top Executive Navbar -->
+  <header class="admin-navbar">
+    <div class="admin-nav-left">
+      <a href="index.html" class="admin-brand">
+        <div class="brand-badge-icon">🏛️</div>
+        <div class="brand-text-block">
+          <span class="brand-title">EcoAsset Admin</span>
+          <span class="brand-subtitle">Municipal Operations Suite</span>
+        </div>
+      </a>
+
+      <nav class="admin-nav-links">
+        <a href="index.html" class="nav-link-item">
+          <span>🏠 Overview</span>
+        </a>
+        <a href="../module3/admin/index.html" class="nav-link-item">
+          <span>🛠️ Task Control</span>
+        </a>
+        <a href="../module4/index.html" class="nav-link-item">
+          <span>📊 Reports</span>
+        </a>
+        <a href="../module5/admin/index.html" class="nav-link-item">
+          <span>👥 User Management</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="admin-nav-right">
+      <a href="index.html" class="nav-link-item" style="color: #cbd5e1;">
+        <span>← Back to Dashboard</span>
+      </a>
+
+      <button class="btn-nav-logout" onclick="handleLogout()">
+        <span>🚪 Sign Out</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Profile Content Container -->
+  <main class="admin-container" style="padding-top: 48px;">
+
+    <div class="profile-card-container">
+
+      <div class="profile-top-avatar" id="profileAvatar">AD</div>
+
+      <h1 class="profile-name" id="profileFullName">Administrator</h1>
+      <p class="profile-email" id="profileEmail">admin@ecoasset.org</p>
+
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span class="profile-role-pill">
+          <span>🏛️ MUNICIPAL ADMINISTRATOR</span>
+        </span>
+      </div>
+
+      <div class="profile-info-grid">
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Account Role</span>
+          <span class="profile-info-val" style="color: #059669;">System Administrator</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Assigned Department</span>
+          <span class="profile-info-val">Municipal Works & Asset Governance</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Operational HQ</span>
+          <span class="profile-info-val">Kuala Lumpur Central Operations</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Access Privileges</span>
+          <span class="profile-info-val">Full Governance & Dispatch Override</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="profile-info-lbl">Account Status</span>
+          <span class="profile-info-val" style="color: #059669;">● Active / Verified</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <a href="index.html" class="btn-action btn-secondary"
+          style="width: 100%; text-decoration: none; padding: 12px; font-size: 13.5px;">
+          <span>🏠 Return to Admin Dashboard</span>
+        </a>
+
+        <button class="btn-profile-logout" onclick="handleLogout()">
+          <span>🚪 Sign Out / Switch Account</span>
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Auth Guard Script -->
+  <script src="../js/auth-guard.js?v=4.2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Enforce Admin Authorization
+      const user = await AuthGuard.requireAuth(['ADMINISTRATOR']);
+      if (!user) return;
+
+      // 2. Populate Profile Fields
+      const name = user.full_name || 'Municipal Administrator';
+      const email = user.email || 'admin@ecoasset.org';
+
+      document.getElementById('profileFullName').textContent = name;
+      document.getElementById('profileEmail').textContent = email;
+
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
+      document.getElementById('profileAvatar').textContent = initials;
+    });
+
+    function handleLogout() {
+      if (confirm('Are you sure you want to sign out from the Administrator Portal?')) {
+        AuthGuard.logout();
+      }
+    }
+  </script>
+</body>
+
+</html>

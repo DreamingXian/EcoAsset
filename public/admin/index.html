@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoAsset - Municipal Administration Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="admin.css?v=1.0">
+</head>
+
+<body>
+
+  <!-- Toast Notification Banner -->
+  <div class="toast-banner" id="toastBanner">
+    <span id="toastMsg">Action executed successfully.</span>
+    <span style="cursor: pointer;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
+  </div>
+
+  <!-- Top Executive Navbar -->
+  <header class="admin-navbar">
+    <div class="admin-nav-left">
+      <a href="index.html" class="admin-brand">
+        <div class="brand-badge-icon">🏛️</div>
+        <div class="brand-text-block">
+          <span class="brand-title">EcoAsset Admin</span>
+          <span class="brand-subtitle">Municipal Operations Suite</span>
+        </div>
+      </a>
+
+      <nav class="admin-nav-links">
+        <a href="index.html" class="nav-link-item active">
+          <span>🏠 Overview</span>
+        </a>
+        <a href="../module3/admin/index.html" class="nav-link-item">
+          <span>🛠️ Task Control</span>
+        </a>
+        <a href="../module4/index.html" class="nav-link-item">
+          <span>📊 Reports</span>
+        </a>
+        <a href="../module5/admin/index.html" class="nav-link-item">
+          <span>👥 User Management</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="admin-nav-right">
+      <div class="admin-clock-pill" id="liveClockDisplay">
+        <span>🕒 Mon 14:00:00</span>
+      </div>
+
+      <a href="profile.html" class="admin-user-pill" title="View Admin Profile">
+        <div class="user-avatar-dot" id="navAvatarInitials">AD</div>
+        <span style="font-size: 13px; font-weight: 700;" id="navAdminName">Administrator</span>
+      </a>
+
+      <button class="btn-nav-logout" onclick="handleLogout()">
+        <span>🚪 Sign Out</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Executive Content -->
+  <main class="admin-container">
+
+    <!-- Executive Welcome Hero Banner -->
+    <section class="dashboard-hero">
+      <div class="hero-title-row">
+        <div>
+          <h1 class="hero-heading">Welcome, <span id="heroAdminName">Municipal Administrator</span></h1>
+          <p class="hero-subtitle">
+            Centralized operations hub for municipal facility maintenance, automated geospatial dispatch, citizen
+            reports verification, and field crew governance.
+          </p>
+        </div>
+        <div>
+          <a href="../module3/admin/index.html" class="btn-batch-dispatch" style="text-decoration: none;">
+            <span>⚡ Open Task Control Panel</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-stats-row">
+        <div class="hero-stat-box">
+          <span class="hero-stat-icon">📋</span>
+          <div>
+            <div class="hero-stat-val" id="heroTotalTasks">14</div>
+            <div class="hero-stat-lbl">Active Work Orders</div>
+          </div>
+        </div>
+        <div class="hero-stat-box">
+          <span class="hero-stat-icon">👷</span>
+          <div>
+            <div class="hero-stat-val" id="heroActiveCrews">3</div>
+            <div class="hero-stat-lbl">Field Fleets on Duty</div>
+          </div>
+        </div>
+        <div class="hero-stat-box">
+          <span class="hero-stat-icon">⚖️</span>
+          <div>
+            <div class="hero-stat-val" id="heroPendingVerification">4</div>
+            <div class="hero-stat-lbl">Awaiting Admin Review</div>
+          </div>
+        </div>
+        <div class="hero-stat-box">
+          <span class="hero-stat-icon">⏱️</span>
+          <div>
+            <div class="hero-stat-val">96.8%</div>
+            <div class="hero-stat-lbl">24h SLA Compliance</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Major Feature Navigation Cards -->
+    <h2
+      style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 20px;">
+      Administrative Modules
+    </h2>
+
+    <div class="module-cards-grid">
+
+      <!-- Card 1: Task Control Dashboard (Primary Focus) -->
+      <a href="../module3/admin/index.html" class="module-card" style="border-top: 4px solid #059669;">
+        <div class="module-card-top">
+          <div class="module-icon-wrap task">🛠️</div>
+          <span class="module-badge-tag active-tag">Core Module • Active</span>
+          <h3 class="module-card-title">Task Control Dashboard</h3>
+          <p class="module-card-desc">
+            Complete supervision of municipal repair tasks. Monitor work order states, execute automated spatial
+            dispatch, manually reassign technicians, and verify completed or flagged tasks.
+          </p>
+          <ul class="module-feature-list">
+            <li class="module-feature-item"><span class="bullet">✓</span> Real-Time Work Order Lifecycle Queue</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Automated Spatial Proximity Dispatch (30km)
+            </li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Unconstrained Manual Crew Assignment</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Pre-Complete & Invalid Evidence Verification
+            </li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Dropped Task Rescheduling & Rerouting</li>
+          </ul>
+        </div>
+        <div class="module-card-cta">
+          <span>Launch Task Control Panel</span>
+          <span class="arrow">→</span>
+        </div>
+      </a>
+
+      <!-- Card 2: Incident & Analytics Reports (Teammate's module) -->
+      <a href="../module4/index.html" class="module-card" style="border-top: 4px solid #0284c7;">
+        <div class="module-card-top">
+          <div class="module-icon-wrap report">📊</div>
+          <span class="module-badge-tag pending-tag">Analytics Module</span>
+          <h3 class="module-card-title">Incident & Analytics Reports</h3>
+          <p class="module-card-desc">
+            Macro analysis of park damage reports, hotspot geographic distributions, citizen engagement trends, and
+            municipal facility degradation metrics.
+          </p>
+          <ul class="module-feature-list">
+            <li class="module-feature-item"><span class="bullet">✓</span> Geospatial Incident Heatmaps & Clusters</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Category & Severity Breakdown Charts</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> SLA Mean Time to Resolution (MTTR)</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Citizen Upvote Velocity Analytics</li>
+          </ul>
+        </div>
+        <div class="module-card-cta" style="color: #0284c7;">
+          <span>Open Analytics & Reports</span>
+          <span class="arrow">→</span>
+        </div>
+      </a>
+
+      <!-- Card 3: User & Access Management (Teammate's module) -->
+      <a href="../module5/admin/index.html" class="module-card" style="border-top: 4px solid #7c3aed;">
+        <div class="module-card-top">
+          <div class="module-icon-wrap user">👥</div>
+          <span class="module-badge-tag pending-tag">Governance Module</span>
+          <h3 class="module-card-title">User & Access Management</h3>
+          <p class="module-card-desc">
+            Comprehensive governance of all platform actors. Manage maintenance crew trade capabilities, site ranger
+            stations, and citizen reputation scores.
+          </p>
+          <ul class="module-feature-list">
+            <li class="module-feature-item"><span class="bullet">✓</span> Maintenance Crew Fleet & Capabilities</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Site Ranger Station Regional Roster</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Citizen Credibility & Penalty Records</li>
+            <li class="module-feature-item"><span class="bullet">✓</span> Role-Based Access Control (RBAC)</li>
+          </ul>
+        </div>
+        <div class="module-card-cta" style="color: #7c3aed;">
+          <span>Manage Users & Roles</span>
+          <span class="arrow">→</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Quick Platform Activity Log Preview -->
+    <div
+      style="background: #ffffff; border: 1.5px solid var(--admin-card-border); border-radius: var(--radius-xl); padding: 28px; box-shadow: var(--shadow-sm);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #0f172a;">
+          ⚡ Recent Municipal Operations Log
+        </h3>
+        <span style="font-size: 12px; font-weight: 700; color: #059669;">Live System Feed</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border-radius: var(--radius-md); border-left: 3px solid #8b5cf6;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 20px;">⚖️</span>
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">Completion Proof Submitted: Fractured
+                Bridge Railing (TASK-8291)</div>
+              <div style="font-size: 12px; color: #64748b;">Submitted by Crew 1 (Ahmad Razak) • Awaiting admin
+                verification</div>
+            </div>
+          </div>
+          <span style="font-size: 12px; font-family: var(--font-mono); color: #64748b;">5 mins ago</span>
+        </div>
+
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border-radius: var(--radius-md); border-left: 3px solid #f59e0b;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 20px;">⚠️</span>
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">Task Dropped: Deep Cable Conduit Break
+                (TASK-9042)</div>
+              <div style="font-size: 12px; color: #64748b;">Dropped due to: Specialized Heavy Machinery Required • Needs
+                rescheduling</div>
+            </div>
+          </div>
+          <span style="font-size: 12px; font-family: var(--font-mono); color: #64748b;">22 mins ago</span>
+        </div>
+
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border-radius: var(--radius-md); border-left: 3px solid #059669;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 20px;">🚜</span>
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">Work Order Accepted: Broken Drainage
+                Grate (TASK-7104)</div>
+              <div style="font-size: 12px; color: #64748b;">Technician Crew 2 (Siti Sarah) accepted assignment • Status
+                -> In Progress</div>
+            </div>
+          </div>
+          <span style="font-size: 12px; font-family: var(--font-mono); color: #64748b;">1 hour ago</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Auth Guard Script -->
+  <script src="../js/auth-guard.js?v=4.2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Enforce Admin Authorization
+      const user = await AuthGuard.requireAuth(['ADMINISTRATOR']);
+      if (!user) return;
+
+      // 2. Display Admin Details
+      const name = user.full_name || 'Municipal Administrator';
+      document.getElementById('navAdminName').textContent = name;
+      document.getElementById('heroAdminName').textContent = name;
+
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
+      document.getElementById('navAvatarInitials').textContent = initials;
+
+      // 3. Live System Clock
+      updateClock();
+      setInterval(updateClock, 1000);
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const dayStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const el = document.getElementById('liveClockDisplay');
+      if (el) el.innerHTML = `<span>🕒 ${dayStr} ${timeStr}</span>`;
+    }
+
+    function handleLogout() {
+      if (confirm('Are you sure you want to sign out from the Administrator Portal?')) {
+        AuthGuard.logout();
+      }
+    }
+  </script>
+</body>
+
+</html>
