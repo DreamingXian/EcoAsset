@@ -32,7 +32,7 @@ class DamageReport implements JsonSerializable
         SkillCategory $requiredSkill = SkillCategory::STRUCTURAL,
         int $upvoteCount = 0,
         float $priorityScore = 0.0,
-        ReportStatus $status = ReportStatus::PENDING_VALIDATION,
+        ReportStatus $status = ReportStatus::OPEN_FOR_CLAIM,
         string $district = 'Kuala Lumpur',
         ?string $reportId = null,
         ?string $createdAt = null

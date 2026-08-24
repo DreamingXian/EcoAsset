@@ -33,9 +33,9 @@ class GeoUtil
     }
 
     /**
-     * Verify if EXIF GPS coordinates match the dropped pin within a max tolerance radius (default 50m).
+     * Verify if EXIF GPS coordinates match the dropped pin within a max tolerance radius (default 100m).
      */
-    public static function isWithinTolerance(float $lat1, float $lon1, float $lat2, float $lon2, float $maxMeters = 50.0): bool
+    public static function isWithinTolerance(float $lat1, float $lon1, float $lat2, float $lon2, float $maxMeters = 100.0): bool
     {
         $distance = self::haversineDistanceMeters($lat1, $lon1, $lat2, $lon2);
         return $distance <= $maxMeters;

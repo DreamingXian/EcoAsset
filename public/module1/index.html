@@ -37,10 +37,15 @@
         type="text" 
         id="searchInput" 
         class="search-input" 
-        placeholder="Search place or issue keyword..." 
+        placeholder="Search issue keyword or address..." 
         oninput="handleSearchInput()"
+        onkeydown="handleSearchKeyDown(event)"
+        autocomplete="off"
       >
       <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()">✕</button>
+
+      <!-- Dynamic Place & Address Autocomplete Dropdown List -->
+      <div id="searchDropdown" class="search-autocomplete-dropdown"></div>
     </div>
   </header>
 
@@ -172,7 +177,7 @@
         <span id="decayTimerVal" style="font-family: monospace; font-size: 13px; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 6px;">14:58</span>
       </div>
 
-      <!-- Section 1: Live Photo Capture (Blank initially) -->
+      <!-- Section 1: Live Photo Capture (Full-Screen Native Camera Capture) -->
       <label class="form-group-title">1. Live Evidence Capture</label>
       <div class="photo-capture-frame" id="photoFrame">
         <div id="photoPlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
@@ -183,17 +188,25 @@
         <img id="capturedImg" class="photo-preview-img" src="" alt="Captured Evidence">
       </div>
 
+      <!-- Hidden Live Camera Input (Opens native device full-screen camera on phone) -->
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleCameraInputChange(event)">
+
       <!-- Capture / Retake Button -->
-      <button type="button" class="btn btn-secondary btn-block" id="btnCapturePhoto" onclick="handlePhotoCaptureButton()" style="margin-bottom: 16px;">
-        <span>📷 Take Live Photo</span>
-      </button>
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <button type="button" class="btn btn-secondary" id="btnCapturePhoto" onclick="triggerCameraCapture()" style="flex: 2;">
+          <span>📷 Take Live Photo</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btnSamplePhoto" onclick="useSamplePhotoCapture()" style="flex: 1; font-size: 12px;" title="Use demo inspection photo for laptop testing">
+          <span>🖼️ Demo Photo</span>
+        </button>
+      </div>
 
       <!-- Section 2: Confirm Facility Location with Interactive Mini-Map -->
       <label class="form-group-title">2. Confirm Facility Location & Mini-Map</label>
       <div style="background: #f8fafc; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span style="font-size: 12.5px; font-weight: 700; color: #334155;">Pinned Location:</span>
-          <span class="badge badge-resolved">≤ 50m EXIF Check</span>
+          <span style="font-size: 12.5px; font-weight: 700; color: #334155;">Pinned Facility Location:</span>
+          <span class="badge" id="locationLockBadge" style="background: #e2e8f0; color: #475569;">Select Location</span>
         </div>
         <p id="selectedLocationLabel" style="font-size: 13px; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 8px;">
           Persiaran KLCC (3.1578° N, 101.7119° E)
@@ -204,20 +217,23 @@
           <div id="reportMiniMap"></div>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
           <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="resetLocationToGps()">
             <span>📍 Reset to GPS</span>
           </button>
-          <button type="button" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="simulateFarLocationPick()" title="Simulate location mismatch >50m for testing">
-            <span>⚠️ Test >50m Mismatch</span>
-          </button>
         </div>
+
+        <!-- Lock / Confirm Location Button & Distance Status Alert -->
+        <div id="locationLockStatusAlert" style="display: none; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 12px; font-weight: 600;"></div>
+        <button type="button" id="btnLockLocation" class="btn btn-primary btn-block" onclick="toggleLocationLock()">
+          <span>🔒 Lock & Confirm Facility Location</span>
+        </button>
       </div>
 
-      <!-- Section 3: Severity Survey Selection -->
+      <!-- Section 3: Severity Survey Selection (4 Categories) -->
       <label class="form-group-title">3. How is this damage affecting visitors? (Select one)</label>
       
-      <div class="survey-question-card selected" onclick="selectSurveyOption(this, 'CRITICAL_SAFETY', 10, 'Critical Safety Hazard')">
+      <div class="survey-question-card selected" onclick="selectSurveyOption(this, 'CRITICAL_SAFETY', 10, 'Critical Safety Hazard (High Danger)')">
         <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
         <div>
           <div class="survey-text-title" style="color: var(--color-critical);">Critical Safety Hazard (High Danger)</div>
@@ -225,7 +241,7 @@
         </div>
       </div>
 
-      <div class="survey-question-card" onclick="selectSurveyOption(this, 'OPERATIONAL', 7, 'Major Facility Blockage')">
+      <div class="survey-question-card" onclick="selectSurveyOption(this, 'MAJOR_BLOCKAGE', 7, 'Major Facility Blockage (Unusable)')">
         <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
         <div>
           <div class="survey-text-title" style="color: var(--color-operational);">Major Facility Blockage (Unusable)</div>
@@ -233,7 +249,7 @@
         </div>
       </div>
 
-      <div class="survey-question-card" onclick="selectSurveyOption(this, 'OPERATIONAL', 6, 'Minor Inconvenience / Partial Damage')">
+      <div class="survey-question-card" onclick="selectSurveyOption(this, 'MINOR_DEFECT', 4, 'Minor Inconvenience (Partially Usable)')">
         <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
         <div>
           <div class="survey-text-title" style="color: #d97706;">Minor Inconvenience (Partially Usable)</div>
@@ -241,11 +257,11 @@
         </div>
       </div>
 
-      <div class="survey-question-card" onclick="selectSurveyOption(this, 'AESTHETIC', 4, 'Aesthetic / Cleanliness Issue')">
+      <div class="survey-question-card" onclick="selectSurveyOption(this, 'AESTHETIC', 2, 'Aesthetic / Cleanliness Defect')">
         <div class="survey-radio-circle"><div class="survey-radio-inner"></div></div>
         <div>
           <div class="survey-text-title" style="color: var(--color-aesthetic);">Aesthetic or Cleanliness Defect</div>
-          <div class="survey-text-desc">Visual or sanitary defect (e.g. overflowing trash bin, graffiti on monument, peeling signboard paint).</div>
+          <div class="survey-text-desc">Visual or sanitary defect (e.g. overflowing trash bin, graffiti on monument, peeling signboard paint, bad odor).</div>
         </div>
       </div>
 
@@ -285,7 +301,7 @@
           </div>
         </div>
 
-        <div class="trade-chip-card" onclick="selectTradeCard(this, 'NOT_SURE')" style="grid-column: 1 / -1;">
+        <div class="trade-chip-card" onclick="selectTradeCard(this, 'OTHER')" style="grid-column: 1 / -1;">
           <span class="trade-chip-icon">❓</span>
           <div>
             <div class="trade-chip-name">Not Sure / Other</div>
@@ -316,7 +332,7 @@
   </div>
 
   <!-- ===================================================================
-       50-METER DISTANCE MISMATCH MODAL
+       100-METER DISTANCE MISMATCH MODAL
        =================================================================== -->
   <div class="confirm-dialog-backdrop" id="mismatchModal">
     <div class="confirm-dialog-card">
@@ -326,7 +342,7 @@
       <div class="distance-mismatch-box" style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:12px; padding:12px; margin-bottom:14px; text-align:left;">
         <span class="badge badge-critical" id="mismatchDistText" style="font-size:12px; margin-bottom:6px;">180 meters away</span>
         <p style="font-size: 12px; color: #7f1d1d; line-height: 1.4; margin-top:4px;">
-          <strong>Anti-Fraud Rule:</strong> The selected map location is further than the 50-meter tolerance radius from the live photo's GPS coordinates.
+          <strong>Anti-Fraud Rule:</strong> The selected map location is further than the 100-meter tolerance radius from the live photo's GPS coordinates.
         </p>
       </div>
 
@@ -427,7 +443,8 @@
   <!-- Leaflet Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
-  <!-- Module 1 Script -->
+  <!-- Auth Guard & Module 1 Script -->
+  <script src="../js/auth-guard.js"></script>
   <script src="module1.js"></script>
 </body>
 </html>
