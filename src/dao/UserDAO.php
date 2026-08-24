@@ -337,15 +337,27 @@ class UserDAO
             $crew['skill_tags'] = self::parsePgArray($crew['skill_tags']);
         }
 
-        // Dynamically compute availability based on active in-progress tasks
-        $taskCheck = "SELECT COUNT(*) as active_cnt 
+        // Dynamically compute availability based on active in-progress and pending tasks
+        $taskCheck = "SELECT 
+                        COUNT(*) FILTER (WHERE r.status = 'IN_PROGRESS') as active_cnt,
+                        COUNT(*) FILTER (WHERE r.status = 'PENDING_ACCEPTANCE') as pending_cnt
                       FROM maintenance_tasks t
                       JOIN damage_reports r ON t.report_id = r.report_id
-                      WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+                      WHERE t.assigned_crew_id = :crew_id";
         $taskStmt = $this->db->prepare($taskCheck);
         $taskStmt->execute(['crew_id' => $crewId]);
-        $activeCnt = (int)($taskStmt->fetch()['active_cnt'] ?? 0);
-        $computedStatus = ($activeCnt > 0) ? 'BUSY' : 'AVAILABLE';
+        $taskCounts = $taskStmt->fetch();
+
+        $activeCnt = (int)($taskCounts['active_cnt'] ?? 0);
+        $pendingCnt = (int)($taskCounts['pending_cnt'] ?? 0);
+
+        if ($activeCnt > 0) {
+            $computedStatus = 'BUSY';
+        } elseif ($pendingCnt > 0) {
+            $computedStatus = 'BUSY'; // busy in DB enum, flagged as pending in frontend
+        } else {
+            $computedStatus = 'AVAILABLE';
+        }
 
         if ($crew['availability_status'] !== $computedStatus) {
             $updateStatus = "UPDATE maintenance_crews SET availability_status = :status WHERE crew_id = :crew_id";
@@ -355,6 +367,8 @@ class UserDAO
         }
 
         $crew['active_tasks_count'] = $activeCnt;
+        $crew['pending_tasks_count'] = $pendingCnt;
+        $crew['computed_status'] = ($activeCnt > 0) ? 'BUSY' : (($pendingCnt > 0) ? 'PENDING_ACCEPTANCE' : 'AVAILABLE');
         $crew['performance_score'] = (float)$crew['performance_score'];
         $crew['current_latitude'] = (float)$crew['current_latitude'];
         $crew['current_longitude'] = (float)$crew['current_longitude'];

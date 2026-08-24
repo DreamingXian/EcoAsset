@@ -141,6 +141,12 @@
       border: 1px solid #fed7aa;
     }
 
+    .duty-status-badge.pending {
+      background: #fefce8;
+      color: #854d0e;
+      border: 1px solid #fef08a;
+    }
+
     /* Content Cards */
     .profile-section-card {
       background: #ffffff;
@@ -758,15 +764,20 @@
           const stars = (rawScore / 20.0).toFixed(1);
           document.getElementById('heroRatingScore').textContent = `${stars} / 5.0 Rating (${rawScore.toFixed(0)}%)`;
 
-          // 2. Dynamic Availability Status (Depends on in-progress tasks)
+          // 2. Dynamic Availability Status (Depends on in-progress and pending tasks)
           const statusBadge = document.getElementById('dutyStatusBadge');
           const workloadDesc = document.getElementById('dutyWorkloadDesc');
           const activeTasks = parseInt(p.active_tasks_count) || 0;
+          const pendingTasks = parseInt(p.pending_tasks_count) || 0;
 
-          if (p.availability_status === 'BUSY' || activeTasks > 0) {
+          if (activeTasks > 0) {
             statusBadge.className = 'duty-status-badge busy';
             statusBadge.innerHTML = '<span>🔴 Busy</span>';
             workloadDesc.textContent = `${activeTasks} task(s) currently in progress`;
+          } else if (pendingTasks > 0 || p.computed_status === 'PENDING_ACCEPTANCE') {
+            statusBadge.className = 'duty-status-badge pending';
+            statusBadge.innerHTML = '<span>🟡 Pending Acceptance</span>';
+            workloadDesc.textContent = `${pendingTasks} dispatched task(s) awaiting your review`;
           } else {
             statusBadge.className = 'duty-status-badge available';
             statusBadge.innerHTML = '<span>🟢 Available</span>';

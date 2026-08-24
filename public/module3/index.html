@@ -8,11 +8,51 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
   <!-- Global & Module Styles -->
   <link rel="stylesheet" href="../css/global.css">
-  <link rel="stylesheet" href="module3.css">
+  <link rel="stylesheet" href="module3.css?v=3.0">
+  <style>
+    .skill-filter-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      grid-column: 1 / -1;
+      margin-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .skill-filter-chip {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .skill-filter-chip:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .skill-filter-chip.active {
+      background: #059669;
+      color: #ffffff;
+      border-color: #059669;
+    }
+
+    .in-progress-card {
+      border: 2px solid #059669;
+      box-shadow: 0 8px 24px rgba(5, 150, 105, 0.12);
+    }
+  </style>
 </head>
 <body>
 
@@ -23,13 +63,13 @@
       <div class="crew-title-block">
         <h2 class="crew-main-title">Crew Terminal</h2>
         <div class="crew-sub-desc">
-          <span>👷 Tan Boon Huat (ID: T-004)</span>
+          <span id="crewNameDisplay">👷 Technician</span>
           <span>•</span>
-          <span style="color: #047857; font-weight: 700;">★ 4.8 / 5.0</span>
+          <span style="color: #047857; font-weight: 700;" id="crewScoreDisplay">★ 5.0 / 5.0</span>
         </div>
       </div>
 
-      <div class="duty-status-badge available" id="dutyBadge" onclick="alert('Duty status: Online for spatial automated dispatches.')">
+      <div class="duty-status-badge available" id="dutyBadge" onclick="showToast('Availability synced automatically by workload')">
         <span>🟢 Available</span>
       </div>
     </header>
@@ -38,11 +78,11 @@
     <div class="terminal-tabs">
       <button class="terminal-tab-btn active" data-tab="my-tasks" onclick="switchTerminalTab('my-tasks')">
         <span>My Tasks</span>
-        <span class="tab-count-pill" id="myTasksBadge">2</span>
+        <span class="tab-count-pill" id="myTasksBadge">0</span>
       </button>
       <button class="terminal-tab-btn" data-tab="open-pool" onclick="switchTerminalTab('open-pool')">
         <span>Open Pool</span>
-        <span class="tab-count-pill" id="openPoolBadge">1</span>
+        <span class="tab-count-pill" id="openPoolBadge">0</span>
       </button>
       <button class="terminal-tab-btn" data-tab="in-progress" onclick="switchTerminalTab('in-progress')">
         <span>In Progress</span>
@@ -60,86 +100,15 @@
     <main class="terminal-content-area">
 
       <!-- =================================================================
-           PANE 1: MY TASKS (DISPATCHED ASSIGNMENTS)
+           PANE 1: MY TASKS (DISPATCHED ASSIGNMENTS AWAITING CREW ACCEPTANCE)
            ================================================================= -->
       <div class="tab-view-pane active" id="pane-my-tasks">
-        
-        <!-- Task Card 1: Critical Safety (Click to inspect full details) -->
-        <div class="task-card" id="my-task-RPT-2401" onclick="openTaskDetailModal('RPT-2401', 'my-tasks')">
-          <div class="task-card-header">
-            <div class="task-badges-cluster">
-              <span class="badge badge-pscore">P 9.2</span>
-              <span class="badge badge-critical">Critical Safety</span>
-              <span class="badge badge-aesthetic">Structural</span>
-            </div>
-            <div class="sla-badge">
-              <span>⏱️ 2h 14m SLA</span>
-            </div>
-          </div>
-
-          <div>
-            <h4 class="task-card-title">Persiaran KLCC, Bukit Bintang</h4>
-            <div class="task-card-location">
-              <span class="task-card-distance">📍 0.8 km away</span>
-              <span>• Tap to view full report details</span>
-            </div>
-          </div>
-
-          <p class="task-card-desc">
-            Broken metal handrail on pedestrian bridge, severe fracture posing imminent fall hazard.
-          </p>
-
-          <div class="task-card-footer" onclick="event.stopPropagation();">
-            <button class="btn btn-primary" style="flex: 2;" onclick="promptConfirmAction('ACCEPT', 'RPT-2401')">
-              <span>✓ Accept Task</span>
-            </button>
-            <button class="btn btn-secondary" style="flex: 1;" onclick="promptConfirmAction('DECLINE', 'RPT-2401')">
-              <span>Decline</span>
-            </button>
+        <div id="myTasksListContainer" style="display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%;">
+          <div class="empty-state-card">
+            <span style="font-size: 32px;">⏳</span>
+            <p style="font-size: 13px; color: #64748b;">Loading your dispatched tasks...</p>
           </div>
         </div>
-
-        <!-- Task Card 2: Operational with Admin Rejection Notice -->
-        <div class="task-card" id="my-task-RPT-2389" onclick="openTaskDetailModal('RPT-2389', 'my-tasks')">
-          <div class="task-card-header">
-            <div class="task-badges-cluster">
-              <span class="badge badge-pscore" style="background:#ea580c;">P 8.5</span>
-              <span class="badge badge-operational">Operational</span>
-              <span class="badge badge-aesthetic">Electrical</span>
-            </div>
-            <div class="sla-badge">
-              <span>⏱️ 4h 50m SLA</span>
-            </div>
-          </div>
-
-          <!-- Admin Rejection Notice Banner -->
-          <div class="admin-comment-banner">
-            <span>⚠️</span>
-            <span><strong>Admin Review Note:</strong> Previous photo was blurry. Please capture clear photo of wiring junction box.</span>
-          </div>
-
-          <div>
-            <h4 class="task-card-title">Jalan Ampang, KLCC</h4>
-            <div class="task-card-location">
-              <span class="task-card-distance">📍 1.2 km away</span>
-              <span>• Tap to inspect details</span>
-            </div>
-          </div>
-
-          <p class="task-card-desc">
-            Open electrical junction box with dangling live wires near tourist walking trail.
-          </p>
-
-          <div class="task-card-footer" onclick="event.stopPropagation();">
-            <button class="btn btn-primary" style="flex: 2;" onclick="promptConfirmAction('ACCEPT', 'RPT-2389')">
-              <span>✓ Accept Task</span>
-            </button>
-            <button class="btn btn-secondary" style="flex: 1;" onclick="promptConfirmAction('DECLINE', 'RPT-2389')">
-              <span>Decline</span>
-            </button>
-          </div>
-        </div>
-
       </div>
 
       <!-- =================================================================
@@ -147,36 +116,25 @@
            ================================================================= -->
       <div class="tab-view-pane" id="pane-open-pool">
         
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; color: #1e40af; font-weight: 600; grid-column: 1 / -1;">
-          <span>🎯 Filtered by your registered skills: <strong>Structural, Electrical</strong></span>
+        <!-- Skill Capability Filter Chips -->
+        <div class="skill-filter-bar">
+          <button class="skill-filter-chip active" data-skill="ALL" onclick="filterOpenPoolBySkill('ALL')">All Categories</button>
+          <button class="skill-filter-chip" data-skill="STRUCTURAL" onclick="filterOpenPoolBySkill('STRUCTURAL')">🏗️ Structural</button>
+          <button class="skill-filter-chip" data-skill="ELECTRICAL" onclick="filterOpenPoolBySkill('ELECTRICAL')">⚡ Electrical</button>
+          <button class="skill-filter-chip" data-skill="SANITATION" onclick="filterOpenPoolBySkill('SANITATION')">🚰 Sanitation</button>
+          <button class="skill-filter-chip" data-skill="GENERAL_FACILITY" onclick="filterOpenPoolBySkill('GENERAL_FACILITY')">🪑 Facilities</button>
+          <button class="skill-filter-chip" data-skill="OTHER" onclick="filterOpenPoolBySkill('OTHER')">🛠️ Other</button>
         </div>
 
-        <!-- Open Pool Card 1 -->
-        <div class="task-card" id="pool-task-RPT-2340" onclick="openTaskDetailModal('RPT-2340', 'open-pool')">
-          <div class="task-card-header">
-            <div class="task-badges-cluster">
-              <span class="badge badge-pscore" style="background:#ea580c;">P 8.9</span>
-              <span class="badge badge-operational">Operational</span>
-              <span class="badge badge-aesthetic">Structural</span>
-            </div>
-            <span style="font-size: 11.5px; font-weight: 700; color: #475569;">Open for Claim</span>
+        <div id="openPoolSkillNotice" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; color: #1e40af; font-weight: 600; grid-column: 1 / -1; margin-bottom: 10px; display: none;">
+          <span id="openPoolSkillNoticeText">🎯 Matching your registered capabilities</span>
+        </div>
+
+        <div id="openPoolListContainer" style="display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%;">
+          <div class="empty-state-card">
+            <span style="font-size: 32px;">⏳</span>
+            <p style="font-size: 13px; color: #64748b;">Loading open maintenance pool...</p>
           </div>
-
-          <div>
-            <h4 class="task-card-title">Jalan Pahang, Titiwangsa</h4>
-            <div class="task-card-location">
-              <span class="task-card-distance">📍 5.1 km away</span>
-              <span>• Tap to inspect details</span>
-            </div>
-          </div>
-
-          <p class="task-card-desc">
-            Damaged storm drainage grate causing pathway blockage during rain.
-          </p>
-
-          <button class="btn btn-primary btn-block" onclick="event.stopPropagation(); promptConfirmAction('CLAIM', 'RPT-2340')">
-            <span>⚡ Claim Task (Lock & Start)</span>
-          </button>
         </div>
 
       </div>
@@ -185,57 +143,13 @@
            PANE 3: IN PROGRESS (MULTI-TASK ACTIVE WORK ORDERS)
            ================================================================= -->
       <div class="tab-view-pane" id="pane-in-progress">
-        
-        <!-- Empty State -->
-        <div class="empty-state-card" id="inProgressEmpty">
-          <span style="font-size: 36px;">🔧</span>
-          <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b;">No Active Work Order</h4>
-          <p style="font-size: 12.5px; color: #64748b;">Accept a dispatched task from "My Tasks" or self-claim an open job from the "Open Pool".</p>
-        </div>
-
-        <!-- Active Work Order Card (RPT-2401 - Clickable to open full detail modal) -->
-        <div class="task-card" id="in-prog-RPT-2401" style="display: none;" onclick="openTaskDetailModal('RPT-2401', 'in-progress')">
-          <div class="task-card-header">
-            <div class="task-badges-cluster">
-              <span class="badge badge-pscore">P 9.2</span>
-              <span class="badge badge-critical">Critical Safety</span>
-              <span class="badge badge-resolved">In Progress</span>
-            </div>
-            <div class="sla-badge">
-              <span>⏱️ 2h 14m SLA</span>
-            </div>
-          </div>
-
-          <div>
-            <h4 class="task-card-title">Persiaran KLCC, Bukit Bintang</h4>
-            <div class="task-card-location">
-              <span class="task-card-distance">📍 0.8 km away</span>
-              <span>• Tap card to view full work order & actions</span>
-            </div>
-          </div>
-
-          <p class="task-card-desc">Broken handrail on pedestrian bridge posing serious fall hazard.</p>
-
-          <!-- Google Maps Launch Navigation Button -->
-          <button class="btn btn-primary btn-block" style="background:#0284c7;" onclick="event.stopPropagation(); launchNavigation(3.1579, 101.7120)">
-            <span>🚀 Launch Navigation in Google Maps</span>
-          </button>
-
-          <!-- 3 Field Execution Lifecycle Actions -->
-          <label class="form-group-title" style="margin-top: 6px;">Field Execution Actions</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;" onclick="event.stopPropagation();">
-            <button class="btn btn-secondary" style="font-size:12px; padding:10px 4px; border:1px solid #10b981; color:#047857; background:#ecfdf5;" onclick="openCompleteModal('RPT-2401')">
-              <span>✅ Mark Done</span>
-            </button>
-            <button class="btn btn-secondary" style="font-size:12px; padding:10px 4px; border:1px solid #f59e0b; color:#b45309; background:#fffbeb;" onclick="openDropModal('RPT-2401')">
-              <span>⚠️ Drop Task</span>
-            </button>
-            <button class="btn btn-secondary" style="font-size:12px; padding:10px 4px; border:1px solid #ef4444; color:#b91c1c; background:#fef2f2;" onclick="openFlagInvalidModal('RPT-2401')">
-              <span>🚩 Flag Invalid</span>
-            </button>
+        <div id="inProgressListContainer" style="display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%;">
+          <div class="empty-state-card">
+            <span style="font-size: 36px;">🔧</span>
+            <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b;">No Active Work Order</h4>
+            <p style="font-size: 12.5px; color: #64748b;">Accept a dispatched task from "My Tasks" or self-claim an open job from the "Open Pool".</p>
           </div>
         </div>
-
       </div>
 
     </main>
@@ -245,6 +159,10 @@
       <a href="index.html" class="nav-tab active">
         <span class="tab-icon">🚜</span>
         <span>Crew Terminal</span>
+      </a>
+      <a href="../module2/index.html" class="nav-tab">
+        <span class="tab-icon">⚡</span>
+        <span>Auto-Dispatch</span>
       </a>
       <a href="profile.html" class="nav-tab">
         <span class="tab-icon">👤</span>
@@ -278,12 +196,6 @@
         </div>
       </div>
 
-      <!-- Admin Comment Banner in Modal if applicable -->
-      <div class="admin-comment-banner" id="modalAdminCommentBox" style="margin-bottom: 12px; display: none;">
-        <span>⚠️</span>
-        <span id="modalAdminCommentText">Admin Comment</span>
-      </div>
-
       <h4 id="modalTaskTitle" style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
         Task Title
       </h4>
@@ -298,9 +210,9 @@
       </p>
 
       <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 18px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-        <span>👤 Reported by: <strong id="modalTaskReporter" style="color: #0f172a;">Ahmad</strong></span>
-        <span>🔥 <strong id="modalTaskUpvotes" style="color: #ea580c;">47</strong> Upvotes</span>
-        <span>⏱️ <strong id="modalTaskSla" style="color: #d97706;">2h 14m</strong></span>
+        <span>👤 Reported by: <strong id="modalTaskReporter" style="color: #0f172a;">Citizen</strong></span>
+        <span>🔥 <strong id="modalTaskUpvotes" style="color: #ea580c;">1</strong> Upvotes</span>
+        <span>⏱️ <strong id="modalTaskSla" style="color: #d97706;">24h SLA</strong></span>
       </div>
 
       <div id="modalActionFooter" style="display: flex; gap: 8px;">
@@ -311,7 +223,7 @@
   </div>
 
   <!-- ===================================================================
-       CREW ACTION CONFIRMATION PROMPT SYSTEM (z-index 3500 ON TOP OF DRAWERS)
+       CREW ACTION CONFIRMATION PROMPT SYSTEM
        =================================================================== -->
   <div class="confirm-dialog-backdrop" id="crewConfirmModal">
     <div class="confirm-dialog-card">
@@ -330,7 +242,49 @@
   </div>
 
   <!-- ===================================================================
-       FIELD LIFECYCLE 1: MARK AS DONE (PRE-COMPLETE ADMIN REVIEW)
+       DECLINE TASK MODAL
+       =================================================================== -->
+  <div class="drawer-backdrop" id="declineModalBackdrop" onclick="closeDeclineModal()"></div>
+  
+  <div class="bottom-drawer" id="declineDrawerModal">
+    <div class="drawer-drag-handle"></div>
+    <div class="drawer-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-family: var(--font-heading); font-size: 17px; font-weight: 800; color:#991b1b;">Decline Work Order</h3>
+        <button type="button" class="modal-close-btn" onclick="closeDeclineModal()">✕</button>
+      </div>
+
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
+        Declining this assignment will return the task to the Open Pool for other qualified crew members to claim.
+      </p>
+
+      <label class="form-group-title">Select Reason for Declining</label>
+      <select class="form-control" id="declineReasonSelect" onchange="handleDeclineReasonChange(this)">
+        <option value="SPECIALIZED_EQUIPMENT">Specialized Tools / Equipment Not Equipped</option>
+        <option value="OUTSIDE_PRIMARY_ZONE">Outside Immediate Dispatch Region (>30km)</option>
+        <option value="SCHEDULE_CONFLICT">Emergency Shift Conflict / End of Duty</option>
+        <option value="SAFETY_HAZARD">Site Access Obstacle / Natural Hazard</option>
+        <option value="OTHER">Other (Specify Custom Reason)</option>
+      </select>
+
+      <div id="declineOtherReasonContainer" style="display: none; margin-top: 8px;">
+        <label class="form-group-title">Custom Reason</label>
+        <input type="text" class="form-control" id="declineOtherReasonInput" placeholder="Explain why you cannot take this job...">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+        <button class="btn btn-danger" onclick="submitDeclineTask()">
+          <span>Confirm Decline</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeDeclineModal()">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       FIELD LIFECYCLE 1: MARK AS DONE (AFTER-REPAIR PHOTO PROOF)
        =================================================================== -->
   <div class="drawer-backdrop" id="completeModalBackdrop" onclick="closeAllDrawers()"></div>
   
@@ -343,10 +297,9 @@
       </div>
 
       <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
-        Capture a live photo of the repaired facility. Status will enter <strong>Pending Admin Review</strong>.
+        Upload a live photo of the completed repairs. Status will be marked <strong>COMPLETED</strong>.
       </p>
 
-      <!-- Resized After-Repair Photo Proof Frame -->
       <label class="form-group-title">1. After-Repair Photo Proof (Required)</label>
       <div class="photo-capture-frame" id="completeFrame">
         <div id="completePlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
@@ -354,25 +307,24 @@
           <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Taken Yet</span>
           <span style="font-size: 11px; color: #94a3b8;">Tap below to snap after-repair proof</span>
         </div>
-        <img id="completeCapturedImg" class="photo-preview-img" src="" alt="After Repair Proof">
+        <img id="completeCapturedImg" class="photo-preview-img" src="" alt="After Repair Proof" style="display: none;">
       </div>
 
       <button type="button" class="btn btn-secondary btn-block" id="btnCompletePhoto" onclick="handleCompletePhotoCapture()" style="margin-bottom: 14px;">
         <span>📷 Take After-Repair Photo</span>
       </button>
 
-      <!-- Resolution Notes (Clean vertical placement) -->
-      <label class="form-group-title">2. Resolution Notes (Optional)</label>
+      <label class="form-group-title">2. Resolution Notes</label>
       <textarea 
         class="form-control" 
         id="completeNotes" 
         rows="3" 
-        placeholder="e.g., Replaced broken stainless steel screws, welded structural bracket, and cleaned site..."
+        placeholder="e.g., Welded fractured steel joint and restored safety coating..."
       ></textarea>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
         <button class="btn btn-primary" onclick="submitCompleteTask()">
-          <span>Submit for Review</span>
+          <span>Submit Completion</span>
         </button>
         <button class="btn btn-secondary" onclick="closeAllDrawers()">
           <span>Cancel</span>
@@ -382,7 +334,7 @@
   </div>
 
   <!-- ===================================================================
-       FIELD LIFECYCLE 2: DROP TASK (WITH 'OTHER' REASON FIELD)
+       FIELD LIFECYCLE 2: DROP TASK (-5 PENALTY)
        =================================================================== -->
   <div class="drawer-backdrop" id="dropModalBackdrop" onclick="closeAllDrawers()"></div>
 
@@ -395,10 +347,9 @@
       </div>
 
       <div class="penalty-warning-box" style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:12px; font-size:12px; color:#991b1b; margin-bottom:14px;">
-        <span>⚠️ <strong>Penalty Notice:</strong> Dropping an accepted work order applies a <strong>-5.00 point deduction</strong> to team rating and releases the job back to the Open Pool.</span>
+        <span>⚠️ <strong>Penalty Notice:</strong> Dropping an accepted work order incurs a <strong>-5.00 point deduction</strong> to your performance score and returns the job to the Open Pool.</span>
       </div>
 
-      <!-- Proper Reason Dropdown -->
       <label class="form-group-title">Select Reason for Dropping</label>
       <select class="form-control" id="dropReasonSelect" onchange="handleDropReasonChange(this)">
         <option value="HEAVY_MACHINERY">Specialized Heavy Machinery Required</option>
@@ -408,13 +359,12 @@
         <option value="OTHER">Other (Specify Custom Reason)</option>
       </select>
 
-      <!-- Custom Reason Field when 'Other' is chosen -->
-      <div id="otherReasonContainer" style="display: none; margin-top: -6px; margin-bottom: 8px;">
-        <label class="form-group-title">Please Specify Custom Reason (Required)</label>
+      <div id="otherReasonContainer" style="display: none; margin-top: 8px;">
+        <label class="form-group-title">Please Specify Custom Reason</label>
         <input type="text" class="form-control" id="otherReasonInput" placeholder="Enter specific field reason for dropping task...">
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
         <button class="btn btn-danger" onclick="submitDropTask()">
           <span>Confirm Drop</span>
         </button>
@@ -426,7 +376,7 @@
   </div>
 
   <!-- ===================================================================
-       FIELD LIFECYCLE 3: FLAG INVALID (PRE-INVALID ADMIN REVIEW)
+       FIELD LIFECYCLE 3: FLAG INVALID (-20 CITIZEN REPUTATION)
        =================================================================== -->
   <div class="drawer-backdrop" id="flagModalBackdrop" onclick="closeAllDrawers()"></div>
 
@@ -439,10 +389,9 @@
       </div>
 
       <div style="background:#fff7ed; border:1px solid #fed7aa; padding:12px; border-radius:12px; font-size:12px; color:#9a3412; margin-bottom:14px;">
-        <span>ℹ️ The original citizen reporter will receive a <strong>-20 credibility penalty</strong> upon municipal administrator validation.</span>
+        <span>ℹ️ The original citizen reporter will receive a <strong>-20 credibility penalty</strong> upon verification.</span>
       </div>
 
-      <!-- Resized Clear Site Evidence Photo Frame -->
       <label class="form-group-title">1. Clear Site Evidence Photo (Required)</label>
       <div class="photo-capture-frame" id="flagFrame">
         <div id="flagPlaceholder" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
@@ -450,14 +399,13 @@
           <span style="font-size: 13px; font-weight: 600; color: #475569;">No Photo Taken Yet</span>
           <span style="font-size: 11px; color: #94a3b8;">Snap on-site clear status proof</span>
         </div>
-        <img id="flagCapturedImg" class="photo-preview-img" src="" alt="Clear Site Proof">
+        <img id="flagCapturedImg" class="photo-preview-img" src="" alt="Clear Site Proof" style="display: none;">
       </div>
 
       <button type="button" class="btn btn-secondary btn-block" id="btnFlagPhoto" onclick="handleFlagPhotoCapture()" style="margin-bottom: 14px;">
         <span>📷 Capture Clear-Site Photo</span>
       </button>
 
-      <!-- Inspection Findings (Required and cannot be blank) -->
       <label class="form-group-title">2. Inspection Findings (Required)</label>
       <textarea 
         class="form-control" 
@@ -466,7 +414,7 @@
         placeholder="Explain why this reported facility issue has no damage (e.g., Facility inspected on-site, fully intact and operational)..."
       ></textarea>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
         <button class="btn btn-danger" onclick="submitFlagInvalid()">
           <span>Submit Flag</span>
         </button>
@@ -477,7 +425,8 @@
     </div>
   </div>
 
-  <!-- Module 3 Script -->
-  <script src="module3.js"></script>
+  <!-- Auth Guard & Terminal Script -->
+  <script src="../js/auth-guard.js?v=3.0"></script>
+  <script src="terminal.js?v=3.0"></script>
 </body>
 </html>

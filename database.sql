@@ -52,11 +52,9 @@ CREATE TYPE issue_category AS ENUM (
 );
 
 CREATE TYPE report_status AS ENUM (
-    'PENDING_VALIDATION',
-    'VERIFIED',
+    'OPEN_FOR_CLAIM',
     'PENDING_ACCEPTANCE',
     'IN_PROGRESS',
-    'OPEN_FOR_CLAIM',
     'COMPLETED',
     'INVALID_RESOLVED'
 );
@@ -117,7 +115,7 @@ CREATE TABLE damage_reports (
     exif_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     upvote_count INT NOT NULL DEFAULT 0,
     priority_score NUMERIC(6, 2) NOT NULL DEFAULT 0.00,
-    status report_status NOT NULL DEFAULT 'PENDING_VALIDATION',
+    status report_status NOT NULL DEFAULT 'OPEN_FOR_CLAIM',
     district VARCHAR(100) DEFAULT 'Kuala Lumpur',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

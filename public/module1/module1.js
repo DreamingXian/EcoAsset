@@ -536,8 +536,9 @@ document.addEventListener('DOMContentLoaded', () => {
     switch (status) {
       case 'COMPLETED':          return '✓ Resolved';
       case 'IN_PROGRESS':        return 'In Progress';
-      case 'OPEN_FOR_CLAIM':     return 'Pending Dispatch';
-      case 'PENDING_VALIDATION': return 'Under Review';
+      case 'PENDING_ACCEPTANCE': return 'Dispatched';
+      case 'OPEN_FOR_CLAIM':     return 'Open for Claim';
+      case 'INVALID_RESOLVED':   return 'Closed (Invalid)';
       default:                   return status || 'Active';
     }
   }

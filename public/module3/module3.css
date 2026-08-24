@@ -72,6 +72,12 @@
   border: 1px solid #fed7aa;
 }
 
+.duty-status-badge.pending {
+  background: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
 /* Tabs Navigation */
 .terminal-tabs {
   background: #ffffff;
@@ -289,7 +295,8 @@
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.drawer-backdrop.active {
+.drawer-backdrop.active,
+.drawer-backdrop.open {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -313,8 +320,86 @@
   flex-direction: column;
 }
 
-.bottom-drawer.active {
+.bottom-drawer.active,
+.bottom-drawer.open {
   transform: translateX(-50%) translateY(0);
+}
+
+/* Confirmation Dialog Modal */
+.confirm-dialog-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.confirm-dialog-backdrop.active,
+.confirm-dialog-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.confirm-dialog-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 380px;
+  width: 100%;
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transform: scale(0.95);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-dialog-backdrop.active .confirm-dialog-card,
+.confirm-dialog-backdrop.open .confirm-dialog-card {
+  transform: scale(1);
+}
+
+.confirm-dialog-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.confirm-dialog-title {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.confirm-dialog-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+.confirm-dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .drawer-drag-handle {

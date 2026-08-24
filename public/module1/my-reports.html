@@ -414,13 +414,13 @@
     function getStatusBadgeHtml(status) {
       switch (status) {
         case 'COMPLETED':
-          return '<span class="badge badge-resolved">✓ Completed & Verified</span>';
+          return '<span class="badge badge-resolved">✓ Completed & Resolved</span>';
         case 'IN_PROGRESS':
           return '<span class="badge badge-operational">In Progress</span>';
+        case 'PENDING_ACCEPTANCE':
+          return '<span class="badge" style="background:#fef3c7; color:#b45309;">Dispatched (Pending Review)</span>';
         case 'OPEN_FOR_CLAIM':
-          return '<span class="badge" style="background:#eff6ff; color:#1d4ed8;">Pending Dispatch</span>';
-        case 'PENDING_VALIDATION':
-          return '<span class="badge" style="background:#fef3c7; color:#b45309;">Under Review</span>';
+          return '<span class="badge" style="background:#eff6ff; color:#1d4ed8;">Open for Dispatch / Claim</span>';
         case 'INVALID_RESOLVED':
           return '<span class="badge" style="background:#fee2e2; color:#b91c1c;">Closed (Invalid)</span>';
         default:

@@ -62,7 +62,31 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 } elseif (($method === 'PUT' || $method === 'POST') && ($cleanUri === '/api/v1/crew/profile' || $uri === '/api/v1/crew/profile')) {
     (new CrewController())->updateProfile();
 
-// 5. API Welcome / Root Route
+// 5. Module 2: Automated Dispatch Prioritization Engine Routes
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/dispatch/queue' || $uri === '/api/v1/dispatch/queue')) {
+    (new TaskController())->getDispatchQueue();
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/dispatch/run' || $uri === '/api/v1/dispatch/run')) {
+    (new TaskController())->triggerAutoDispatch();
+
+// 6. Module 3: Maintenance Tasks & Work Orders Routes
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/tasks/my-tasks' || $uri === '/api/v1/tasks/my-tasks')) {
+    (new TaskController())->getMyTasks();
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/tasks/open-pool' || $uri === '/api/v1/tasks/open-pool')) {
+    (new TaskController())->getOpenPool();
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/accept$#i', $cleanUri, $m)) {
+    (new TaskController())->acceptTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/decline$#i', $cleanUri, $m)) {
+    (new TaskController())->declineTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/claim$#i', $cleanUri, $m)) {
+    (new TaskController())->claimTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/complete$#i', $cleanUri, $m)) {
+    (new TaskController())->completeTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/drop$#i', $cleanUri, $m)) {
+    (new TaskController())->dropTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/flag-invalid$#i', $cleanUri, $m)) {
+    (new TaskController())->flagInvalid($m[1]);
+
+// 7. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
     echo json_encode([
         "name" => "EcoAsset REST API",
