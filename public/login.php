@@ -1221,10 +1221,21 @@
           localStorage.setItem('ecoasset_token', result.data.token);
           localStorage.setItem('ecoasset_user', JSON.stringify(result.data.user));
 
+          const mustChange = (result.data.must_change_password === true) || (result.data.user && result.data.user.must_change_password === true);
+          if (mustChange) {
+            localStorage.setItem('ecoasset_first_login', 'true');
+            showGeneralAlert(`Welcome, ${result.data.user.full_name}! Please update your default password to continue...`, 'success');
+            setTimeout(() => {
+              window.location.href = 'module5/update-account.html?first_login=1';
+            }, 800);
+            return;
+          }
+
           showGeneralAlert(`Welcome back, ${result.data.user.full_name}! Redirecting...`, 'success');
           setTimeout(() => {
             redirectByRole(result.data.user.role);
           }, 600);
+
 
         } else {
           const errorMsg = result.message || 'Unable to log in. Please try again.';
@@ -1260,11 +1271,15 @@
         case 'MAINTENANCE_CREW':
           window.location.href = 'module3/index.html';
           break;
+        case 'ADMINISTRATOR':
+          window.location.href = 'module5/index.html';
+          break;
         default:
           window.location.href = 'module1/index.html';
           break;
       }
     }
+
 
     function setLoginLoading(isLoading) {
       loginBtn.disabled = isLoading;
