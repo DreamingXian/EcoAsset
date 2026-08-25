@@ -21,51 +21,14 @@
     <span style="cursor: pointer;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
   </div>
 
-  <!-- Top Executive Navbar -->
-  <header class="admin-navbar">
-    <div class="admin-nav-left">
-      <a href="../../admin/index.html" class="admin-brand">
-        <div class="brand-badge-icon">🏛️</div>
-        <div class="brand-text-block">
-          <span class="brand-title">EcoAsset Admin</span>
-          <span class="brand-subtitle">Municipal Operations Suite</span>
-        </div>
-      </a>
+  <!-- Unified Desktop Admin Layout -->
+  <div class="admin-desktop-layout">
 
-      <nav class="admin-nav-links">
-        <a href="../../admin/index.html" class="nav-link-item">
-          <span>🏠 Overview</span>
-        </a>
-        <a href="../../module3/admin/index.html" class="nav-link-item active">
-          <span>🛠️ Task Control</span>
-        </a>
-        <a href="../../module4/index.html" class="nav-link-item">
-          <span>📊 Reports</span>
-        </a>
-        <a href="../../module5/admin/index.html" class="nav-link-item">
-          <span>👥 User Management</span>
-        </a>
-      </nav>
-    </div>
+    <!-- Reusable Admin Sidebar Container -->
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
 
-    <div class="admin-nav-right">
-      <div class="admin-clock-pill" id="liveClockDisplay">
-        <span>🕒 Mon 14:00:00</span>
-      </div>
-
-      <a href="../../admin/profile.html" class="admin-user-pill" title="View Admin Profile">
-        <div class="user-avatar-dot" id="navAvatarInitials">AD</div>
-        <span style="font-size: 13px; font-weight: 700;" id="navAdminName">Administrator</span>
-      </a>
-
-      <button class="btn-nav-logout" onclick="handleLogout()">
-        <span>🚪 Sign Out</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="admin-container">
+    <!-- Main Container -->
+    <main class="admin-main">
     
     <!-- Top Header Row -->
     <div class="task-control-header" style="margin-bottom: 20px;">
@@ -237,6 +200,7 @@
     </section>
 
   </main>
+  </div>
 
   <!-- ==========================================================================
        MODAL 1: BATCH AUTO-DISPATCH CONFIRMATION PROMPT
@@ -656,6 +620,7 @@
 
   <!-- Scripts -->
   <script src="../../js/auth-guard.js?v=4.2"></script>
+  <script src="../../js/admin-sidebar.js?v=1.0"></script>
   <script>
     // =========================================================================
     // SAMPLE DEMO WORK ORDER RECORDS
@@ -885,28 +850,16 @@
       const user = await AuthGuard.requireAuth(['ADMINISTRATOR']);
       if (!user) return;
 
-      const name = user.full_name || 'Municipal Administrator';
-      document.getElementById('navAdminName').textContent = name;
-      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
-      document.getElementById('navAvatarInitials').textContent = initials;
+      // 2. Initialize Shared Admin Sidebar
+      initAdminSidebar('tasks');
 
-      // 2. System Clock & Auto-Dispatch Countdown
-      updateClock();
+      // 3. System Auto-Dispatch Countdown
       updateBatchCountdown();
-      setInterval(updateClock, 1000);
       setInterval(updateBatchCountdown, 1000);
 
-      // 3. Render Sample Task Cards
+      // 4. Render Sample Task Cards
       renderTaskCards();
     });
-
-    function updateClock() {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const dayStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-      const el = document.getElementById('liveClockDisplay');
-      if (el) el.innerHTML = `<span>🕒 ${dayStr} ${timeStr}</span>`;
-    }
 
     // =========================================================================
     // BIG LIVE COUNTDOWN FOR NEXT AUTO BATCH ASSIGN TIME (8:00 AM & 1:00 PM)
