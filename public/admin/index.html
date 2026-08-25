@@ -25,51 +25,14 @@
     <span style="cursor: pointer;" onclick="document.getElementById('toastBanner').classList.remove('show')">✕</span>
   </div>
 
-  <!-- Top Executive Navbar -->
-  <header class="admin-navbar">
-    <div class="admin-nav-left">
-      <a href="index.html" class="admin-brand">
-        <div class="brand-badge-icon">🏛️</div>
-        <div class="brand-text-block">
-          <span class="brand-title">EcoAsset Admin</span>
-          <span class="brand-subtitle">Municipal Operations Suite</span>
-        </div>
-      </a>
+  <!-- Unified Desktop Admin Layout -->
+  <div class="admin-desktop-layout">
 
-      <nav class="admin-nav-links">
-        <a href="index.html" class="nav-link-item active">
-          <span>🏠 Overview</span>
-        </a>
-        <a href="../module3/admin/index.html" class="nav-link-item">
-          <span>🛠️ Task Control</span>
-        </a>
-        <a href="../module4/index.html" class="nav-link-item">
-          <span>📊 Reports</span>
-        </a>
-        <a href="../module5/admin/index.html" class="nav-link-item">
-          <span>👥 User Management</span>
-        </a>
-      </nav>
-    </div>
+    <!-- Reusable Admin Sidebar Container -->
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
 
-    <div class="admin-nav-right">
-      <div class="admin-clock-pill" id="liveClockDisplay">
-        <span>🕒 Mon 14:00:00</span>
-      </div>
-
-      <a href="profile.html" class="admin-user-pill" title="View Admin Profile">
-        <div class="user-avatar-dot" id="navAvatarInitials">AD</div>
-        <span style="font-size: 13px; font-weight: 700;" id="navAdminName">Administrator</span>
-      </a>
-
-      <button class="btn-nav-logout" onclick="handleLogout()">
-        <span>🚪 Sign Out</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Executive Content -->
-  <main class="admin-container">
+    <!-- Main Executive Content -->
+    <main class="admin-main">
 
     <!-- Executive Welcome Hero Banner -->
     <section class="dashboard-hero">
@@ -178,7 +141,7 @@
       </a>
 
       <!-- Card 3: User & Access Management (Teammate's module) -->
-      <a href="../module5/admin/index.html" class="module-card" style="border-top: 4px solid #7c3aed;">
+      <a href="../module5/index.html" class="module-card" style="border-top: 4px solid #7c3aed;">
         <div class="module-card-top">
           <div class="module-icon-wrap user">👥</div>
           <span class="module-badge-tag pending-tag">Governance Module</span>
@@ -258,41 +221,25 @@
     </div>
 
   </main>
+  </div>
 
-  <!-- Auth Guard Script -->
+  <!-- Scripts -->
   <script src="../js/auth-guard.js?v=4.2"></script>
+  <script src="../js/admin-sidebar.js?v=1.0"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Enforce Admin Authorization
       const user = await AuthGuard.requireAuth(['ADMINISTRATOR']);
       if (!user) return;
 
-      // 2. Display Admin Details
+      // 2. Initialize Shared Admin Sidebar
+      initAdminSidebar('overview');
+
+      // 3. Display Page-Specific Details
       const name = user.full_name || 'Municipal Administrator';
-      document.getElementById('navAdminName').textContent = name;
-      document.getElementById('heroAdminName').textContent = name;
-
-      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
-      document.getElementById('navAvatarInitials').textContent = initials;
-
-      // 3. Live System Clock
-      updateClock();
-      setInterval(updateClock, 1000);
+      const heroName = document.getElementById('heroAdminName');
+      if (heroName) heroName.textContent = name;
     });
-
-    function updateClock() {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const dayStr = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-      const el = document.getElementById('liveClockDisplay');
-      if (el) el.innerHTML = `<span>🕒 ${dayStr} ${timeStr}</span>`;
-    }
-
-    function handleLogout() {
-      if (confirm('Are you sure you want to sign out from the Administrator Portal?')) {
-        AuthGuard.logout();
-      }
-    }
   </script>
 </body>
 
