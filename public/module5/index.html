@@ -475,27 +475,32 @@
       color: #059669;
     }
 
-    /* Status Badges */
+    /* Status Badges (Vibrant Solid Pill with White Text - Highly Eye Catching) */
     .status-badge {
       display: inline-flex;
       align-items: center;
-      padding: 3px 9px;
-      border-radius: 14px;
+      justify-content: center;
+      padding: 4px 12px;
+      border-radius: 16px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      min-width: 64px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .status-badge.active {
-      background-color: #ecfdf5;
-      color: #059669;
+      background-color: #10b981;
+      color: #ffffff;
     }
 
     .status-badge.inactive {
-      background-color: #f1f5f9;
-      color: #64748b;
+      background-color: #ef4444;
+      color: #ffffff;
     }
 
-    /* Action Buttons in Table */
+    /* Action Buttons in Table (Outline Style with Transparent Background) */
     .actions-cell-wrapper {
       display: flex;
       align-items: center;
@@ -531,10 +536,10 @@
     }
 
     .btn-status-toggle {
-      padding: 5px 12px;
+      padding: 4px 12px;
       border-radius: 16px;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
       cursor: pointer;
       font-family: inherit;
       transition: all 0.15s ease;
@@ -542,27 +547,36 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      background-color: transparent;
     }
 
     .btn-status-toggle.deactivate {
-      background-color: #fff5f5;
-      border: 1.5px solid #fecaca;
-      color: #dc2626;
+      background-color: transparent;
+      border: 1.5px solid #ef4444;
+      color: #ef4444;
     }
 
-    .btn-status-toggle.deactivate:hover {
-      background-color: #fee2e2;
+    .btn-status-toggle.deactivate:hover:not(:disabled) {
+      background-color: rgba(239, 68, 68, 0.08);
     }
 
     .btn-status-toggle.activate {
-      background-color: #ecfdf5;
-      border: 1.5px solid #a7f3d0;
-      color: #059669;
+      background-color: transparent;
+      border: 1.5px solid #10b981;
+      color: #10b981;
     }
 
     .btn-status-toggle.activate:hover {
-      background-color: #d1fae5;
+      background-color: rgba(16, 185, 129, 0.08);
     }
+
+    .btn-status-toggle:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+    }
+
 
     /* -------------------------------------------------------------
        4. Universal Modal Backdrop & Box Styles
