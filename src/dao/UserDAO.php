@@ -32,7 +32,7 @@ class UserDAO
      */
     public function getAllUsers(): array
     {
-        $sql = "SELECT user_id, email, full_name, role, is_active, created_at 
+        $sql = "SELECT user_id, email, full_name, role, is_active, must_change_password, created_at 
                 FROM users 
                 ORDER BY created_at DESC";
         $stmt = $this->db->query($sql);
@@ -44,7 +44,7 @@ class UserDAO
      */
     public function getAllInternalUsers(): array
     {
-        $sql = "SELECT u.user_id, u.email, u.full_name, u.role, u.is_active, u.created_at,
+        $sql = "SELECT u.user_id, u.email, u.full_name, u.role, u.is_active, u.must_change_password, u.created_at,
                        srp.station_region AS ranger_station, srp.employee_id AS ranger_emp_id,
                        mc.skill_tags, mc.availability_status, mc.performance_score, mc.station_region AS crew_station
                 FROM users u
@@ -67,7 +67,7 @@ class UserDAO
      */
     public function getUserById(string $userId): ?array
     {
-        $sql = "SELECT u.user_id, u.email, u.full_name, u.role, u.is_active, u.created_at,
+        $sql = "SELECT u.user_id, u.email, u.password_hash, u.full_name, u.role, u.is_active, u.must_change_password, u.created_at,
                        tp.reputation_score,
                        srp.station_region AS ranger_station, srp.employee_id AS ranger_emp_id,
                        mc.skill_tags, mc.availability_status, mc.performance_score,
@@ -92,7 +92,7 @@ class UserDAO
      */
     public function getUserByEmail(string $email): ?array
     {
-        $sql = "SELECT u.user_id, u.email, u.password_hash, u.full_name, u.role, u.is_active, u.created_at,
+        $sql = "SELECT u.user_id, u.email, u.password_hash, u.full_name, u.role, u.is_active, u.must_change_password, u.created_at,
                        tp.reputation_score,
                        srp.station_region AS ranger_station, srp.employee_id AS ranger_emp_id,
                        mc.skill_tags, mc.availability_status, mc.performance_score,
@@ -117,7 +117,7 @@ class UserDAO
      */
     public function getUsersByRole(string $role): array
     {
-        $sql = "SELECT user_id, email, full_name, role, is_active, created_at 
+        $sql = "SELECT user_id, email, full_name, role, is_active, must_change_password, created_at 
                 FROM users 
                 WHERE role = :role 
                 ORDER BY created_at DESC";
@@ -139,7 +139,8 @@ class UserDAO
                 JOIN maintenance_crews mc ON u.user_id = mc.crew_id
                 WHERE u.is_active = TRUE 
                   AND mc.availability_status = 'AVAILABLE'
-                  AND :skill = ANY(mc.skill_tags)";
+                  AND :skill = ANY(mc.skill_tags)
+                ORDER BY mc.performance_score DESC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['skill' => strtoupper($skillCategory)]);
@@ -166,9 +167,12 @@ class UserDAO
             $this->db->beginTransaction();
 
             $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+            $mustChange = isset($extraData['must_change_password']) 
+                ? ($extraData['must_change_password'] ? 'true' : 'false') 
+                : ($role !== 'TOURIST' ? 'true' : 'false');
 
-            $sql = "INSERT INTO users (email, password_hash, full_name, role) 
-                    VALUES (:email, :password_hash, :full_name, :role) 
+            $sql = "INSERT INTO users (email, password_hash, full_name, role, must_change_password) 
+                    VALUES (:email, :password_hash, :full_name, :role, :must_change) 
                     RETURNING user_id";
 
             $stmt = $this->db->prepare($sql);
@@ -176,7 +180,8 @@ class UserDAO
                 'email'         => strtolower(trim($email)),
                 'password_hash' => $passwordHash,
                 'full_name'     => trim($fullName),
-                'role'          => $role
+                'role'          => $role,
+                'must_change'   => $mustChange
             ]);
 
             $result = $stmt->fetch();
@@ -250,14 +255,14 @@ class UserDAO
     }
 
     /**
-     * Update password.
+     * Update password and clear must_change_password flag.
      */
     public function updatePassword(string $userId, string $newPassword): bool
     {
         $passwordHash = password_hash($newPassword, PASSWORD_BCRYPT);
 
         $sql = "UPDATE users 
-                SET password_hash = :password_hash 
+                SET password_hash = :password_hash, must_change_password = FALSE 
                 WHERE user_id = :user_id";
 
         $stmt = $this->db->prepare($sql);
@@ -282,6 +287,52 @@ class UserDAO
             'user_id'   => $userId
         ]);
     }
+
+    /**
+     * Update user details and role by Administrator.
+     */
+    public function updateUserByAdmin(string $userId, string $fullName, string $email, string $role): bool
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $sql = "UPDATE users 
+                    SET full_name = :full_name, email = :email, role = :role 
+                    WHERE user_id = :user_id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'full_name' => trim($fullName),
+                'email'     => strtolower(trim($email)),
+                'role'      => $role,
+                'user_id'   => $userId
+            ]);
+
+            // Ensure role-specific profiles exist if transitioned
+            if ($role === 'SITE_RANGER') {
+                $check = $this->db->prepare("SELECT user_id FROM site_ranger_profiles WHERE user_id = :id");
+                $check->execute(['id' => $userId]);
+                if (!$check->fetch()) {
+                    $ins = $this->db->prepare("INSERT INTO site_ranger_profiles (user_id, station_region, employee_id) VALUES (:id, 'Kuala Lumpur', :emp)");
+                    $ins->execute(['id' => $userId, 'emp' => 'RNG-' . rand(1000, 9999)]);
+                }
+            } elseif ($role === 'MAINTENANCE_CREW') {
+                $check = $this->db->prepare("SELECT crew_id FROM maintenance_crews WHERE crew_id = :id");
+                $check->execute(['id' => $userId]);
+                if (!$check->fetch()) {
+                    $ins = $this->db->prepare("INSERT INTO maintenance_crews (crew_id, skill_tags, availability_status, performance_score, current_latitude, current_longitude, station_region) VALUES (:id, '{STRUCTURAL}', 'AVAILABLE', 100.00, 3.139003, 101.686855, 'Kuala Lumpur')");
+                    $ins->execute(['id' => $userId]);
+                }
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error in UserDAO::updateUserByAdmin: " . $e->getMessage());
+            return false;
+        }
+    }
+
 
 
     /**

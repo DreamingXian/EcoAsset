@@ -92,11 +92,13 @@ class AuthController
             }
 
             // 6. Generate signed JWT token
+            $mustChangePassword = (bool)($user['must_change_password'] ?? false);
             $payload = [
-                'user_id'   => $user['user_id'],
-                'email'     => $user['email'],
-                'full_name' => $user['full_name'],
-                'role'      => $user['role']
+                'user_id'              => $user['user_id'],
+                'email'                => $user['email'],
+                'full_name'            => $user['full_name'],
+                'role'                 => $user['role'],
+                'must_change_password' => $mustChangePassword
             ];
             $token = JWTUtil::generateToken($payload);
 
@@ -109,20 +111,23 @@ class AuthController
 
             // 8. Return response payload
             ResponseUtil::success([
-                'token' => $token,
+                'token'                => $token,
+                'must_change_password' => $mustChangePassword,
                 'user'  => [
-                    'user_id'             => $user['user_id'],
-                    'email'               => $user['email'],
-                    'full_name'           => $user['full_name'],
-                    'role'                => $user['role'],
-                    'reputation_score'    => isset($user['reputation_score']) ? (int)$user['reputation_score'] : null,
-                    'ranger_station'      => $user['ranger_station'] ?? null,
-                    'ranger_emp_id'       => $user['ranger_emp_id'] ?? null,
-                    'skill_tags'          => $user['skill_tags'] ?? [],
-                    'availability_status' => $user['availability_status'] ?? null,
-                    'performance_score'   => isset($user['performance_score']) ? (float)$user['performance_score'] : null
+                    'user_id'              => $user['user_id'],
+                    'email'                => $user['email'],
+                    'full_name'            => $user['full_name'],
+                    'role'                 => $user['role'],
+                    'must_change_password' => $mustChangePassword,
+                    'reputation_score'     => isset($user['reputation_score']) ? (int)$user['reputation_score'] : null,
+                    'ranger_station'       => $user['ranger_station'] ?? null,
+                    'ranger_emp_id'        => $user['ranger_emp_id'] ?? null,
+                    'skill_tags'           => $user['skill_tags'] ?? [],
+                    'availability_status'  => $user['availability_status'] ?? null,
+                    'performance_score'    => isset($user['performance_score']) ? (float)$user['performance_score'] : null
                 ]
-            ], 'Login successful.');
+            ], $mustChangePassword ? 'First login detected. Please update your password.' : 'Login successful.');
+
 
         } catch (Exception $e) {
             ResponseUtil::error('Authentication service error: ' . $e->getMessage(), 500);
@@ -306,8 +311,9 @@ class AuthController
             // 6. Return success (includes simulated link for easy testing)
             ResponseUtil::success([
                 'email' => $user['email'],
-                'reset_link' => "/public/reset_password.php?token=" . urlencode($resetToken) . "&email=" . urlencode($user['email'])
+                'reset_link' => "/public/module5/reset_password.php?token=" . urlencode($resetToken) . "&email=" . urlencode($user['email'])
             ], 'Reset link sent! Check your inbox.');
+
 
         } catch (Exception $e) {
             ResponseUtil::error('Password reset service error: ' . $e->getMessage(), 500);
@@ -402,5 +408,126 @@ class AuthController
 
         ResponseUtil::success(['user' => $user], 'Session active.');
     }
+
+    /**
+     * Update user account details and/or password (PUT/POST /api/v1/user/profile)
+     */
+    public function updateProfile(): void
+    {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            ResponseUtil::error('Authentication token required.', 401);
+            return;
+        }
+
+        $token = $matches[1];
+        $payload = JWTUtil::validateToken($token);
+
+        if (!$payload || !isset($payload['user_id'])) {
+            ResponseUtil::error('Invalid or expired session token.', 401);
+            return;
+        }
+
+        $userId = $payload['user_id'];
+        $user = $this->userDAO->getUserById($userId);
+        if (!$user) {
+            ResponseUtil::error('User account not found.', 404);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true) ?? $_POST;
+
+        $fullName = trim($data['full_name'] ?? '');
+        $email = strtolower(trim($data['email'] ?? ''));
+        $currentPassword = $data['current_password'] ?? '';
+        $newPassword = $data['new_password'] ?? '';
+        $confirmPassword = $data['confirm_password'] ?? '';
+
+        $errors = [];
+
+        // 1. Validate Name
+        if (empty($fullName)) {
+            $errors['full_name'] = 'Full name is required.';
+        }
+
+        // 2. Validate Email
+        if (empty($email)) {
+            $errors['email'] = 'Email address is required.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'Please enter a valid email address.';
+        } elseif (strtolower($user['email']) !== $email) {
+            // Check if email already taken by another account
+            $existing = $this->userDAO->getUserByEmail($email);
+            if ($existing && $existing['user_id'] !== $userId) {
+                $errors['email'] = 'This email address is already registered to another user.';
+            }
+        }
+
+        // 3. Validate Password change if requested
+        $isChangingPassword = !empty($newPassword) || !empty($currentPassword) || !empty($confirmPassword);
+        if ($isChangingPassword) {
+            if (empty($currentPassword)) {
+                $errors['current_password'] = 'Current password is required to set a new password.';
+            } elseif (!password_verify($currentPassword, $user['password_hash'])) {
+                $errors['current_password'] = 'Incorrect current password.';
+            }
+
+            if (empty($newPassword)) {
+                $errors['new_password'] = 'New password is required.';
+            } elseif (strlen($newPassword) < 8) {
+                $errors['new_password'] = 'New password must be at least 8 characters.';
+            }
+
+            if (empty($confirmPassword)) {
+                $errors['confirm_password'] = 'Please confirm your new password.';
+            } elseif ($newPassword !== $confirmPassword) {
+                $errors['confirm_password'] = 'New passwords do not match.';
+            }
+        }
+
+        if (!empty($errors)) {
+            ResponseUtil::error('Please correct the errors in the form.', 400, ['errors' => $errors]);
+            return;
+        }
+
+        try {
+            // Update Profile Name and Email
+            $this->userDAO->updateUserProfile($userId, $fullName, $email);
+
+            // Update Password if changing
+            if ($isChangingPassword) {
+                $this->userDAO->updatePassword($userId, $newPassword);
+            }
+
+            // Fetch fresh updated user
+            $freshUser = $this->userDAO->getUserById($userId);
+            unset($freshUser['password_hash']);
+
+            // Issue refreshed token with updated email/name
+            $newToken = JWTUtil::generateToken([
+                'user_id'   => $freshUser['user_id'],
+                'email'     => $freshUser['email'],
+                'role'      => $freshUser['role'],
+                'full_name' => $freshUser['full_name']
+            ], 86400 * 7);
+
+            // Audit log
+            try {
+                $this->auditLogDAO->log($userId, 'PROFILE_UPDATE', "User updated account details" . ($isChangingPassword ? " and password" : ""));
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success([
+                'token' => $newToken,
+                'user'  => $freshUser
+            ], 'Account details updated successfully!');
+
+        } catch (Exception $e) {
+            ResponseUtil::error('Unable to update profile: ' . $e->getMessage(), 500);
+        }
+    }
 }
+
 
