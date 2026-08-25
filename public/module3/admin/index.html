@@ -237,13 +237,48 @@
       </div>
 
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
-        <button class="btn-action btn-primary" onclick="confirmBatchAutoDispatch()">
+        <button class="btn-action btn-primary" id="btnExecuteBatchDispatch" onclick="confirmBatchAutoDispatch()">
           <span>⚡ Confirm & Execute Batch Assignment</span>
         </button>
         <button class="btn-action btn-secondary" onclick="closeModal('batchDispatchConfirmModal')">
           <span>Cancel</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 1B: BATCH AUTO-DISPATCH EXECUTION REPORT MODAL
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="batchResultsModal">
+    <div class="admin-modal-box wide-modal">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title">⚡ Batch Auto-Dispatch Execution Report</h3>
+        <button class="modal-close-btn" onclick="closeModal('batchResultsModal')">✕</button>
+      </div>
+
+      <div class="algo-meta-grid" style="margin-bottom: 18px;">
+        <div class="algo-meta-item">
+          <span class="algo-meta-label">Total Evaluated</span>
+          <span class="algo-meta-val" id="batchResEvaluated">0 Tasks</span>
+        </div>
+        <div class="algo-meta-item">
+          <span class="algo-meta-label">Successfully Assigned</span>
+          <span class="algo-meta-val" style="color: #059669;" id="batchResAssigned">0 Dispatched</span>
+        </div>
+        <div class="algo-meta-item">
+          <span class="algo-meta-label">Unassigned / Skipped</span>
+          <span class="algo-meta-val" style="color: #d97706;" id="batchResUnassigned">0 Left in Pool</span>
+        </div>
+      </div>
+
+      <div style="max-height: 320px; overflow-y: auto; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;" id="batchMatchesContainer">
+        <!-- Injected dynamic match results -->
+      </div>
+
+      <button class="btn-action btn-primary" style="width: 100%; padding: 12px;" onclick="closeModal('batchResultsModal')">
+        <span>Done & Refresh Task Control Roster</span>
+      </button>
     </div>
   </div>
 
@@ -334,7 +369,7 @@
           Spatial Dispatch Result
         </div>
         <p style="font-size: 13.5px; color: #7f1d1d; line-height: 1.5;" id="algoNoMatchReasonText">
-          No available maintenance crew with matching trade capability (<strong id="algoNoMatchSkillText">GENERAL_FACILITY</strong>) was found within the <strong>30km perimeter</strong>, or all qualified crews currently have in-progress assignments.
+          No available maintenance crew was found within the 30km perimeter, or all qualified crews currently have in-progress assignments.
         </p>
       </div>
 
@@ -418,6 +453,58 @@
           💡 <strong>Add-On Assignment:</strong> Tasks assigned to busy crews are queued as <strong>Add-On tasks</strong> for 24-hour acceptance in their terminal.
         </span>
         <button class="btn-action btn-secondary" onclick="closeModal('manualCrewPickerModal')">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4B: REASSIGNMENT CONFIRMATION PROMPT
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="reassignConfirmModal">
+    <div class="admin-modal-box">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title">⚠️ Confirm Technician Reassignment</h3>
+        <button class="modal-close-btn" onclick="closeModal('reassignConfirmModal')">✕</button>
+      </div>
+
+      <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+        <div style="font-size: 11px; font-weight: 800; color: #92400e; text-transform: uppercase; margin-bottom: 6px;">
+          Reassignment Transition Notice
+        </div>
+        <p style="font-size: 13.5px; color: #78350f; line-height: 1.5; margin: 0;" id="reassignConfirmNoticeText">
+          Are you sure you want to reassign this work order? The existing assignment will be revoked and transferred to the new technician with a fresh 24-hour acceptance window.
+        </p>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Work Order:</span>
+          <strong style="color: #0f172a;" id="reassignModalTaskId">TASK-6201</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Current Assignee:</span>
+          <span style="color: #dc2626; font-weight: 700;" id="reassignModalCurrentCrew">Tech Ahmad</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 15px; margin: -2px 0;">
+          ⬇️ Transfer Work Order
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">New Assignee:</span>
+          <span style="color: #059669; font-weight: 700;" id="reassignModalNewCrew">Crew 2 (Siti Sarah)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Assignment Type:</span>
+          <span id="reassignModalType" class="badge-tag badge-aesthetic" style="background:#0f172a; color:#fff;">Standard 24h SLA</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+        <button class="btn-action btn-primary" id="btnConfirmReassignmentAction" style="background: #059669; padding: 12px;" onclick="executeConfirmedReassignment()">
+          <span>✅ Confirm Reassignment</span>
+        </button>
+        <button class="btn-action btn-secondary" onclick="closeModal('reassignConfirmModal')">
           <span>Cancel</span>
         </button>
       </div>
@@ -599,9 +686,9 @@
                 <span class="profile-info-lbl">Report Created</span>
                 <span class="profile-info-val" id="detailModalCreated">2026-08-24 09:15</span>
               </div>
-              <div class="profile-info-row">
-                <span class="profile-info-lbl">24h SLA Window</span>
-                <span class="profile-info-val" style="color: #d97706;" id="detailModalSla">Active SLA (24 Hours)</span>
+              <div class="profile-info-row" id="detailModalSlaRow">
+                <span class="profile-info-lbl" id="detailModalSlaLbl">Operational SLA</span>
+                <span class="profile-info-val" id="detailModalSla">--</span>
               </div>
             </div>
           </div>
@@ -623,220 +710,20 @@
   <script src="../../js/admin-sidebar.js?v=1.0"></script>
   <script>
     // =========================================================================
-    // SAMPLE DEMO WORK ORDER RECORDS
+    // STATE MANAGEMENT & LIVE DATABASE DATA
     // =========================================================================
-    const SAMPLE_TASKS = [
-      {
-        task_id: 'TASK-8291',
-        category: 'CRITICAL_SAFETY',
-        required_skill: 'STRUCTURAL',
-        description: 'Fractured suspension bridge handrail with sharp rusted edges near the main lake crossing.',
-        district: 'Titiwangsa Lake Park, KL',
-        latitude: 3.1764,
-        longitude: 101.7071,
-        priority_score: 9.4,
-        status: 'PRECOMPLETE',
-        reporter_name: 'Alice Tan',
-        reporter_reputation: 100,
-        upvote_count: 5,
-        created_at: '2026-08-24 09:15:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=600&q=80',
-        completion_photo_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
-        completion_notes: 'Replaced broken railing bracket, welded steel reinforcement, and applied weather-resistant anti-rust coating.',
-        assigned_crew_name: 'Crew 1 (Ahmad Razak)',
-        assigned_crew_id: 'crew1'
-      },
-      {
-        task_id: 'TASK-9042',
-        category: 'MAJOR_BLOCKAGE',
-        required_skill: 'ELECTRICAL',
-        description: 'Deep underground high-voltage power conduit severed by falling oak root system, power blackout on east pathway.',
-        district: 'Perdana Botanical Gardens, KL',
-        latitude: 3.1438,
-        longitude: 101.6836,
-        priority_score: 8.8,
-        status: 'DROPPED',
-        reporter_name: 'Marcus Lee',
-        reporter_reputation: 95,
-        upvote_count: 4,
-        created_at: '2026-08-24 08:30:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=600&q=80',
-        drop_reason: 'Specialized Heavy Machinery & Trench Digger Required for Excavation',
-        assigned_crew_name: 'Crew 2 (Siti Sarah)',
-        assigned_crew_id: 'crew2'
-      },
-      {
-        task_id: 'TASK-7140',
-        category: 'MINOR_DEFECT',
-        required_skill: 'ELECTRICAL',
-        description: 'Reported stolen solar lamp post unit near forest trail viewpoint.',
-        district: 'Bukit Nanas Forest Reserve, KL',
-        latitude: 3.1512,
-        longitude: 101.7029,
-        priority_score: 7.2,
-        status: 'PRE_INVALID',
-        reporter_name: 'David Wong',
-        reporter_reputation: 80,
-        upvote_count: 1,
-        created_at: '2026-08-24 10:00:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
-        flag_invalid_photo_url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
-        flag_invalid_notes: 'Site inspected thoroughly. Solar lamp post was recently relocated 10m north by park management, intact and operational. No theft or defect found.',
-        assigned_crew_name: 'Crew 3 (Kumar Raman)',
-        assigned_crew_id: 'crew3'
-      },
-      {
-        task_id: 'TASK-6201',
-        category: 'CRITICAL_SAFETY',
-        required_skill: 'STRUCTURAL',
-        description: 'Large fallen tree trunk blocking high-traffic hiking pathway #4 after thunderstorm.',
-        district: 'KL Forest Eco Park, KL',
-        latitude: 3.1508,
-        longitude: 101.7011,
-        priority_score: 9.1,
-        status: 'OPEN_FOR_CLAIM',
-        reporter_name: 'Sarah Lim',
-        reporter_reputation: 100,
-        upvote_count: 6,
-        created_at: '2026-08-24 11:20:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80',
-        assigned_crew_name: 'Unassigned (Open Pool)',
-        assigned_crew_id: null
-      },
-      {
-        task_id: 'TASK-5519',
-        category: 'MINOR_DEFECT',
-        required_skill: 'GENERAL_FACILITY',
-        description: 'Cracked concrete bench with exposed reinforcing rebar wire on picnic lawn.',
-        district: 'Lake Gardens, KL',
-        latitude: 3.1420,
-        longitude: 101.6880,
-        priority_score: 6.8,
-        status: 'OPEN_FOR_CLAIM',
-        reporter_name: 'Jason Lee',
-        reporter_reputation: 100,
-        upvote_count: 2,
-        created_at: '2026-08-24 12:10:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80',
-        assigned_crew_name: 'Unassigned (Open Pool)',
-        assigned_crew_id: null
-      },
-      {
-        task_id: 'TASK-4402',
-        category: 'MAJOR_BLOCKAGE',
-        required_skill: 'SANITATION',
-        description: 'Severe drainage blockage causing rainwater overflow onto visitor pavilion terrace.',
-        district: 'Taman Rimba Kiara, KL',
-        latitude: 3.1492,
-        longitude: 101.6294,
-        priority_score: 8.5,
-        status: 'IN_PROGRESS',
-        reporter_name: 'Emily Tan',
-        reporter_reputation: 100,
-        upvote_count: 3,
-        created_at: '2026-08-24 07:45:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1584467735876-82088f114674?auto=format&fit=crop&w=600&q=80',
-        assigned_crew_name: 'Crew 1 (Ahmad Razak)',
-        assigned_crew_id: 'crew1'
-      },
-      {
-        task_id: 'TASK-3310',
-        category: 'MINOR_DEFECT',
-        required_skill: 'ELECTRICAL',
-        description: 'Flickering LED bollard light fixture near park gazebo.',
-        district: 'KLCC Park, KL',
-        latitude: 3.1553,
-        longitude: 101.7145,
-        priority_score: 5.8,
-        status: 'PENDING_ACCEPTANCE',
-        reporter_name: 'Zul Hakim',
-        reporter_reputation: 100,
-        upvote_count: 1,
-        created_at: '2026-08-24 13:00:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80',
-        assigned_crew_name: 'Crew 2 (Siti Sarah) [Dispatched]',
-        assigned_crew_id: 'crew2'
-      },
-      {
-        task_id: 'TASK-1002',
-        category: 'AESTHETIC',
-        required_skill: 'GENERAL_FACILITY',
-        description: 'Graffiti vandalism removed and restored with anti-graffiti enamel coating.',
-        district: 'Central Park Deck, KL',
-        latitude: 3.1570,
-        longitude: 101.7120,
-        priority_score: 4.2,
-        status: 'COMPLETED',
-        reporter_name: 'Nurul Izzah',
-        reporter_reputation: 100,
-        upvote_count: 2,
-        created_at: '2026-08-23 15:30:00',
-        report_photo_url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
-        assigned_crew_name: 'Crew 3 (Kumar Raman)',
-        assigned_crew_id: 'crew3'
-      }
-    ];
-
-    // =========================================================================
-    // SAMPLE FLEET ROSTER DATA (For Manual and Algorithmic Assignment)
-    // =========================================================================
-    const SAMPLE_CREWS = [
-      {
-        crew_id: 'crew1',
-        full_name: 'Crew 1 (Ahmad Razak)',
-        skills: ['STRUCTURAL', 'GENERAL_FACILITY'],
-        status: 'BUSY', // 1 in-progress job
-        active_jobs_count: 1,
-        performance_score: 98.5,
-        base_station: 'KL Central Depot',
-        distance_km: 2.4,
-        avatar_color: '#059669'
-      },
-      {
-        crew_id: 'crew2',
-        full_name: 'Crew 2 (Siti Sarah)',
-        skills: ['ELECTRICAL', 'SANITATION'],
-        status: 'AVAILABLE',
-        active_jobs_count: 0,
-        performance_score: 96.0,
-        base_station: 'Perdana Operations Station',
-        distance_km: 5.1,
-        avatar_color: '#0284c7'
-      },
-      {
-        crew_id: 'crew3',
-        full_name: 'Crew 3 (Kumar Raman)',
-        skills: ['STRUCTURAL', 'GENERAL_FACILITY'],
-        status: 'AVAILABLE',
-        active_jobs_count: 0,
-        performance_score: 94.5,
-        base_station: 'Lake Gardens Station',
-        distance_km: 8.3,
-        avatar_color: '#7c3aed'
-      },
-      {
-        crew_id: 'crew4',
-        full_name: 'Crew 4 (Muhammad Faiz)',
-        skills: ['SANITATION', 'OTHER'],
-        status: 'AVAILABLE',
-        active_jobs_count: 0,
-        performance_score: 92.0,
-        base_station: 'Kiara Field Office',
-        distance_km: 12.8,
-        avatar_color: '#d97706'
-      },
-      {
-        crew_id: 'crew5',
-        full_name: 'Crew 5 (Tan Wei Lun)',
-        skills: ['ELECTRICAL', 'STRUCTURAL'],
-        status: 'AVAILABLE',
-        active_jobs_count: 0,
-        performance_score: 89.0,
-        base_station: 'Ampang Outpost (34km away)',
-        distance_km: 34.2, // Exceeds 30km threshold for spatial test
-        avatar_color: '#64748b'
-      }
-    ];
+    let liveTasks = [];
+    let liveFleet = [];
+    let liveCounts = {
+      open_pool: 0,
+      pending_acceptance: 0,
+      in_progress: 0,
+      precomplete: 0,
+      dropped: 0,
+      pre_invalid: 0,
+      closed: 0,
+      total_all: 0
+    };
 
     let currentStatusFilter = 'ALL';
     let currentCategoryFilter = 'ALL';
@@ -844,6 +731,8 @@
     let currentSortOrder = 'priority_desc';
     let activeActionTaskId = null;
     let currentMatchedCandidate = null;
+    let currentTaskCandidates = [];
+    let isReassignMode = false;
 
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Enforce Admin Authorization
@@ -857,8 +746,8 @@
       updateBatchCountdown();
       setInterval(updateBatchCountdown, 1000);
 
-      // 4. Render Sample Task Cards
-      renderTaskCards();
+      // 4. Fetch Real Data from Supabase / Backend API
+      await loadAdminTasks();
     });
 
     // =========================================================================
@@ -904,87 +793,276 @@
     }
 
     // =========================================================================
-    // BATCH AUTO-DISPATCH CONFIRMATION PROMPT UX
+    // API DATA FETCHING & UI SYNCHRONIZATION
+    // =========================================================================
+    async function loadAdminTasks() {
+      const token = AuthGuard.getToken();
+      if (!token) return;
+
+      const container = document.getElementById('taskCardsContainer');
+      if (container && liveTasks.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; background: #ffffff; padding: 48px; border-radius: 18px; text-align: center; border: 1.5px solid #e2e8f0;">
+            <div style="font-size: 32px; animation: spin 1s linear infinite; display: inline-block;">⏳</div>
+            <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 10px;">Loading Live Tasks...</h3>
+            <p style="font-size: 13px; color: #64748b;">Retrieving work orders, technician availability, and SLA timers from database.</p>
+          </div>
+        `;
+      }
+
+      try {
+        const queryParams = new URLSearchParams();
+        if (currentStatusFilter !== 'ALL') queryParams.append('status', currentStatusFilter);
+        if (currentCategoryFilter !== 'ALL') queryParams.append('category', currentCategoryFilter);
+        if (currentSearchTerm) queryParams.append('search', currentSearchTerm);
+
+        const response = await fetch(`../../api/v1/admin/tasks?${queryParams.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        const result = await response.json();
+        if (result.status === 'success' && result.data) {
+          liveTasks = result.data.tasks || [];
+          liveFleet = result.data.fleet || [];
+          liveCounts = result.data.counts || liveCounts;
+
+          updateKpiAndChipCounters();
+          renderTaskCards();
+        } else {
+          showToast(result.error || 'Failed to load task roster.', true);
+        }
+      } catch (err) {
+        console.error('Error fetching admin tasks:', err);
+        showToast('Network error while retrieving tasks.', true);
+      }
+    }
+
+    function updateKpiAndChipCounters() {
+      // 1. Top 8 KPI Metric Cards
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+
+      setVal('kpiAll', liveCounts.total_all);
+      setVal('kpiOpen', liveCounts.open_pool);
+      setVal('kpiPending', liveCounts.pending_acceptance);
+      setVal('kpiProgress', liveCounts.in_progress);
+      setVal('kpiPrecomplete', liveCounts.precomplete);
+      setVal('kpiDropped', liveCounts.dropped);
+      setVal('kpiPreinvalid', liveCounts.pre_invalid);
+      setVal('kpiCompleted', liveCounts.closed);
+
+      // 2. Status Filter Chips
+      document.querySelectorAll('.filter-chip-btn').forEach(btn => {
+        const st = btn.dataset.status;
+        if (st === 'ALL') btn.textContent = `All (${liveCounts.total_all})`;
+        else if (st === 'PRECOMPLETE') btn.textContent = `⚖️ Pre-Complete (${liveCounts.precomplete})`;
+        else if (st === 'DROPPED') btn.textContent = `⚠️ Dropped (${liveCounts.dropped})`;
+        else if (st === 'PRE_INVALID') btn.textContent = `🚩 Pre-Invalid (${liveCounts.pre_invalid})`;
+        else if (st === 'OPEN_FOR_CLAIM') btn.textContent = `📦 Open Pool (${liveCounts.open_pool})`;
+        else if (st === 'PENDING_ACCEPTANCE') btn.textContent = `🟡 Pending (${liveCounts.pending_acceptance})`;
+        else if (st === 'IN_PROGRESS') btn.textContent = `🔧 In Progress (${liveCounts.in_progress})`;
+        else if (st === 'COMPLETED') btn.textContent = `✅ Completed (${liveCounts.closed})`;
+      });
+    }
+
+    // =========================================================================
+    // OVERALL BATCH AUTO-DISPATCH
     // =========================================================================
     window.openBatchDispatchConfirmModal = function() {
-      const openCount = SAMPLE_TASKS.filter(t => t.status === 'OPEN_FOR_CLAIM').length;
+      const openCount = liveCounts.open_pool;
       document.getElementById('batchOpenCountText').textContent = `${openCount} Open Work Orders`;
       document.getElementById('batchModalOpenTasks').textContent = `${openCount} Tasks Eligible`;
       openModal('batchDispatchConfirmModal');
     };
 
-    window.confirmBatchAutoDispatch = function() {
-      closeModal('batchDispatchConfirmModal');
-      let count = 0;
-      SAMPLE_TASKS.forEach(t => {
-        if (t.status === 'OPEN_FOR_CLAIM') {
-          t.status = 'PENDING_ACCEPTANCE';
-          t.assigned_crew_name = 'Crew 3 (Kumar Raman) [Batch Dispatched]';
-          t.assigned_crew_id = 'crew3';
-          count++;
+    window.confirmBatchAutoDispatch = async function() {
+      const btn = document.getElementById('btnExecuteBatchDispatch');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Running Spatial Algorithm...</span>`;
+      }
+
+      const token = AuthGuard.getToken();
+
+      try {
+        const response = await fetch('../../api/v1/admin/tasks/batch-dispatch', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+
+        const result = await response.json();
+        closeModal('batchDispatchConfirmModal');
+
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<span>⚡ Confirm & Execute Batch Assignment</span>`;
         }
-      });
-      renderTaskCards();
-      showToast(`⚡ Batch auto-dispatch executed! ${count} open task(s) dispatched to eligible fleets within 30km.`);
+
+        if (result.status === 'success' && result.data) {
+          const data = result.data;
+          document.getElementById('batchResEvaluated').textContent = `${data.total_evaluated} Tasks`;
+          document.getElementById('batchResAssigned').textContent = `${data.assigned_count} Dispatched`;
+          document.getElementById('batchResUnassigned').textContent = `${data.unassigned_count} Left in Pool`;
+
+          const container = document.getElementById('batchMatchesContainer');
+          if (container) {
+            if (data.matches && data.matches.length > 0) {
+              container.innerHTML = data.matches.map(m => {
+                const isAssigned = m.status === 'ASSIGNED';
+                return `
+                  <div style="background: ${isAssigned ? '#f0fdf4' : '#fffbeb'}; border: 1.5px solid ${isAssigned ? '#bbf7d0' : '#fde68a'}; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <strong style="font-size: 13.5px; color: #0f172a;">${m.district || 'Task'}</strong>
+                        <span class="badge-tag badge-aesthetic">${formatSkill(m.required_skill)}</span>
+                        <span class="status-badge-pill ${isAssigned ? 'pill-completed' : 'pill-pending'}">${isAssigned ? '✅ DISPATCHED' : '⚠️ SKIPPED'}</span>
+                      </div>
+                      <div style="font-size: 12px; color: #64748b; margin-top: 3px;">
+                        ${isAssigned ? `Assigned to: <strong>${escapeHtml(m.matched_crew_name)}</strong> • Distance: <strong>${m.distance_km} km</strong> • Suitability Score: <strong>${m.suitability_score}</strong>` : escapeHtml(m.reason)}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+            } else {
+              container.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">
+                  No unassigned tasks found in Open Pool.
+                </div>
+              `;
+            }
+          }
+
+          openModal('batchResultsModal');
+          showToast(`⚡ Batch auto-dispatch executed: ${data.assigned_count} task(s) dispatched to eligible fleets.`);
+          await loadAdminTasks();
+        } else {
+          showToast(result.error || 'Batch auto-dispatch failed.', true);
+        }
+      } catch (err) {
+        console.error('Error running batch dispatch:', err);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<span>⚡ Confirm & Execute Batch Assignment</span>`;
+        }
+        showToast('Network error during batch auto-dispatch.', true);
+      }
     };
 
     // =========================================================================
     // SINGLE TASK AUTO-DISPATCH ALGORITHM TRIGGER & RESULT PROMPT UX
     // =========================================================================
-    window.handleAutoDispatchSingle = function(taskId) {
+    window.handleAutoDispatchSingle = async function(taskId) {
       activeActionTaskId = taskId;
-      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
 
-      // Run Simulated Spatial & Trade Fit Algorithm:
-      // Filter crews: Skill match + Available (0 jobs) + <= 30km distance
-      const eligible = SAMPLE_CREWS.filter(c => {
-        const skillMatch = c.skills.includes(task.required_skill);
-        const isAvailable = c.status === 'AVAILABLE' && c.active_jobs_count === 0;
-        const withinRadius = c.distance_km <= 30.0;
-        return skillMatch && isAvailable && withinRadius;
-      });
+      const token = AuthGuard.getToken();
+      try {
+        const response = await fetch(`../../api/v1/admin/tasks/${taskId}/auto-dispatch-preview`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
 
-      // Sort by nearest distance
-      eligible.sort((a, b) => a.distance_km - b.distance_km);
+        const result = await response.json();
+        if (result.status === 'success' && result.data) {
+          const data = result.data;
+          if (data.matched && data.best_candidate) {
+            // CASE A: Optimal Crew Found!
+            currentMatchedCandidate = data.best_candidate;
+            const cand = currentMatchedCandidate;
 
-      if (eligible.length > 0) {
-        // CASE A: Optimal Crew Found!
-        currentMatchedCandidate = eligible[0];
-        document.getElementById('algoCrewAvatar').textContent = currentMatchedCandidate.full_name.substring(0, 2);
-        document.getElementById('algoCrewAvatar').style.background = currentMatchedCandidate.avatar_color;
-        document.getElementById('algoCrewName').textContent = currentMatchedCandidate.full_name;
-        document.getElementById('algoCrewLocation').innerHTML = `📍 <strong>${currentMatchedCandidate.distance_km.toFixed(1)} km away</strong> from incident • ${currentMatchedCandidate.base_station}`;
-        document.getElementById('algoCrewStatus').textContent = `🟢 AVAILABLE`;
-        document.getElementById('algoCrewPerf').textContent = `⭐ ${currentMatchedCandidate.performance_score.toFixed(1)} / 100`;
-        document.getElementById('algoCrewWorkload').textContent = `${currentMatchedCandidate.active_jobs_count} Active Jobs`;
-        document.getElementById('algoTaskIdText').textContent = task.task_id;
-        document.getElementById('algoConfirmCrewBtnText').textContent = currentMatchedCandidate.full_name.split('(')[0].trim();
+            const avatarEl = document.getElementById('algoCrewAvatar');
+            const nameEl = document.getElementById('algoCrewName');
+            const locEl = document.getElementById('algoCrewLocation');
+            const statusEl = document.getElementById('algoCrewStatus');
+            const perfEl = document.getElementById('algoCrewPerf');
+            const workloadEl = document.getElementById('algoCrewWorkload');
+            const taskIdEl = document.getElementById('algoTaskIdText');
+            const btnTextEl = document.getElementById('algoConfirmCrewBtnText');
+            const skillsEl = document.getElementById('algoCrewSkills');
 
-        // Render skill tags
-        document.getElementById('algoCrewSkills').innerHTML = currentMatchedCandidate.skills.map(s => {
-          const isReq = s === task.required_skill;
-          return `<span class="crew-skill-pill ${isReq ? 'match-highlight' : ''}">${isReq ? '✓ ' : ''}${formatSkill(s)}${isReq ? ' (Required)' : ''}</span>`;
-        }).join('');
+            if (avatarEl) avatarEl.textContent = (cand.full_name || 'CR').substring(0, 2).toUpperCase();
+            if (nameEl) nameEl.textContent = cand.full_name;
+            if (locEl) locEl.innerHTML = `📍 <strong>${cand.distance_km} km away</strong> from incident • ${escapeHtml(cand.station_region || 'Kuala Lumpur')}`;
+            if (statusEl) statusEl.textContent = `🟢 AVAILABLE`;
+            if (perfEl) perfEl.textContent = `⭐ ${Number(cand.performance_score || 100).toFixed(1)} / 100`;
+            if (workloadEl) workloadEl.textContent = `${cand.active_tasks || 0} Active Jobs`;
+            if (taskIdEl) taskIdEl.textContent = task.task_code || task.task_id;
+            if (btnTextEl) btnTextEl.textContent = cand.full_name;
 
-        openModal('algoMatchResultModal');
-      } else {
-        // CASE B: No Suitable Crew Found
-        currentMatchedCandidate = null;
-        document.getElementById('algoNoMatchSkillText').textContent = formatSkill(task.required_skill);
-        openModal('algoNoMatchModal');
+            // Render skill tags
+            if (skillsEl) {
+              skillsEl.innerHTML = (cand.skill_tags || []).map(s => {
+                const isReq = s === task.required_skill;
+                return `<span class="crew-skill-pill ${isReq ? 'match-highlight' : ''}">${isReq ? '✓ ' : ''}${formatSkill(s)}${isReq ? ' (Required)' : ''}</span>`;
+              }).join('');
+            }
+
+            openModal('algoMatchResultModal');
+          } else {
+            // CASE B: No Suitable Crew Found
+            currentMatchedCandidate = null;
+            const reasonEl = document.getElementById('algoNoMatchReasonText');
+            if (reasonEl) {
+              const skillName = formatSkill(task.required_skill);
+              reasonEl.innerHTML = data.reason 
+                ? escapeHtml(data.reason) 
+                : `No available maintenance crew with matching trade capability (<strong>${escapeHtml(skillName)}</strong>) was found within the <strong>30km perimeter</strong>, or all qualified crews currently have in-progress assignments.`;
+            }
+            openModal('algoNoMatchModal');
+          }
+        } else {
+          showToast(result.error || 'Failed to preview auto-dispatch algorithm.', true);
+        }
+      } catch (err) {
+        console.error('Error in handleAutoDispatchSingle:', err);
+        showToast('Network error while running auto-dispatch algorithm.', true);
       }
     };
 
-    window.confirmSingleAlgoAssignment = function() {
-      closeModal('algoMatchResultModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
-      if (task && currentMatchedCandidate) {
-        task.status = 'PENDING_ACCEPTANCE';
-        task.assigned_crew_name = `${currentMatchedCandidate.full_name} [Auto-Dispatched]`;
-        task.assigned_crew_id = currentMatchedCandidate.crew_id;
-        renderTaskCards();
-        showToast(`✅ Task ${task.task_id} successfully assigned to ${currentMatchedCandidate.full_name} (Pending Acceptance).`);
+    window.confirmSingleAlgoAssignment = async function() {
+      if (!activeActionTaskId || !currentMatchedCandidate) return;
+      const token = AuthGuard.getToken();
+
+      try {
+        const response = await fetch(`../../api/v1/admin/tasks/${activeActionTaskId}/assign`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            crew_id: currentMatchedCandidate.crew_id,
+            is_addon: false
+          })
+        });
+
+        const result = await response.json();
+        closeModal('algoMatchResultModal');
+
+        if (result.status === 'success') {
+          showToast(`✅ Task successfully dispatched to ${currentMatchedCandidate.full_name} (24h acceptance window).`);
+          await loadAdminTasks();
+        } else {
+          showToast(result.error || 'Assignment failed.', true);
+        }
+      } catch (err) {
+        console.error('Error in confirmSingleAlgoAssignment:', err);
+        showToast('Network error during crew assignment.', true);
       }
     };
 
@@ -997,31 +1075,66 @@
     // =========================================================================
     // ADVANCED MANUAL CREW PICKER & REASSIGNMENT UX (Search, Filter, Sort)
     // =========================================================================
-    window.openManualCrewPickerModal = function(taskId, isReassign = false) {
+    window.openManualCrewPickerModal = async function(taskId, isReassign = false) {
       if (taskId) activeActionTaskId = taskId;
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      isReassignMode = isReassign;
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (!task) return;
 
       document.getElementById('manualPickerModalTitle').textContent = isReassign 
-        ? `👤 Reassign Technician for Work Order ${task.task_id}` 
-        : `👤 Select Technician for Manual Assignment (${task.task_id})`;
+        ? `👤 Reassign Technician for Work Order (${task.task_code || task.task_id})` 
+        : `👤 Select Technician for Manual Assignment (${task.task_code || task.task_id})`;
 
-      document.getElementById('pickerTaskTitle').textContent = `${task.task_id} • ${task.description.substring(0, 42)}...`;
+      document.getElementById('pickerTaskTitle').textContent = `${task.task_code || task.task_id} • ${(task.description || '').substring(0, 42)}...`;
       document.getElementById('pickerTaskLocation').textContent = `📍 ${task.district}`;
-      document.getElementById('pickerTaskSkillBadge').textContent = `Required Trade: ${formatSkill(task.required_skill)}`;
+      
+      const currentAssigneeSnippet = (isReassign && task.assigned_crew_name) 
+        ? ` • Current: <span style="color:#38bdf8; font-weight:700;">${escapeHtml(task.assigned_crew_name)}</span>` 
+        : '';
+      document.getElementById('pickerTaskSkillBadge').innerHTML = `Required Trade: ${formatSkill(task.required_skill)}${currentAssigneeSnippet}`;
 
-      // Reset filters to defaults:
+      // Reset filters to defaults
       document.getElementById('crewSearchInput').value = '';
-      document.getElementById('crewSkillFitFilter').value = 'MATCHED'; // Default to trade skill matched
-      document.getElementById('crewStatusFilter').value = 'ALL'; // Show both Available and Busy
-      document.getElementById('crewSortSelector').value = 'DISTANCE'; // Default sort nearest first
+      document.getElementById('crewSkillFitFilter').value = 'MATCHED';
+      document.getElementById('crewStatusFilter').value = 'ALL';
+      document.getElementById('crewSortSelector').value = 'DISTANCE';
 
-      filterAndRenderCrewRoster();
+      const container = document.getElementById('crewRosterContainer');
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 24px; color: #64748b;">
+            <span style="font-size: 24px;">⏳</span>
+            <div>Calculating live distances for technicians...</div>
+          </div>
+        `;
+      }
+
       openModal('manualCrewPickerModal');
+
+      // Fetch dynamic candidates with live calculated distances from task location
+      const token = AuthGuard.getToken();
+      try {
+        const response = await fetch(`../../api/v1/admin/tasks/${activeActionTaskId}/candidates`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        const result = await response.json();
+        if (result.status === 'success' && result.data) {
+          currentTaskCandidates = result.data.crews || [];
+          filterAndRenderCrewRoster();
+        } else {
+          showToast(result.error || 'Failed to load technician candidates.', true);
+        }
+      } catch (err) {
+        console.error('Error fetching crew candidates:', err);
+        showToast('Network error while loading crew candidates.', true);
+      }
     };
 
     function filterAndRenderCrewRoster() {
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (!task) return;
 
       const search = document.getElementById('crewSearchInput').value.trim().toLowerCase();
@@ -1029,34 +1142,39 @@
       const statusFilter = document.getElementById('crewStatusFilter').value;
       const sortKey = document.getElementById('crewSortSelector').value;
 
-      let list = [...SAMPLE_CREWS];
+      let list = [...currentTaskCandidates];
 
       // 1. Skill Fit Filter
       if (skillFilter === 'MATCHED') {
-        list = list.filter(c => c.skills.includes(task.required_skill));
+        list = list.filter(c => c.has_skill);
       }
 
       // 2. Status Filter
-      if (statusFilter !== 'ALL') {
-        list = list.filter(c => c.status === statusFilter);
+      if (statusFilter === 'AVAILABLE') {
+        list = list.filter(c => c.computed_status === 'AVAILABLE');
+      } else if (statusFilter === 'BUSY') {
+        list = list.filter(c => c.computed_status !== 'AVAILABLE');
       }
 
       // 3. Search Filter
       if (search) {
         list = list.filter(c => {
-          const matchName = c.full_name.toLowerCase().includes(search);
-          const matchId = c.crew_id.toLowerCase().includes(search);
-          const matchBase = c.base_station.toLowerCase().includes(search);
-          const matchSkill = c.skills.some(s => s.toLowerCase().includes(search));
-          return matchName || matchId || matchBase || matchSkill;
+          const matchName = (c.full_name || '').toLowerCase().includes(search);
+          const matchEmail = (c.email || '').toLowerCase().includes(search);
+          const matchBase = (c.station_region || '').toLowerCase().includes(search);
+          const matchSkill = (c.skill_tags || []).some(s => s.toLowerCase().includes(search));
+          return matchName || matchEmail || matchBase || matchSkill;
         });
       }
 
       // 4. Sorting
       list.sort((a, b) => {
+        // Keep current assignee or available near top
+        if (a.is_current_assignee && !b.is_current_assignee) return -1;
+        if (!a.is_current_assignee && b.is_current_assignee) return 1;
         if (sortKey === 'DISTANCE') return a.distance_km - b.distance_km;
         if (sortKey === 'SCORE') return b.performance_score - a.performance_score;
-        if (sortKey === 'WORKLOAD') return a.active_jobs_count - b.active_jobs_count;
+        if (sortKey === 'WORKLOAD') return a.active_tasks_count - b.active_tasks_count;
         return 0;
       });
 
@@ -1068,29 +1186,70 @@
           <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 32px; text-align: center;">
             <span style="font-size: 28px;">👷</span>
             <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-top: 6px;">No Technicians Found</div>
-            <div style="font-size: 12px; color: #64748b;">Try adjusting your search query or trade filter setting to "Show All Trade Skills".</div>
+            <div style="font-size: 12px; color: #64748b;">Try adjusting your search query or setting trade filter to "Show All Trade Skills".</div>
           </div>
         `;
         return;
       }
 
       container.innerHTML = list.map(crew => {
-        const isMatched = crew.skills.includes(task.required_skill);
-        const isBusy = crew.status === 'BUSY';
-        const statusBadge = isBusy 
-          ? `<span class="status-badge-pill pill-dropped">🔴 BUSY (${crew.active_jobs_count} active)</span>`
-          : `<span class="status-badge-pill pill-completed">🟢 AVAILABLE</span>`;
+        const isAvailable = crew.computed_status === 'AVAILABLE';
+        const isMatched = crew.has_skill;
+        const isCurrentAssignee = (task.assigned_crew_id && crew.user_id === task.assigned_crew_id) || crew.is_current_assignee;
 
-        const skillsHtml = crew.skills.map(s => {
+        let statusBadge = '';
+        if (isCurrentAssignee) {
+          statusBadge = `<span class="status-badge-pill" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-weight: 800;">📍 CURRENT ASSIGNEE</span>`;
+        } else if (isAvailable) {
+          statusBadge = `<span class="status-badge-pill pill-completed">🟢 AVAILABLE</span>`;
+        } else if (crew.active_tasks_count > 0) {
+          statusBadge = `<span class="status-badge-pill pill-dropped">🔴 BUSY (${crew.active_tasks_count} in-progress)</span>`;
+        } else {
+          statusBadge = `<span class="status-badge-pill pill-pending">🟡 PENDING (${crew.pending_tasks_count} pending)</span>`;
+        }
+
+        const skillsHtml = (crew.skill_tags || []).map(s => {
           const match = s === task.required_skill;
           return `<span class="crew-skill-pill ${match ? 'match-highlight' : ''}">${match ? '✓ ' : ''}${formatSkill(s)}</span>`;
         }).join('');
 
+        let actionButtonHtml = '';
+        if (isCurrentAssignee) {
+          actionButtonHtml = `
+            <button 
+              class="btn-action btn-secondary" 
+              disabled 
+              style="padding: 9px 16px; font-size: 12.5px; opacity: 0.55; cursor: not-allowed; background: #f1f5f9; border-color: #cbd5e1; color: #64748b;"
+              title="Already assigned to this work order"
+            >
+              <span>Current Assignee</span>
+            </button>
+          `;
+        } else {
+          const buttonText = isReassignMode 
+            ? (isAvailable ? '👤 Reassign Crew' : '➕ Add-On Reassignment') 
+            : (isAvailable ? '👤 Assign Crew' : '➕ Add-On Assignment');
+
+          const buttonStyle = isAvailable 
+            ? 'btn-primary' 
+            : 'btn-secondary" style="border-color: #d97706; color: #b45309; background: #fffbeb;';
+
+          actionButtonHtml = `
+            <button 
+              class="btn-action ${buttonStyle}" 
+              style="padding: 9px 16px; font-size: 12.5px;"
+              onclick="handleAssignCrewToTask('${crew.user_id}')"
+            >
+              <span>${buttonText}</span>
+            </button>
+          `;
+        }
+
         return `
-          <div class="crew-card-item ${isMatched ? 'skill-matched' : ''}">
+          <div class="crew-card-item ${isMatched ? 'skill-matched' : ''}" style="${isCurrentAssignee ? 'border-color: #bae6fd; background: #f8fafc;' : ''}">
             <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
-              <div class="algo-crew-avatar" style="background: ${crew.avatar_color};">
-                ${crew.full_name.substring(0, 2)}
+              <div class="algo-crew-avatar" style="background: ${isCurrentAssignee ? '#0284c7' : '#059669'};">
+                ${(crew.full_name || 'CR').substring(0, 2).toUpperCase()}
               </div>
               <div>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -1100,46 +1259,129 @@
                   ${statusBadge}
                 </div>
                 <div style="font-size: 12px; color: #64748b; margin-top: 3px;">
-                  📍 <strong>${crew.distance_km.toFixed(1)} km away</strong> • ${escapeHtml(crew.base_station)} • ⭐ ${crew.performance_score.toFixed(1)}
+                  📍 <strong>${crew.distance_km} km away</strong> • ${escapeHtml(crew.station_region || 'Kuala Lumpur')} • ⭐ ${crew.performance_score.toFixed(1)}
                 </div>
                 <div style="display: flex; gap: 6px; margin-top: 6px;">
-                  ${skillsHtml}
+                  ${skillsHtml || '<span class="crew-skill-pill">General</span>'}
                 </div>
               </div>
             </div>
 
             <div>
-              <button 
-                class="btn-action ${isBusy ? 'btn-secondary' : 'btn-primary'}" 
-                style="padding: 9px 16px; font-size: 12.5px; ${isBusy ? 'border-color: #d97706; color: #b45309; background: #fffbeb;' : ''}"
-                onclick="handleAssignCrewToTask('${crew.crew_id}')"
-              >
-                <span>${isBusy ? '➕ Add-On Task' : '👤 Assign Crew'}</span>
-              </button>
+              ${actionButtonHtml}
             </div>
           </div>
         `;
       }).join('');
     }
 
+    let pendingReassignCrewId = null;
+
     window.handleAssignCrewToTask = function(crewId) {
-      closeModal('manualCrewPickerModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
-      const crew = SAMPLE_CREWS.find(c => c.crew_id === crewId);
-      if (!task || !crew) return;
+      if (!activeActionTaskId) return;
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
+      const crew = currentTaskCandidates.find(c => c.user_id === crewId);
+      if (!crew) return;
 
-      const isBusy = crew.status === 'BUSY' || crew.active_jobs_count > 0;
-      task.assigned_crew_name = crew.full_name;
-      task.assigned_crew_id = crew.crew_id;
-      task.status = 'PENDING_ACCEPTANCE'; // Queued for 24 hours acceptance
-
-      renderTaskCards();
-      if (isBusy) {
-        showToast(`➕ Task ${activeActionTaskId} queued as an Add-On assignment for ${crew.full_name} (24h acceptance window).`);
-      } else {
-        showToast(`👤 Task ${activeActionTaskId} assigned to ${crew.full_name} (24h acceptance window).`);
+      if (task && task.assigned_crew_id && task.assigned_crew_id === crewId) {
+        showToast(`⚠️ Task is already assigned to ${crew.full_name}. Please choose another technician.`, true);
+        return;
       }
+
+      if (isReassignMode) {
+        // Prompt Confirmation Modal for Reassignment
+        pendingReassignCrewId = crewId;
+        const isAddOn = crew.computed_status !== 'AVAILABLE';
+        
+        const taskIdEl = document.getElementById('reassignModalTaskId');
+        const currCrewEl = document.getElementById('reassignModalCurrentCrew');
+        const newCrewEl = document.getElementById('reassignModalNewCrew');
+        const typeEl = document.getElementById('reassignModalType');
+        const noticeEl = document.getElementById('reassignConfirmNoticeText');
+        const btnEl = document.getElementById('btnConfirmReassignmentAction');
+
+        if (taskIdEl) taskIdEl.textContent = task ? (task.task_code || task.task_id) : activeActionTaskId;
+        if (currCrewEl) currCrewEl.textContent = (task && task.assigned_crew_name) ? task.assigned_crew_name : 'Current Technician';
+        if (newCrewEl) newCrewEl.innerHTML = `${escapeHtml(crew.full_name)} <span style="font-size:11.5px; color:#64748b; font-weight:normal;">(${crew.distance_km} km away)</span>`;
+        
+        if (typeEl) {
+          typeEl.textContent = isAddOn ? '➕ Add-On Reassignment' : 'Standard 24h SLA';
+          typeEl.style.background = isAddOn ? '#fef3c7' : '#0f172a';
+          typeEl.style.color = isAddOn ? '#92400e' : '#fff';
+        }
+
+        if (noticeEl) {
+          const prevName = (task && task.assigned_crew_name) ? task.assigned_crew_name : 'the current technician';
+          noticeEl.innerHTML = `Are you sure you want to reassign this work order from <strong>${escapeHtml(prevName)}</strong> to <strong>${escapeHtml(crew.full_name)}</strong>? The current assignment will be revoked and transferred with a fresh 24-hour acceptance window.`;
+        }
+
+        if (btnEl) {
+          btnEl.innerHTML = `<span>✅ Confirm Reassignment to ${escapeHtml(crew.full_name)}</span>`;
+        }
+
+        openModal('reassignConfirmModal');
+        return;
+      }
+
+      // Direct assignment for open pool tasks
+      executeAssignmentDirect(crewId);
     };
+
+    window.executeConfirmedReassignment = async function() {
+      if (!pendingReassignCrewId || !activeActionTaskId) return;
+      closeModal('reassignConfirmModal');
+      await executeAssignmentDirect(pendingReassignCrewId);
+      pendingReassignCrewId = null;
+    };
+
+    async function executeAssignmentDirect(crewId) {
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
+      const crew = currentTaskCandidates.find(c => c.user_id === crewId);
+      if (!crew) return;
+
+      const isAddOn = crew.computed_status !== 'AVAILABLE';
+      const token = AuthGuard.getToken();
+
+      try {
+        const response = await fetch(`../../api/v1/admin/tasks/${activeActionTaskId}/assign`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            crew_id: crewId,
+            is_addon: isAddOn
+          })
+        });
+
+        const result = await response.json();
+        closeModal('manualCrewPickerModal');
+
+        if (result.status === 'success') {
+          if (isReassignMode) {
+            if (isAddOn) {
+              showToast(`➕ Task successfully reassigned as an Add-On for ${crew.full_name} (24h acceptance window).`);
+            } else {
+              showToast(`👤 Task successfully reassigned to ${crew.full_name} (24h acceptance window).`);
+            }
+          } else {
+            if (isAddOn) {
+              showToast(`➕ Task queued as an Add-On assignment for ${crew.full_name} (24h acceptance window).`);
+            } else {
+              showToast(`👤 Task assigned to ${crew.full_name} (24h acceptance window).`);
+            }
+          }
+          await loadAdminTasks();
+        } else {
+          showToast(result.error || 'Assignment failed.', true);
+        }
+      } catch (err) {
+        console.error('Error assigning crew:', err);
+        showToast('Network error during crew assignment.', true);
+      }
+    }
 
     // =========================================================================
     // FILTERING & RENDERING LOGIC FOR TASK CARDS GRID
@@ -1157,12 +1399,12 @@
         el.classList.add('active');
       }
 
-      renderTaskCards();
+      loadAdminTasks();
     }
 
     function handleCategoryFilter(category) {
       currentCategoryFilter = category;
-      renderTaskCards();
+      loadAdminTasks();
     }
 
     function handleSearchFilter() {
@@ -1179,26 +1421,27 @@
       const container = document.getElementById('taskCardsContainer');
       if (!container) return;
 
-      let filtered = SAMPLE_TASKS.filter(task => {
-        if (currentStatusFilter !== 'ALL' && task.status !== currentStatusFilter) return false;
-        if (currentCategoryFilter !== 'ALL' && task.required_skill !== currentCategoryFilter) return false;
-        if (currentSearchTerm) {
-          const matchId = task.task_id.toLowerCase().includes(currentSearchTerm);
-          const matchDesc = task.description.toLowerCase().includes(currentSearchTerm);
-          const matchDist = task.district.toLowerCase().includes(currentSearchTerm);
-          const matchRep = task.reporter_name.toLowerCase().includes(currentSearchTerm);
-          const matchCrew = task.assigned_crew_name.toLowerCase().includes(currentSearchTerm);
-          if (!matchId && !matchDesc && !matchDist && !matchRep && !matchCrew) return false;
-        }
-        return true;
-      });
+      let filtered = [...liveTasks];
+
+      // Client-side search filtering if tasks are already in memory
+      if (currentSearchTerm) {
+        filtered = filtered.filter(task => {
+          const matchCode = (task.task_code || '').toLowerCase().includes(currentSearchTerm);
+          const matchId = (task.task_id || '').toLowerCase().includes(currentSearchTerm);
+          const matchDesc = (task.description || '').toLowerCase().includes(currentSearchTerm);
+          const matchDist = (task.district || '').toLowerCase().includes(currentSearchTerm);
+          const matchRep = (task.reporter_name || '').toLowerCase().includes(currentSearchTerm);
+          const matchCrew = (task.assigned_crew_name || '').toLowerCase().includes(currentSearchTerm);
+          return matchCode || matchId || matchDesc || matchDist || matchRep || matchCrew;
+        });
+      }
 
       // Sorting
       filtered.sort((a, b) => {
         if (currentSortOrder === 'priority_desc') return b.priority_score - a.priority_score;
-        if (currentSortOrder === 'created_asc') return new Date(a.created_at) - new Date(b.created_at);
+        if (currentSortOrder === 'created_asc') return new Date(a.report_created_at) - new Date(b.report_created_at);
         if (currentSortOrder === 'upvotes_desc') return b.upvote_count - a.upvote_count;
-        if (currentSortOrder === 'newest_desc') return new Date(b.created_at) - new Date(a.created_at);
+        if (currentSortOrder === 'newest_desc') return new Date(b.report_created_at) - new Date(a.report_created_at);
         return 0;
       });
 
@@ -1207,7 +1450,7 @@
           <div style="grid-column: 1 / -1; background: #ffffff; padding: 48px; border-radius: 18px; text-align: center; border: 1.5px solid #e2e8f0;">
             <span style="font-size: 36px;">🔍</span>
             <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 8px;">No Tasks Found</h3>
-            <p style="font-size: 13px; color: #64748b;">No maintenance tasks match the selected filter criteria.</p>
+            <p style="font-size: 13px; color: #64748b;">No maintenance work orders match your current filter settings.</p>
           </div>
         `;
         return;
@@ -1286,7 +1529,7 @@
             <span>👤 Assign Crew</span>
           </button>
         `;
-      } else if (task.status === 'IN_PROGRESS' || task.status === 'PENDING_ACCEPTANCE') {
+      } else if (task.status === 'PENDING_ACCEPTANCE') {
         actionsHtml = `
           <button class="btn-action btn-secondary" onclick="event.stopPropagation(); openManualCrewPickerModal('${task.task_id}', true)" style="flex:1;">
             <span>👤 Reassign Crew</span>
@@ -1295,11 +1538,38 @@
             <span>🔍 Inspect</span>
           </button>
         `;
+      } else if (task.status === 'IN_PROGRESS') {
+        actionsHtml = `
+          <button class="btn-action btn-secondary" style="width:100%;" onclick="event.stopPropagation(); openTaskDetailModal('${task.task_id}')">
+            <span>🔍 Inspect Active Work Order</span>
+          </button>
+        `;
       } else {
         actionsHtml = `
           <button class="btn-action btn-secondary" style="width:100%;" onclick="event.stopPropagation(); openTaskDetailModal('${task.task_id}')">
             <span>🔍 View Audit Details</span>
           </button>
+        `;
+      }
+
+      const assignedDisplay = task.assigned_crew_name 
+        ? escapeHtml(task.assigned_crew_name) 
+        : '<span style="color:#94a3b8;">Unassigned (Open Pool)</span>';
+
+      let timingMetaHtml = '';
+      if (task.status === 'IN_PROGRESS') {
+        timingMetaHtml = `
+          <div class="card-meta-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; font-size: 11.5px; color: #0284c7;">
+            <span>⏱️ In-Progress: <strong>${escapeHtml(task.elapsed_formatted || 'In Progress')}</strong></span>
+            <span>● Active Work</span>
+          </div>
+        `;
+      } else if (task.status === 'PENDING_ACCEPTANCE') {
+        timingMetaHtml = `
+          <div class="card-meta-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0; font-size: 11.5px; color: #d97706;">
+            <span>⏳ Acceptance SLA: <strong>${escapeHtml(task.sla_formatted || '24h Window Active')}</strong></span>
+            <span>● Awaiting Confirmation</span>
+          </div>
         `;
       }
 
@@ -1316,19 +1586,20 @@
             </div>
 
             <div class="card-body-section">
-              <img src="${task.report_photo_url}" class="card-thumb-img" alt="Task Thumbnail">
+              <img src="${task.photo_url}" class="card-thumb-img" alt="Task Thumbnail">
               <div class="card-main-info">
                 <h4 class="card-task-title">${escapeHtml(task.district)}</h4>
-                <div class="card-task-loc">📍 ID: <strong style="font-family:var(--font-mono); color:#0f172a;">${task.task_id}</strong></div>
+                <div class="card-task-loc">📍 ID: <strong style="font-family:var(--font-mono); color:#0f172a;">${task.task_code || task.task_id}</strong></div>
                 <p class="card-task-desc">${escapeHtml(task.description)}</p>
               </div>
             </div>
 
+            ${timingMetaHtml}
             ${alertBoxHtml}
 
             <div class="card-meta-row">
               <span>👤 Reporter: <strong>${escapeHtml(task.reporter_name)}</strong></span>
-              <span>👷 Crew: <strong>${escapeHtml(task.assigned_crew_name)}</strong></span>
+              <span>👷 Crew: <strong>${assignedDisplay}</strong></span>
             </div>
           </div>
 
@@ -1344,13 +1615,13 @@
     // =========================================================================
     window.openVerifyCompleteModal = function(taskId) {
       activeActionTaskId = taskId;
-      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
 
-      document.getElementById('modalBeforeImg').src = task.report_photo_url;
+      document.getElementById('modalBeforeImg').src = task.photo_url;
       document.getElementById('modalBeforeDesc').textContent = `Reported: ${task.description}`;
-      document.getElementById('modalAfterImg').src = task.completion_photo_url || task.report_photo_url;
-      document.getElementById('modalAfterNotes').textContent = `Technician Notes: ${task.completion_notes || 'Repairs completed.'}`;
+      document.getElementById('modalAfterImg').src = task.completion_photo_url || task.photo_url;
+      document.getElementById('modalAfterNotes').textContent = `Technician Notes: ${task.resolution_notes || 'Repairs completed.'}`;
       document.getElementById('verifyRejectReason').value = '';
 
       openModal('verifyCompleteModal');
@@ -1358,11 +1629,11 @@
 
     window.handleApproveCompletion = function() {
       closeModal('verifyCompleteModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (task) {
         task.status = 'COMPLETED';
         renderTaskCards();
-        showToast(`✅ Task ${activeActionTaskId} approved! Crew rewarded +5 points.`);
+        showToast(`✅ Task approved! Crew rewarded +5 points.`);
       }
     };
 
@@ -1373,7 +1644,7 @@
         return;
       }
       closeModal('verifyCompleteModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (task) {
         task.status = 'IN_PROGRESS';
         renderTaskCards();
@@ -1383,58 +1654,49 @@
 
     window.openRescheduleDroppedModal = function(taskId) {
       activeActionTaskId = taskId;
-      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
 
-      document.getElementById('modalDropReasonText').textContent = task.drop_reason || 'Specialized Heavy Machinery Required';
+      document.getElementById('modalDropReasonText').textContent = task.drop_reason || 'Specialized equipment or heavy machinery required.';
       openModal('rescheduleDroppedModal');
     };
 
     window.handleRescheduleAction = function(action) {
       closeModal('rescheduleDroppedModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
-      if (!task) return;
-
       if (action === 'AUTO_DISPATCH') {
-        task.status = 'PENDING_ACCEPTANCE';
-        task.assigned_crew_name = 'Crew 3 (Kumar Raman) [Re-Dispatched]';
-        task.assigned_crew_id = 'crew3';
-        showToast(`⚡ Task ${activeActionTaskId} spatial re-dispatch triggered.`);
+        handleAutoDispatchSingle(activeActionTaskId);
       } else if (action === 'RETURN_OPEN_POOL') {
-        task.status = 'OPEN_FOR_CLAIM';
-        task.assigned_crew_name = 'Unassigned (Open Pool)';
-        task.assigned_crew_id = null;
-        showToast(`📦 Task ${activeActionTaskId} returned to Open Maintenance Pool.`);
+        showToast(`📦 Task returned to Open Maintenance Pool.`);
+        loadAdminTasks();
       }
-      renderTaskCards();
     };
 
     window.openVerifyInvalidModal = function(taskId) {
       activeActionTaskId = taskId;
-      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
 
-      document.getElementById('modalInvalidReportImg').src = task.report_photo_url;
-      document.getElementById('modalInvalidReportDesc').textContent = task.description;
-      document.getElementById('modalInvalidClearImg').src = task.flag_invalid_photo_url || task.report_photo_url;
-      document.getElementById('modalInvalidNotes').textContent = task.flag_invalid_notes || 'Clear site proof submitted.';
+      document.getElementById('modalInvalidReportImg').src = task.photo_url;
+      document.getElementById('modalInvalidReportDesc').textContent = `Reported: ${task.description}`;
+      document.getElementById('modalInvalidClearImg').src = task.flag_invalid_photo_url || task.photo_url;
+      document.getElementById('modalInvalidNotes').textContent = `Technician Inspection Findings: ${task.flag_invalid_notes || 'No defect found at site.'}`;
 
       openModal('verifyInvalidModal');
     };
 
     window.handleApproveInvalid = function() {
       closeModal('verifyInvalidModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (task) {
         task.status = 'INVALID_RESOLVED';
         renderTaskCards();
-        showToast(`🚩 Task ${activeActionTaskId} confirmed as Invalid. Reporter penalized (-20 pts).`);
+        showToast(`🚩 Task confirmed as Invalid. Citizen reputation adjusted (-20 pts).`);
       }
     };
 
     window.handleRejectInvalid = function() {
       closeModal('verifyInvalidModal');
-      const task = SAMPLE_TASKS.find(t => t.task_id === activeActionTaskId);
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (task) {
         task.status = 'IN_PROGRESS';
         renderTaskCards();
@@ -1442,21 +1704,50 @@
       }
     };
 
+    // =========================================================================
+    // ENLARGED TASK DETAIL PANEL INSPECTION
+    // =========================================================================
     window.openTaskDetailModal = function(taskId) {
       activeActionTaskId = taskId;
-      const task = SAMPLE_TASKS.find(t => t.task_id === taskId);
+      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
 
-      document.getElementById('detailModalTitle').textContent = `Work Order Inspection: ${task.task_id}`;
+      document.getElementById('detailModalTitle').textContent = `Work Order Inspection: ${task.task_code || task.task_id}`;
       document.getElementById('detailModalSubtitle').textContent = `ID: ${task.task_id} • ${task.district}`;
-      document.getElementById('detailModalImg').src = task.report_photo_url;
+      document.getElementById('detailModalImg').src = task.photo_url;
       document.getElementById('detailModalDesc').textContent = task.description;
       document.getElementById('detailModalLocation').textContent = `${task.district} (${task.latitude.toFixed(4)}, ${task.longitude.toFixed(4)})`;
-      document.getElementById('detailModalReporter').textContent = `${task.reporter_name} (Reputation: ${task.reporter_reputation})`;
+      document.getElementById('detailModalReporter').textContent = `${task.reporter_name} (${task.reporter_email || 'citizen'})`;
       document.getElementById('detailModalUpvotes').textContent = `👍 ${task.upvote_count} Upvote${task.upvote_count !== 1 ? 's' : ''}`;
-      document.getElementById('detailModalCrew').textContent = task.assigned_crew_name;
-      document.getElementById('detailModalCreated').textContent = task.created_at;
-      document.getElementById('detailModalSla').textContent = '24h SLA Active';
+      document.getElementById('detailModalCrew').textContent = task.assigned_crew_name || 'Unassigned (Open Pool)';
+      document.getElementById('detailModalCreated').textContent = task.report_created_at || 'Just now';
+
+      // SLA & Elapsed Time Handling
+      const slaLblEl = document.getElementById('detailModalSlaLbl');
+      const slaValEl = document.getElementById('detailModalSla');
+
+      if (task.status === 'IN_PROGRESS') {
+        if (slaLblEl) slaLblEl.textContent = 'Time In-Progress';
+        if (slaValEl) {
+          const acceptedText = task.assigned_at ? ` (Accepted: ${formatDateTime(task.assigned_at)})` : '';
+          slaValEl.innerHTML = `<span style="color: #0284c7; font-weight: 700;">⏱️ ${escapeHtml(task.elapsed_formatted || 'In Progress')}</span> <span style="font-size:11px; color:#64748b;">${acceptedText}</span>`;
+        }
+      } else if (task.status === 'PENDING_ACCEPTANCE') {
+        if (slaLblEl) slaLblEl.textContent = '24h SLA Acceptance';
+        if (slaValEl) {
+          slaValEl.innerHTML = `<span style="color: #d97706; font-weight: 700;">⏳ ${escapeHtml(task.sla_formatted || '24h Window Active')}</span>`;
+        }
+      } else if (task.status === 'OPEN_FOR_CLAIM') {
+        if (slaLblEl) slaLblEl.textContent = 'Pool Status';
+        if (slaValEl) {
+          slaValEl.innerHTML = `<span style="color: #059669; font-weight: 700;">Open for Claim / Dispatch</span>`;
+        }
+      } else {
+        if (slaLblEl) slaLblEl.textContent = 'Work Order Status';
+        if (slaValEl) {
+          slaValEl.innerHTML = `<span style="color: #64748b; font-weight: 700;">${task.status}</span>`;
+        }
+      }
 
       const catClass = task.category === 'CRITICAL_SAFETY' ? 'badge-critical' : 'badge-operational';
       document.getElementById('detailModalBadges').innerHTML = `
@@ -1489,11 +1780,25 @@
 
       // State-specific Alert Box
       const alertBox = document.getElementById('detailModalStateAlert');
-      if (task.status === 'PRECOMPLETE') {
+      if (task.status === 'IN_PROGRESS') {
+        alertBox.innerHTML = `
+          <div class="card-action-alert-box" style="background:#f0f9ff; border:1.5px solid #bae6fd; color:#0369a1;">
+            <span>🔧</span>
+            <div><strong>Active Work Order:</strong> Accepted and currently under repair by <strong>${escapeHtml(task.assigned_crew_name || 'Assigned Crew')}</strong>. This task is locked and cannot be reassigned while work is underway.</div>
+          </div>
+        `;
+      } else if (task.status === 'PENDING_ACCEPTANCE') {
+        alertBox.innerHTML = `
+          <div class="card-action-alert-box alert-dropped" style="background:#fffbeb; border:1.5px solid #fde68a; color:#92400e;">
+            <span>⏳</span>
+            <div><strong>Pending Crew Acceptance:</strong> Dispatched to <strong>${escapeHtml(task.assigned_crew_name || 'Assigned Crew')}</strong>. The crew has 24 hours to accept or decline.</div>
+          </div>
+        `;
+      } else if (task.status === 'PRECOMPLETE') {
         alertBox.innerHTML = `
           <div class="card-action-alert-box alert-precomplete">
             <span>⚖️</span>
-            <div><strong>Technician Resolution Notes:</strong> ${escapeHtml(task.completion_notes || 'Repairs completed.')}</div>
+            <div><strong>Technician Resolution Notes:</strong> ${escapeHtml(task.resolution_notes || 'Repairs completed.')}</div>
           </div>
         `;
       } else if (task.status === 'DROPPED') {
@@ -1555,10 +1860,10 @@
             <span>Close</span>
           </button>
         `;
-      } else if (task.status === 'IN_PROGRESS' || task.status === 'PENDING_ACCEPTANCE') {
+      } else if (task.status === 'PENDING_ACCEPTANCE') {
         actionsHtml = `
           <button class="btn-action btn-secondary" style="flex: 1.5; padding: 12px;" onclick="closeModal('taskDetailModal'); openManualCrewPickerModal('${task.task_id}', true)">
-            <span>👤 Reassign Technician / Fleet</span>
+            <span>👤 Reassign Crew</span>
           </button>
           <button class="btn-action btn-secondary" style="flex: 1;" onclick="closeModal('taskDetailModal')">
             <span>Close Panel</span>
@@ -1577,7 +1882,7 @@
     };
 
     // =========================================================================
-    // MODAL UTILITIES
+    // MODAL & UTILITY HELPERS
     // =========================================================================
     function openModal(id) {
       const modal = document.getElementById(id);
@@ -1609,6 +1914,7 @@
         case 'MAJOR_BLOCKAGE': return 'Major Blockage';
         case 'MINOR_DEFECT': return 'Minor Defect';
         case 'AESTHETIC': return 'Aesthetic';
+        case 'OPERATIONAL': return 'Operational';
         default: return cat;
       }
     }
@@ -1620,27 +1926,32 @@
         case 'SANITATION': return 'Sanitation';
         case 'GENERAL_FACILITY': return 'Facilities';
         case 'OTHER': return 'Other';
-        default: return skill;
+        default: return skill || 'General';
       }
     }
 
     function showToast(msg, isError = false) {
       const toast = document.getElementById('toastBanner');
+      if (!toast) return;
       document.getElementById('toastMsg').textContent = msg;
       toast.style.background = isError ? '#ef4444' : '#059669';
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '--';
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function handleLogout() {
-      if (confirm('Are you sure you want to sign out from the Administrator Portal?')) {
-        AuthGuard.logout();
-      }
     }
   </script>
 </body>

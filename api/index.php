@@ -86,7 +86,19 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
     (new TaskController())->completeTask($m[1]);
 } elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/drop$#i', $cleanUri, $m)) {
     (new TaskController())->dropTask($m[1]);
-// 7. Module 5: Admin User Management Routes
+// 7. Module 3: Admin Task Control Routes
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/tasks' || $uri === '/api/v1/admin/tasks')) {
+    (new AdminController())->getTasks();
+} elseif ($method === 'GET' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/candidates$#i', $cleanUri, $m)) {
+    (new AdminController())->getCrewCandidatesForTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/auto-dispatch-preview$#i', $cleanUri, $m)) {
+    (new AdminController())->previewSingleTaskAutoDispatch($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/assign$#i', $cleanUri, $m)) {
+    (new AdminController())->assignCrew($m[1]);
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/admin/tasks/batch-dispatch' || $uri === '/api/v1/admin/tasks/batch-dispatch')) {
+    (new AdminController())->runBatchDispatch();
+
+// 8. Module 5: Admin User Management Routes
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/users' || $uri === '/api/v1/admin/users')) {
     (new AdminController())->getUsers();
 } elseif ($method === 'POST' && ($cleanUri === '/api/v1/admin/users' || $uri === '/api/v1/admin/users')) {
@@ -96,7 +108,7 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 } elseif (($method === 'PUT' || $method === 'POST') && preg_match('#^/api/v1/admin/users/([a-f0-9\-]+)$#i', $cleanUri, $m)) {
     (new AdminController())->updateUser($m[1]);
 
-// 8. API Welcome / Root Route
+// 9. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
     echo json_encode([
         "name" => "EcoAsset REST API",

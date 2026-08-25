@@ -179,3 +179,18 @@ class AdminSidebar {
 function initAdminSidebar(activePage = 'overview') {
   AdminSidebar.init({ active: activePage });
 }
+
+// Global logout helper for admin portal
+window.handleLogout = function() {
+  if (confirm('Are you sure you want to sign out from the Administrator Portal?')) {
+    if (typeof AuthGuard !== 'undefined' && AuthGuard.logout) {
+      AuthGuard.logout();
+    } else {
+      localStorage.removeItem('ecoasset_token');
+      localStorage.removeItem('ecoasset_user');
+      const path = window.location.pathname;
+      const isModule3Admin = path.includes('/module3/admin/');
+      window.location.href = isModule3Admin ? '../../module5/login.php' : '../module5/login.php';
+    }
+  }
+};
