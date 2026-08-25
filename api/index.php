@@ -5,6 +5,7 @@ use App\Controllers\AuthController;
 use App\Controllers\ReportController;
 use App\Controllers\CrewController;
 use App\Controllers\TaskController;
+use App\Controllers\AdminController;
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -52,9 +53,11 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 } elseif ($method === 'GET' && preg_match('#^/api/v1/reports/([a-f0-9\-]+)$#i', $cleanUri, $m)) {
     (new ReportController())->getReportById($m[1]);
 
-// 3. Citizen Activity History Route
+// 3. Citizen Activity History & User Profile Routes
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/user/activity' || $uri === '/api/v1/user/activity')) {
     (new ReportController())->getUserActivity();
+} elseif (($method === 'PUT' || $method === 'POST') && ($cleanUri === '/api/v1/user/profile' || $uri === '/api/v1/user/profile')) {
+    (new AuthController())->updateProfile();
 
 // 4. Maintenance Crew Profile & Capabilities Routes
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/crew/profile' || $uri === '/api/v1/crew/profile')) {
@@ -83,10 +86,17 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
     (new TaskController())->completeTask($m[1]);
 } elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/drop$#i', $cleanUri, $m)) {
     (new TaskController())->dropTask($m[1]);
-} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/flag-invalid$#i', $cleanUri, $m)) {
-    (new TaskController())->flagInvalid($m[1]);
+// 7. Module 5: Admin User Management Routes
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/users' || $uri === '/api/v1/admin/users')) {
+    (new AdminController())->getUsers();
+} elseif ($method === 'POST' && ($cleanUri === '/api/v1/admin/users' || $uri === '/api/v1/admin/users')) {
+    (new AdminController())->createUser();
+} elseif (($method === 'PATCH' || $method === 'POST') && preg_match('#^/api/v1/admin/users/([a-f0-9\-]+)/status$#i', $cleanUri, $m)) {
+    (new AdminController())->updateStatus($m[1]);
+} elseif (($method === 'PUT' || $method === 'POST') && preg_match('#^/api/v1/admin/users/([a-f0-9\-]+)$#i', $cleanUri, $m)) {
+    (new AdminController())->updateUser($m[1]);
 
-// 7. API Welcome / Root Route
+// 8. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
     echo json_encode([
         "name" => "EcoAsset REST API",

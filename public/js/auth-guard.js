@@ -33,11 +33,13 @@ const AuthGuard = {
   getLoginUrl() {
     const path = window.location.pathname;
     if (path.includes('/module3/admin/') || path.includes('/module5/admin/')) {
-      return '../../login.php';
-    } else if (path.includes('/admin/') || path.includes('/module1/') || path.includes('/module2/') || path.includes('/module3/') || path.includes('/module4/') || path.includes('/module5/')) {
-      return '../login.php';
+      return '../../module5/login.php';
+    } else if (path.includes('/module5/')) {
+      return 'login.php';
+    } else if (path.includes('/admin/') || path.includes('/module1/') || path.includes('/module2/') || path.includes('/module3/') || path.includes('/module4/')) {
+      return '../module5/login.php';
     }
-    return 'login.php';
+    return 'module5/login.php';
   },
 
   logout() {
@@ -89,6 +91,13 @@ const AuthGuard = {
       return null;
     }
 
+    // Force first-time login users to update password before performing any action
+    if (user.must_change_password === true && !window.location.pathname.includes('update-account.html')) {
+      const updateUrl = window.location.pathname.includes('/module') ? '../module5/update-account.html?first_login=1' : 'module5/update-account.html?first_login=1';
+      window.location.href = updateUrl;
+      return null;
+    }
+
     return user;
   },
 
@@ -130,17 +139,11 @@ const AuthGuard = {
         this.setSession(null, result.data.user);
         return result.data.user;
       }
-    } catch (err) {
-      console.error('Failed to sync profile with server:', err);
+      return this.getUser();
+    } catch (e) {
+      return this.getUser();
     }
-    return this.getUser();
   }
 };
 
-// Global shorthand for window scope
 window.AuthGuard = AuthGuard;
-window.handleLogout = function() {
-  if (confirm('Are you sure you want to sign out?')) {
-    AuthGuard.logout();
-  }
-};

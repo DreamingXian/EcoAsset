@@ -11,13 +11,90 @@ $db = Database::getConnection();
 
 $seedUsers = [
     [
+        'email' => 'admin@ecoasset.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Zarina Aziz',
+        'role' => 'ADMINISTRATOR',
+        'extra' => [],
+        'is_active' => true
+    ],
+    [
+        'email' => 'admin@dbkl.gov.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Zarina Aziz',
+        'role' => 'ADMINISTRATOR',
+        'extra' => [],
+        'is_active' => true
+    ],
+    [
+        'email' => 'hafiz@dbkl.gov.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Hafiz Roslan',
+        'role' => 'SITE_RANGER',
+        'extra' => [
+            'station_region' => 'Kuala Lumpur',
+            'employee_id' => 'RNG-1001'
+        ],
+        'is_active' => true
+    ],
+    [
+        'email' => 'boonhuat@contractor.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Tan Boon Huat',
+        'role' => 'MAINTENANCE_CREW',
+        'extra' => [
+            'skill_tags' => ['STRUCTURAL', 'SANITATION'],
+            'current_latitude' => 3.139003,
+            'current_longitude' => 101.686855,
+            'station_region' => 'Kuala Lumpur'
+        ],
+        'is_active' => true
+    ],
+    [
+        'email' => 'selvam@contractor.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Selvam Krishnan',
+        'role' => 'MAINTENANCE_CREW',
+        'extra' => [
+            'skill_tags' => ['ELECTRICAL'],
+            'current_latitude' => 3.149000,
+            'current_longitude' => 101.696800,
+            'station_region' => 'Kuala Lumpur'
+        ],
+        'is_active' => true
+    ],
+    [
+        'email' => 'nurulain@dbkl.gov.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Nurul Ain',
+        'role' => 'SITE_RANGER',
+        'extra' => [
+            'station_region' => 'Kuala Lumpur',
+            'employee_id' => 'RNG-1002'
+        ],
+        'is_active' => false
+    ],
+    [
+        'email' => 'kaiming@contractor.my',
+        'password' => 'Pass1234!',
+        'full_name' => 'Wong Kai Ming',
+        'role' => 'MAINTENANCE_CREW',
+        'extra' => [
+            'skill_tags' => ['STRUCTURAL'],
+            'current_latitude' => 3.159000,
+            'current_longitude' => 101.706800,
+            'station_region' => 'Kuala Lumpur'
+        ],
+        'is_active' => true
+    ],
+    [
         'email' => 'ranger@ecoasset.my',
         'password' => 'Pass1234!',
         'full_name' => 'Officer Roslan',
         'role' => 'SITE_RANGER',
         'extra' => [
             'station_region' => 'Kuala Lumpur',
-            'employee_id' => 'RNG-1001'
+            'employee_id' => 'RNG-1003'
         ],
         'is_active' => true
     ],
@@ -32,14 +109,6 @@ $seedUsers = [
             'current_longitude' => 101.686855,
             'station_region' => 'Kuala Lumpur'
         ],
-        'is_active' => true
-    ],
-    [
-        'email' => 'admin@ecoasset.my',
-        'password' => 'Pass1234!',
-        'full_name' => 'Admin Sarah',
-        'role' => 'ADMINISTRATOR',
-        'extra' => [],
         'is_active' => true
     ],
     [
@@ -58,6 +127,7 @@ $seedUsers = [
         'full_name' => 'Deactivated User',
         'role' => 'TOURIST',
         'extra' => [
+
             'reputation_score' => 80
         ],
         'is_active' => false
