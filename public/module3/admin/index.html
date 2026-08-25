@@ -1589,7 +1589,7 @@
               <img src="${task.photo_url}" class="card-thumb-img" alt="Task Thumbnail">
               <div class="card-main-info">
                 <h4 class="card-task-title">${escapeHtml(task.district)}</h4>
-                <div class="card-task-loc">📍 ID: <strong style="font-family:var(--font-mono); color:#0f172a;">${task.task_code || task.task_id}</strong></div>
+                <div class="card-task-loc">📍 ${escapeHtml(task.district || 'Incident Site')}</div>
                 <p class="card-task-desc">${escapeHtml(task.description)}</p>
               </div>
             </div>
@@ -1762,15 +1762,15 @@
       const secImg = document.getElementById('detailModalSecondaryImg');
       const secTitle = document.getElementById('detailModalSecondaryTitle');
 
-      if (task.status === 'PRECOMPLETE' && task.completion_photo_url) {
+      if ((task.status === 'PRECOMPLETE' || task.status === 'COMPLETED') && task.completion_photo_url) {
         secWrap.style.display = 'block';
-        secTitle.textContent = 'Technician After-Repair Photo Proof';
+        secTitle.textContent = task.status === 'COMPLETED' ? 'Verified After-Repair Photo Proof' : 'Technician After-Repair Photo Proof';
         secTitle.style.color = '#6d28d9';
         secImg.src = task.completion_photo_url;
         secImg.style.borderColor = '#c4b5fd';
-      } else if (task.status === 'PRE_INVALID' && task.flag_invalid_photo_url) {
+      } else if ((task.status === 'PRE_INVALID' || task.status === 'INVALID_RESOLVED') && task.flag_invalid_photo_url) {
         secWrap.style.display = 'block';
-        secTitle.textContent = 'Technician Clear-Site Evidence';
+        secTitle.textContent = task.status === 'INVALID_RESOLVED' ? 'Approved Clear-Site Evidence' : 'Technician Clear-Site Evidence';
         secTitle.style.color = '#be123c';
         secImg.src = task.flag_invalid_photo_url;
         secImg.style.borderColor = '#fecdd3';

@@ -45,6 +45,8 @@ class TaskDAO
      */
     public function getAssignedTasksForCrew(string $crewId): array
     {
+        $this->sweepExpiredPendingSlaTasks();
+
         $sql = "SELECT t.*, 
                        r.category, r.required_skill, r.description, r.latitude, r.longitude,
                        r.photo_url as report_photo_url, r.upvote_count, r.priority_score,
@@ -54,7 +56,7 @@ class TaskDAO
                 JOIN damage_reports r ON t.report_id = r.report_id
                 LEFT JOIN users u ON r.user_id = u.user_id
                 WHERE t.assigned_crew_id = :crew_id
-                  AND r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS', 'PRECOMPLETE', 'DROPPED', 'PRE_INVALID', 'COMPLETED')
+                  AND r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS', 'PRECOMPLETE', 'DROPPED', 'PRE_INVALID', 'COMPLETED', 'INVALID_RESOLVED')
                 ORDER BY r.priority_score DESC, r.created_at ASC";
 
         $stmt = $this->db->prepare($sql);
@@ -237,25 +239,25 @@ class TaskDAO
             $this->db->beginTransaction();
 
             // Fetch assigned crew ID and report ID
-            $fetchSql = "SELECT assigned_crew_id, report_id FROM maintenance_tasks WHERE task_id = :task_id";
+            $fetchSql = "SELECT task_id, assigned_crew_id, report_id FROM maintenance_tasks WHERE task_id = :task_id OR report_id = :task_id";
             $fetchStmt = $this->db->prepare($fetchSql);
             $fetchStmt->execute(['task_id' => $taskId]);
             $task = $fetchStmt->fetch();
 
             if (!$task) {
-                throw new Exception("Task not found.");
+                throw new Exception("Task not found for ID {$taskId}.");
             }
 
             // 1. Update task record with completion proof (completed_at remains NULL until admin approval)
             $taskSql = "UPDATE maintenance_tasks 
                         SET completion_photo_url = :photo,
                             resolution_notes = :notes
-                        WHERE task_id = :task_id";
+                        WHERE task_id = :real_task_id";
             $taskStmt = $this->db->prepare($taskSql);
             $taskStmt->execute([
-                'photo'   => $photoUrl,
-                'notes'   => $notes,
-                'task_id' => $taskId
+                'photo'        => $photoUrl,
+                'notes'        => $notes,
+                'real_task_id' => $task['task_id']
             ]);
 
             // 2. Mark report PRECOMPLETE (waiting for admin validation)
@@ -356,28 +358,28 @@ class TaskDAO
             $this->db->beginTransaction();
 
             // Fetch report ID
-            $fetchSql = "SELECT t.report_id, r.user_id as reporter_id
+            $fetchSql = "SELECT t.task_id, t.report_id, r.user_id as reporter_id
                          FROM maintenance_tasks t
                          JOIN damage_reports r ON t.report_id = r.report_id
-                         WHERE t.task_id = :task_id";
+                         WHERE t.task_id = :task_id OR t.report_id = :task_id";
             $fetchStmt = $this->db->prepare($fetchSql);
             $fetchStmt->execute(['task_id' => $taskId]);
             $info = $fetchStmt->fetch();
 
             if (!$info) {
-                throw new Exception("Task record not found.");
+                throw new Exception("Task record not found for ID {$taskId}.");
             }
 
             // 1. Update task with clear-site proof & findings
             $taskSql = "UPDATE maintenance_tasks 
                         SET flag_invalid_photo_url = :photo,
                             flag_invalid_notes = :notes
-                        WHERE task_id = :task_id";
+                        WHERE task_id = :real_task_id";
             $taskStmt = $this->db->prepare($taskSql);
             $taskStmt->execute([
-                'photo'   => $photoUrl,
-                'notes'   => $notes,
-                'task_id' => $taskId
+                'photo'        => $photoUrl,
+                'notes'        => $notes,
+                'real_task_id' => $info['task_id']
             ]);
 
             // 2. Mark report PRE_INVALID (waiting for admin validation)

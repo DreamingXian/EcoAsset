@@ -86,6 +86,8 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
     (new TaskController())->completeTask($m[1]);
 } elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/drop$#i', $cleanUri, $m)) {
     (new TaskController())->dropTask($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/tasks/([a-f0-9\-]+)/flag-invalid$#i', $cleanUri, $m)) {
+    (new TaskController())->flagInvalid($m[1]);
 // 7. Module 3: Admin Task Control Routes
 } elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/tasks' || $uri === '/api/v1/admin/tasks')) {
     (new AdminController())->getTasks();
