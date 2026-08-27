@@ -502,6 +502,76 @@ class TaskDAO
     }
 
     /**
+     * Admin returns a DROPPED task back to the OPEN MAINTENANCE POOL.
+     * Transitions damage_reports.status to OPEN_FOR_CLAIM, clears assignment fields in maintenance_tasks.
+     */
+    public function returnTaskToOpenPool(string $taskIdOrReportId, string $adminId): array
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $fetchSql = "SELECT t.task_id, t.report_id, t.assigned_crew_id, r.status, r.district
+                         FROM damage_reports r
+                         LEFT JOIN maintenance_tasks t ON r.report_id = t.report_id
+                         WHERE t.task_id = :id OR r.report_id = :id";
+            $fetchStmt = $this->db->prepare($fetchSql);
+            $fetchStmt->execute(['id' => $taskIdOrReportId]);
+            $task = $fetchStmt->fetch();
+
+            if (!$task) {
+                throw new Exception("Task or damage report not found for ID {$taskIdOrReportId}.");
+            }
+
+            $previousCrewId = $task['assigned_crew_id'];
+
+            // 1. Update report status to OPEN_FOR_CLAIM
+            $repSql = "UPDATE damage_reports SET status = 'OPEN_FOR_CLAIM' WHERE report_id = :report_id";
+            $repStmt = $this->db->prepare($repSql);
+            $repStmt->execute(['report_id' => $task['report_id']]);
+
+            // 2. Clear assignment & SLA details in maintenance_tasks if task record exists
+            if (!empty($task['task_id'])) {
+                $taskSql = "UPDATE maintenance_tasks 
+                            SET assigned_crew_id = NULL,
+                                assigned_at = NULL,
+                                sla_expires_at = NULL,
+                                admin_return_reason = NULL
+                            WHERE task_id = :task_id";
+                $taskStmt = $this->db->prepare($taskSql);
+                $taskStmt->execute(['task_id' => $task['task_id']]);
+            }
+
+            // 3. If previous crew has 0 other in-progress/pending tasks, ensure status is AVAILABLE
+            if (!empty($previousCrewId)) {
+                $crewCheck = "SELECT COUNT(*) as cnt 
+                              FROM maintenance_tasks t 
+                              JOIN damage_reports r ON t.report_id = r.report_id 
+                              WHERE t.assigned_crew_id = :crew_id AND r.status IN ('IN_PROGRESS', 'PENDING_ACCEPTANCE')";
+                $cStmt = $this->db->prepare($crewCheck);
+                $cStmt->execute(['crew_id' => $previousCrewId]);
+                $cnt = (int)($cStmt->fetch()['cnt'] ?? 0);
+                if ($cnt === 0) {
+                    $cUpdate = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
+                    $cuStmt = $this->db->prepare($cUpdate);
+                    $cuStmt->execute(['crew_id' => $previousCrewId]);
+                }
+            }
+
+            $this->db->commit();
+            return [
+                'success'   => true,
+                'task_id'   => $task['task_id'] ?? $task['report_id'],
+                'report_id' => $task['report_id'],
+                'district'  => $task['district'] ?? 'Incident Site'
+            ];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error in TaskDAO::returnTaskToOpenPool: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Flag incident as Invalid / No Fault Found with clear-site photo proof -> transitions to PRE_INVALID.
      */
     public function flagInvalidTask(string $taskId, string $crewId, string $photoUrl, string $notes): bool

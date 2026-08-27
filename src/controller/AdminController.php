@@ -502,5 +502,32 @@ class AdminController
             ResponseUtil::error('Failed to return task for rework: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * Admin returns a DROPPED task back to Open Pool (POST /api/v1/admin/tasks/{id}/return-open-pool)
+     */
+    public function returnToOpenPool(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->returnTaskToOpenPool($taskId, $admin['user_id']);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_RETURNED_TO_OPEN_POOL',
+                    "Admin returned task {$taskId} (District: {$result['district']}) back to Open Maintenance Pool."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Work order successfully returned to Open Maintenance Pool.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to return task to Open Pool: ' . $e->getMessage(), 500);
+        }
+    }
 }
 

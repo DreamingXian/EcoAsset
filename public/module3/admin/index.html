@@ -600,7 +600,7 @@
         <button class="btn-action btn-primary" onclick="handleRescheduleAction('AUTO_DISPATCH')">
           <span>⚡ Run Automated Spatial Re-Dispatch</span>
         </button>
-        <button class="btn-action btn-secondary" onclick="openManualCrewPickerModal(activeActionTaskId, true)">
+        <button class="btn-action btn-secondary" onclick="closeModal('rescheduleDroppedModal'); openManualCrewPickerModal(activeActionTaskId, true)">
           <span>👤 Manually Assign to Another Technician</span>
         </button>
         <button class="btn-action btn-secondary" onclick="handleRescheduleAction('RETURN_OPEN_POOL')">
@@ -1579,6 +1579,32 @@
           }
           pendingAdminAction = null;
         }
+      } else if (action.type === 'RETURN_OPEN_POOL') {
+        try {
+          const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/admin/tasks/${action.taskId}/return-open-pool`, {
+            method: 'POST'
+          });
+          const res = await response.json();
+          closeModal('adminConfirmationModal');
+          closeModal('rescheduleDroppedModal');
+          closeModal('taskDetailModal');
+
+          if (res.status === 'success') {
+            showToast(`📦 Work order successfully returned to Open Maintenance Pool.`);
+            await loadAdminTasks();
+          } else {
+            showToast(res.message || res.error || 'Failed to return task to Open Pool.', true);
+          }
+        } catch (err) {
+          console.error('Error returning task to Open Pool:', err);
+          showToast('Network error while returning task to Open Pool: ' + err.message, true);
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>Yes, Confirm</span>`;
+          }
+          pendingAdminAction = null;
+        }
       }
     };
 
@@ -1823,12 +1849,38 @@
     };
 
     window.handleRescheduleAction = function(action) {
-      closeModal('rescheduleDroppedModal');
       if (action === 'AUTO_DISPATCH') {
+        closeModal('rescheduleDroppedModal');
         handleAutoDispatchSingle(activeActionTaskId);
       } else if (action === 'RETURN_OPEN_POOL') {
-        showToast(`📦 Task returned to Open Maintenance Pool.`);
-        loadAdminTasks();
+        const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
+        const taskId = activeActionTaskId || (task ? task.task_id : null);
+        if (!taskId) {
+          showToast('⚠️ No task selected.', true);
+          return;
+        }
+
+        pendingAdminAction = {
+          type: 'RETURN_OPEN_POOL',
+          taskId: taskId,
+          district: (task && task.district) ? task.district : 'Incident Site'
+        };
+
+        document.getElementById('adminConfirmIcon').textContent = '📦';
+        document.getElementById('adminConfirmTitle').textContent = 'Return Task to Open Maintenance Pool';
+        document.getElementById('adminConfirmDesc').innerHTML = `
+          Are you sure you want to return this dropped work order for <strong>${escapeHtml((task && task.district) || 'this site')}</strong> back to the <strong style="color:#0284c7;">OPEN MAINTENANCE POOL</strong>?<br><br>
+          The task will become available for any eligible technician to claim immediately from their terminal, or be automatically dispatched during the next scheduled batch cycle.
+        `;
+
+        const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+        if (submitBtn) {
+          submitBtn.style.background = '#0284c7';
+          submitBtn.innerHTML = `<span>📦 Yes, Return to Open Pool</span>`;
+        }
+
+        closeModal('rescheduleDroppedModal');
+        openModal('adminConfirmationModal');
       }
     };
 
