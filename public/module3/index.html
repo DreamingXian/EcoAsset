@@ -74,7 +74,7 @@
       </div>
     </header>
 
-    <!-- 3 Terminal Navigation Tabs -->
+    <!-- 6 Terminal Navigation Tabs -->
     <div class="terminal-tabs">
       <button class="terminal-tab-btn active" data-tab="my-tasks" onclick="switchTerminalTab('my-tasks')">
         <span>My Tasks</span>
@@ -87,6 +87,18 @@
       <button class="terminal-tab-btn" data-tab="in-progress" onclick="switchTerminalTab('in-progress')">
         <span>In Progress</span>
         <span class="tab-count-pill" id="inProgressBadge">0</span>
+      </button>
+      <button class="terminal-tab-btn" data-tab="under-review" onclick="switchTerminalTab('under-review')">
+        <span>Under Review</span>
+        <span class="tab-count-pill" id="underReviewBadge">0</span>
+      </button>
+      <button class="terminal-tab-btn" data-tab="completed" onclick="switchTerminalTab('completed')">
+        <span>Completed</span>
+        <span class="tab-count-pill" id="completedBadge">0</span>
+      </button>
+      <button class="terminal-tab-btn" data-tab="application-result" onclick="switchTerminalTab('application-result')">
+        <span>Application Result</span>
+        <span class="tab-count-pill" id="appResultBadge">0</span>
       </button>
     </div>
 
@@ -152,6 +164,55 @@
         </div>
       </div>
 
+      <!-- =================================================================
+           PANE 4: UNDER REVIEW (PRECOMPLETE & PRE_INVALID AWAITING ADMIN)
+           ================================================================= -->
+      <div class="tab-view-pane" id="pane-under-review">
+        <div id="underReviewListContainer" style="display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%;">
+          <div class="empty-state-card">
+            <span style="font-size: 36px;">⏳</span>
+            <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b; margin-top: 6px;">No Submissions Under Review</h4>
+            <p style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
+              Tasks you have submitted for completion validation or flagged as invalid will appear here while under review by municipal administration.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           PANE 5: COMPLETED (FULLY APPROVED WORK ORDERS)
+           ================================================================= -->
+      <div class="tab-view-pane" id="pane-completed">
+        <div id="completedListContainer" style="display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%;">
+          <div class="empty-state-card">
+            <span style="font-size: 36px;">✅</span>
+            <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b; margin-top: 6px;">No Completed Tasks Yet</h4>
+            <p style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
+              Work orders verified and approved by municipal administration will appear here with performance rewards.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================
+           PANE 6: APPLICATION RESULT (INVALID RESOLVED - RECENT 7 DAYS)
+           ================================================================= -->
+      <div class="tab-view-pane" id="pane-application-result">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; color: #475569; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>ℹ️</span>
+          <span>Showing invalid report clearances approved by municipal administration in the <strong>last 7 days</strong>.</span>
+        </div>
+        <div id="appResultListContainer" style="display: grid; grid-template-columns: 1fr; gap: 14px; width: 100%;">
+          <div class="empty-state-card">
+            <span style="font-size: 36px;">📋</span>
+            <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b; margin-top: 6px;">No Recent Application Results</h4>
+            <p style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
+              Outcomes for invalid report clearance applications approved in the last 7 days will be displayed here.
+            </p>
+          </div>
+        </div>
+      </div>
+
     </main>
 
     <!-- Bottom Navigation Bar for Crew -->
@@ -186,13 +247,32 @@
         <button type="button" class="modal-close-btn" onclick="closeTaskDetailModal()">✕</button>
       </div>
 
-      <!-- Resized Evidence Photo Frame -->
-      <div class="incident-photo-wrapper">
+      <!-- Single Evidence Photo Frame -->
+      <div class="incident-photo-wrapper" id="modalSinglePhotoWrap">
         <img id="modalTaskPhoto" src="" alt="Damage Photo">
         <div class="photo-badge-overlay">
           <span id="modalCategoryBadge" class="badge badge-critical">Critical</span>
           <span id="modalTradeBadge" class="badge badge-aesthetic">Structural</span>
           <span id="modalTaskPScore" class="badge badge-pscore">P 9.2</span>
+        </div>
+      </div>
+
+      <!-- Dual Photo Comparison Frame (for Pre-Complete, Pre-Invalid, Completed, and Invalid Resolved) -->
+      <div id="modalDualPhotoWrap" style="display: none; margin-bottom: 14px;">
+        <div class="proof-comparison-grid" style="margin: 0 0 8px 0;">
+          <div class="proof-photo-item" style="aspect-ratio: 16/10;">
+            <img id="modalDualBeforePhoto" src="" alt="Original Reported Defect">
+            <div class="proof-photo-label" id="modalDualBeforeLabel">1. Reported Incident</div>
+          </div>
+          <div class="proof-photo-item" style="aspect-ratio: 16/10;">
+            <img id="modalDualAfterPhoto" src="" alt="Field Evidence Proof">
+            <div class="proof-photo-label" id="modalDualAfterLabel">2. Field Submission</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <span id="modalDualCategoryBadge" class="badge badge-critical">Critical</span>
+          <span id="modalDualTradeBadge" class="badge badge-aesthetic">Structural</span>
+          <span id="modalDualStatusBadge" class="badge" style="background:#f3e8ff; color:#7e22ce;">Status</span>
         </div>
       </div>
 

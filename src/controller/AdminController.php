@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\DAO\UserDAO;
+use App\DAO\TaskDAO;
 use App\DAO\AuditLogDAO;
 use App\Utils\JWTUtil;
 use App\Utils\ResponseUtil;
@@ -11,11 +12,13 @@ use Exception;
 class AdminController
 {
     private UserDAO $userDAO;
+    private TaskDAO $taskDAO;
     private AuditLogDAO $auditLogDAO;
 
     public function __construct()
     {
         $this->userDAO = new UserDAO();
+        $this->taskDAO = new TaskDAO();
         $this->auditLogDAO = new AuditLogDAO();
     }
 
@@ -316,4 +319,277 @@ class AdminController
             default: return ucfirst(strtolower($role));
         }
     }
+
+    // =========================================================================
+    // MODULE 3: ADMIN TASK CONTROL DASHBOARD ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Retrieve complete tasks overview with status counters, fleet status, and filtered tasks (GET /api/v1/admin/tasks)
+     */
+    public function getTasks(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $status = $_GET['status'] ?? null;
+        $search = $_GET['search'] ?? null;
+        $category = $_GET['category'] ?? null;
+        $skill = $_GET['skill'] ?? null;
+
+        try {
+            $data = $this->taskDAO->getAdminTasksOverview($status, $search, $category, $skill);
+            ResponseUtil::success($data, 'Admin task control overview retrieved.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve task control data: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Retrieve dynamic crew candidates with live distances from a task location (GET /api/v1/admin/tasks/{id}/candidates)
+     */
+    public function getCrewCandidatesForTask(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $data = $this->taskDAO->getCrewsFleetForTask($taskId);
+            ResponseUtil::success($data, 'Crew candidates retrieved with distances.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve crew candidates: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Run algorithm preview recommendation for single task (POST /api/v1/admin/tasks/{id}/auto-dispatch-preview)
+     */
+    public function previewSingleTaskAutoDispatch(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->previewSingleTaskAutoDispatch($taskId);
+            ResponseUtil::success($result, 'Single-task auto-dispatch recommendation evaluated.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to evaluate auto-dispatch algorithm: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Assign or Add-On assign a task to a maintenance crew (POST /api/v1/admin/tasks/{id}/assign)
+     */
+    public function assignCrew(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $crewId = trim($input['crew_id'] ?? ($_POST['crew_id'] ?? ''));
+        $isAddOn = !empty($input['is_addon']) || !empty($_POST['is_addon']);
+
+        if (empty($crewId)) {
+            ResponseUtil::error('Maintenance technician crew_id is required.', 400);
+            return;
+        }
+
+        try {
+            $result = $this->taskDAO->manualAssignTask($taskId, $crewId, $admin['user_id'], $isAddOn);
+            if (!$result['success']) {
+                ResponseUtil::error($result['error'] ?? 'Assignment failed.', 400);
+                return;
+            }
+
+            try {
+                $actionName = $isAddOn ? 'TASK_ADDON_ASSIGNED' : 'TASK_MANUALLY_ASSIGNED';
+                $this->auditLogDAO->log($admin['user_id'], $actionName, "Admin assigned task {$taskId} to crew {$result['assigned_crew_name']}");
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Task successfully assigned to {$result['assigned_crew_name']} (24-hour acceptance window).");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to assign task: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Run batch auto-dispatch across all unassigned Open Pool tasks (POST /api/v1/admin/tasks/batch-dispatch)
+     */
+    public function runBatchDispatch(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->runAutoDispatch();
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'], 
+                    'BATCH_AUTO_DISPATCH_TRIGGERED', 
+                    "Batch auto-dispatch ran: {$result['assigned_count']} assigned, {$result['unassigned_count']} unassigned."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Batch auto-dispatch completed: {$result['assigned_count']} tasks dispatched.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Batch auto-dispatch failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin approves a PRECOMPLETE work order (POST /api/v1/admin/tasks/{id}/approve-complete)
+     */
+    public function approveCompletion(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->approveTaskCompletion($taskId, $admin['user_id']);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_COMPLETED_APPROVED',
+                    "Admin approved completion for task {$taskId}. +5.0 performance points awarded to technician {$result['crew_name']}."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Work order completion approved! +5.0 performance points awarded to {$result['crew_name']}.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to approve completion: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin rejects a PRECOMPLETE submission and returns it for rework (POST /api/v1/admin/tasks/{id}/reject-complete)
+     */
+    public function rejectCompletion(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $reason = trim($input['return_reason'] ?? ($_POST['return_reason'] ?? ''));
+
+        if (empty($reason)) {
+            ResponseUtil::error('A return reason / remarks is required when rejecting completion.', 400);
+            return;
+        }
+
+        try {
+            $result = $this->taskDAO->rejectTaskCompletion($taskId, $admin['user_id'], $reason);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_COMPLETED_REJECTED',
+                    "Admin returned task {$taskId} to technician {$result['crew_name']} for rework: {$reason}"
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Work order returned to technician {$result['crew_name']} for rework.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to return task for rework: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin returns a DROPPED task back to Open Pool (POST /api/v1/admin/tasks/{id}/return-open-pool)
+     */
+    public function returnToOpenPool(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->returnTaskToOpenPool($taskId, $admin['user_id']);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_RETURNED_TO_OPEN_POOL',
+                    "Admin returned task {$taskId} (District: {$result['district']}) back to Open Maintenance Pool."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Work order successfully returned to Open Maintenance Pool.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to return task to Open Pool: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin approves a PRE_INVALID flag (POST /api/v1/admin/tasks/{id}/approve-invalid)
+     */
+    public function approveInvalid(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->approveInvalidTask($taskId, $admin['user_id']);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_INVALID_APPROVED',
+                    "Admin approved invalid flag for task {$taskId}. -20 reputation points deducted from citizen {$result['reporter_name']}."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Incident flagged as INVALID_RESOLVED. -20 reputation points deducted from {$result['reporter_name']}.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to approve invalid flag: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin rejects a PRE_INVALID flag and returns task for rework (POST /api/v1/admin/tasks/{id}/reject-invalid)
+     */
+    public function rejectInvalid(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $reason = trim($input['return_reason'] ?? ($_POST['return_reason'] ?? ''));
+
+        if (empty($reason)) {
+            ResponseUtil::error('A rejection reason / remarks is required when returning an invalid flag for rework.', 400);
+            return;
+        }
+
+        try {
+            $result = $this->taskDAO->rejectInvalidTask($taskId, $admin['user_id'], $reason);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_INVALID_REJECTED',
+                    "Admin rejected invalid flag for task {$taskId} and returned to technician {$result['crew_name']}: {$reason}"
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Invalid flag rejected. Work order returned to technician {$result['crew_name']} for rework.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to reject invalid flag: ' . $e->getMessage(), 500);
+        }
+    }
 }
+
