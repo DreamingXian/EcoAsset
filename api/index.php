@@ -97,6 +97,10 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
     (new AdminController())->previewSingleTaskAutoDispatch($m[1]);
 } elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/assign$#i', $cleanUri, $m)) {
     (new AdminController())->assignCrew($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/approve-complete$#i', $cleanUri, $m)) {
+    (new AdminController())->approveCompletion($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/reject-complete$#i', $cleanUri, $m)) {
+    (new AdminController())->rejectCompletion($m[1]);
 } elseif ($method === 'POST' && ($cleanUri === '/api/v1/admin/tasks/batch-dispatch' || $uri === '/api/v1/admin/tasks/batch-dispatch')) {
     (new AdminController())->runBatchDispatch();
 

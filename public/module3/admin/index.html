@@ -512,6 +512,27 @@
   </div>
 
   <!-- ==========================================================================
+       MODAL: ADMIN CONFIRMATION PROMPT
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="adminConfirmationModal" style="z-index: 3500;">
+    <div class="admin-modal-box" style="max-width: 490px; text-align: center; padding: 28px 24px; z-index: 3501;">
+      <div id="adminConfirmIcon" style="font-size: 42px; margin-bottom: 12px;">⚖️</div>
+      <h3 class="modal-head-title" id="adminConfirmTitle" style="font-size: 18px; margin-bottom: 8px; justify-content: center;">Confirm Action</h3>
+      <p style="font-size: 13.5px; color: #475569; line-height: 1.55; margin-bottom: 22px;" id="adminConfirmDesc">
+        Are you sure you want to proceed with this administrative action?
+      </p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button class="btn-action btn-primary" id="adminConfirmSubmitBtn" style="padding: 12px;" onclick="executeAdminConfirmedAction()">
+          <span>Yes, Confirm</span>
+        </button>
+        <button class="btn-action btn-secondary" onclick="closeModal('adminConfirmationModal')">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
        MODAL 5: VERIFY COMPLETION (PRECOMPLETE)
        ========================================================================== -->
   <div class="admin-modal-backdrop" id="verifyCompleteModal">
@@ -816,7 +837,7 @@
         if (currentCategoryFilter !== 'ALL') queryParams.append('category', currentCategoryFilter);
         if (currentSearchTerm) queryParams.append('search', currentSearchTerm);
 
-        const response = await fetch(`../../api/v1/admin/tasks?${queryParams.toString()}`, {
+        const response = await fetch(`/api/index.php/api/v1/admin/tasks?${queryParams.toString()}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -890,7 +911,7 @@
       const token = AuthGuard.getToken();
 
       try {
-        const response = await fetch('../../api/v1/admin/tasks/batch-dispatch', {
+        const response = await fetch('/api/index.php/api/v1/admin/tasks/batch-dispatch', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -968,7 +989,7 @@
 
       const token = AuthGuard.getToken();
       try {
-        const response = await fetch(`../../api/v1/admin/tasks/${taskId}/auto-dispatch-preview`, {
+        const response = await fetch(`/api/index.php/api/v1/admin/tasks/${taskId}/auto-dispatch-preview`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1038,7 +1059,7 @@
       const token = AuthGuard.getToken();
 
       try {
-        const response = await fetch(`../../api/v1/admin/tasks/${activeActionTaskId}/assign`, {
+        const response = await fetch(`/api/index.php/api/v1/admin/tasks/${activeActionTaskId}/assign`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1114,7 +1135,7 @@
       // Fetch dynamic candidates with live calculated distances from task location
       const token = AuthGuard.getToken();
       try {
-        const response = await fetch(`../../api/v1/admin/tasks/${activeActionTaskId}/candidates`, {
+        const response = await fetch(`/api/index.php/api/v1/admin/tasks/${activeActionTaskId}/candidates`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -1343,7 +1364,7 @@
       const token = AuthGuard.getToken();
 
       try {
-        const response = await fetch(`../../api/v1/admin/tasks/${activeActionTaskId}/assign`, {
+        const response = await fetch(`/api/index.php/api/v1/admin/tasks/${activeActionTaskId}/assign`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1382,6 +1403,184 @@
         showToast('Network error during crew assignment.', true);
       }
     }
+
+    // =========================================================================
+    // PRECOMPLETE VERIFICATION & REWORK REVIEW SYSTEM
+    // =========================================================================
+    let pendingAdminAction = null;
+
+    window.openVerifyCompleteModal = function(taskId) {
+      activeActionTaskId = taskId;
+      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
+      if (!task) return;
+
+      const originalPhoto = task.photo_url || task.report_photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+      const afterPhoto = task.completion_photo_url || originalPhoto;
+
+      document.getElementById('modalBeforeImg').src = originalPhoto;
+      document.getElementById('modalBeforeDesc').textContent = `${escapeHtml(task.district || 'Incident Site')} • ${escapeHtml(task.description || '')}`;
+      
+      document.getElementById('modalAfterImg').src = afterPhoto;
+      document.getElementById('modalAfterNotes').innerHTML = `
+        <strong>Technician:</strong> ${escapeHtml(task.assigned_crew_name || 'Assigned Crew')}<br>
+        <strong>Resolution Notes:</strong> ${escapeHtml(task.resolution_notes || 'Repairs completed on site.')}
+      `;
+
+      const reasonInput = document.getElementById('verifyRejectReason');
+      if (reasonInput) {
+        reasonInput.value = '';
+        reasonInput.style.borderColor = '#e2e8f0';
+      }
+
+      openModal('verifyCompleteModal');
+    };
+
+    window.handleApproveCompletion = function() {
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
+      const taskId = activeActionTaskId || (task ? task.task_id : null);
+      if (!taskId) {
+        showToast('⚠️ No task selected for approval.', true);
+        return;
+      }
+
+      pendingAdminAction = {
+        type: 'APPROVE_COMPLETE',
+        taskId: taskId,
+        crewName: (task && task.assigned_crew_name) ? task.assigned_crew_name : 'Technician',
+        district: (task && task.district) ? task.district : 'Incident Site'
+      };
+
+      document.getElementById('adminConfirmIcon').textContent = '✅';
+      document.getElementById('adminConfirmTitle').textContent = 'Approve Work Order Completion';
+      document.getElementById('adminConfirmDesc').innerHTML = `
+        Are you sure you want to approve the repair proof for <strong>${escapeHtml((task && task.district) || 'this site')}</strong>?<br><br>
+        The task will be marked as <strong style="color:#059669;">COMPLETED</strong> and <strong style="color:#059669;">+5.0 performance points</strong> will be awarded to <strong>${escapeHtml((task && task.assigned_crew_name) || 'the technician')}</strong>.
+      `;
+      
+      const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+      if (submitBtn) {
+        submitBtn.style.background = '#059669';
+        submitBtn.innerHTML = `<span>✅ Yes, Approve Completion</span>`;
+      }
+
+      openModal('adminConfirmationModal');
+    };
+
+    window.handleRejectCompletion = function() {
+      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
+      const taskId = activeActionTaskId || (task ? task.task_id : null);
+      if (!taskId) {
+        showToast('⚠️ No task selected for return.', true);
+        return;
+      }
+
+      const reasonInput = document.getElementById('verifyRejectReason');
+      const reason = reasonInput ? reasonInput.value.trim() : '';
+
+      if (!reason) {
+        if (reasonInput) {
+          reasonInput.style.borderColor = '#ef4444';
+          reasonInput.focus();
+        }
+        showToast('⚠️ A return reason / remarks is compulsory when returning a task for rework.', true);
+        return;
+      }
+
+      pendingAdminAction = {
+        type: 'REJECT_COMPLETE',
+        taskId: taskId,
+        reason: reason,
+        crewName: (task && task.assigned_crew_name) ? task.assigned_crew_name : 'Technician',
+        district: (task && task.district) ? task.district : 'Incident Site'
+      };
+
+      document.getElementById('adminConfirmIcon').textContent = '↩️';
+      document.getElementById('adminConfirmTitle').textContent = 'Return Work Order for Rework';
+      document.getElementById('adminConfirmDesc').innerHTML = `
+        Are you sure you want to return this task back to <strong style="color:#0284c7;">IN_PROGRESS</strong> for <strong>${escapeHtml((task && task.assigned_crew_name) || 'the technician')}</strong>?<br><br>
+        <strong>Return Remarks:</strong><br>
+        <div style="background:#fef2f2; border-left:3px solid #ef4444; padding:8px 10px; border-radius:6px; font-size:12.5px; color:#7f1d1d; margin-top:6px; text-align:left;">
+          ${escapeHtml(reason)}
+        </div>
+      `;
+
+      const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+      if (submitBtn) {
+        submitBtn.style.background = '#dc2626';
+        submitBtn.innerHTML = `<span>↩️ Yes, Return for Rework</span>`;
+      }
+
+      openModal('adminConfirmationModal');
+    };
+
+    window.executeAdminConfirmedAction = async function() {
+      if (!pendingAdminAction) return;
+
+      const action = pendingAdminAction;
+      const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>⏳ Processing...</span>`;
+      }
+
+      if (action.type === 'APPROVE_COMPLETE') {
+        try {
+          const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/admin/tasks/${action.taskId}/approve-complete`, {
+            method: 'POST'
+          });
+          const res = await response.json();
+          closeModal('adminConfirmationModal');
+          closeModal('verifyCompleteModal');
+          closeModal('taskDetailModal');
+
+          if (res.status === 'success') {
+            showToast(`✅ Work order completion approved! +5.0 performance points awarded to ${action.crewName}.`);
+            await loadAdminTasks();
+          } else {
+            showToast(res.message || res.error || 'Failed to approve completion.', true);
+          }
+        } catch (err) {
+          console.error('Error approving completion:', err);
+          showToast('Network error while approving completion: ' + err.message, true);
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>Yes, Confirm</span>`;
+          }
+          pendingAdminAction = null;
+        }
+      } else if (action.type === 'REJECT_COMPLETE') {
+        try {
+          const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/admin/tasks/${action.taskId}/reject-complete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              return_reason: action.reason
+            })
+          });
+          const res = await response.json();
+          closeModal('adminConfirmationModal');
+          closeModal('verifyCompleteModal');
+          closeModal('taskDetailModal');
+
+          if (res.status === 'success') {
+            showToast(`↩️ Work order returned to ${action.crewName} for rework.`);
+            await loadAdminTasks();
+          } else {
+            showToast(res.message || res.error || 'Failed to return task for rework.', true);
+          }
+        } catch (err) {
+          console.error('Error rejecting completion:', err);
+          showToast('Network error while returning task for rework: ' + err.message, true);
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>Yes, Confirm</span>`;
+          }
+          pendingAdminAction = null;
+        }
+      }
+    };
 
     // =========================================================================
     // FILTERING & RENDERING LOGIC FOR TASK CARDS GRID
@@ -1611,46 +1810,8 @@
     }
 
     // =========================================================================
-    // LIFECYCLE MODAL HANDLERS
+    // DROPPED & INVALID MODAL HANDLERS
     // =========================================================================
-    window.openVerifyCompleteModal = function(taskId) {
-      activeActionTaskId = taskId;
-      const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
-      if (!task) return;
-
-      document.getElementById('modalBeforeImg').src = task.photo_url;
-      document.getElementById('modalBeforeDesc').textContent = `Reported: ${task.description}`;
-      document.getElementById('modalAfterImg').src = task.completion_photo_url || task.photo_url;
-      document.getElementById('modalAfterNotes').textContent = `Technician Notes: ${task.resolution_notes || 'Repairs completed.'}`;
-      document.getElementById('verifyRejectReason').value = '';
-
-      openModal('verifyCompleteModal');
-    };
-
-    window.handleApproveCompletion = function() {
-      closeModal('verifyCompleteModal');
-      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
-      if (task) {
-        task.status = 'COMPLETED';
-        renderTaskCards();
-        showToast(`✅ Task approved! Crew rewarded +5 points.`);
-      }
-    };
-
-    window.handleRejectCompletion = function() {
-      const reason = document.getElementById('verifyRejectReason').value.trim();
-      if (!reason) {
-        showToast('⚠️ Please specify a rejection / return reason for the technician.', true);
-        return;
-      }
-      closeModal('verifyCompleteModal');
-      const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
-      if (task) {
-        task.status = 'IN_PROGRESS';
-        renderTaskCards();
-        showToast(`↩️ Work order returned to ${task.assigned_crew_name} with return notes.`);
-      }
-    };
 
     window.openRescheduleDroppedModal = function(taskId) {
       activeActionTaskId = taskId;

@@ -440,5 +440,67 @@ class AdminController
             ResponseUtil::error('Batch auto-dispatch failed: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * Admin approves a PRECOMPLETE work order (POST /api/v1/admin/tasks/{id}/approve-complete)
+     */
+    public function approveCompletion(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->approveTaskCompletion($taskId, $admin['user_id']);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_COMPLETED_APPROVED',
+                    "Admin approved completion for task {$taskId}. +5.0 performance points awarded to technician {$result['crew_name']}."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Work order completion approved! +5.0 performance points awarded to {$result['crew_name']}.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to approve completion: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin rejects a PRECOMPLETE submission and returns it for rework (POST /api/v1/admin/tasks/{id}/reject-complete)
+     */
+    public function rejectCompletion(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $reason = trim($input['return_reason'] ?? ($_POST['return_reason'] ?? ''));
+
+        if (empty($reason)) {
+            ResponseUtil::error('A return reason / remarks is required when rejecting completion.', 400);
+            return;
+        }
+
+        try {
+            $result = $this->taskDAO->rejectTaskCompletion($taskId, $admin['user_id'], $reason);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_COMPLETED_REJECTED',
+                    "Admin returned task {$taskId} to technician {$result['crew_name']} for rework: {$reason}"
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Work order returned to technician {$result['crew_name']} for rework.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to return task for rework: ' . $e->getMessage(), 500);
+        }
+    }
 }
 

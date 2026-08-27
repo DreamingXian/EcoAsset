@@ -291,6 +291,158 @@ class TaskDAO
     }
 
     /**
+     * Admin approves a PRECOMPLETE work order -> transitions to COMPLETED (+5.0 pts to crew).
+     */
+    public function approveTaskCompletion(string $taskId, string $adminId, float $rewardPoints = 5.0): array
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $fetchSql = "SELECT t.task_id, t.report_id, t.assigned_crew_id, r.status, u.full_name as crew_name, r.district
+                         FROM maintenance_tasks t
+                         JOIN damage_reports r ON t.report_id = r.report_id
+                         LEFT JOIN users u ON t.assigned_crew_id = u.user_id
+                         WHERE t.task_id = :task_id OR t.report_id = :task_id";
+            $fetchStmt = $this->db->prepare($fetchSql);
+            $fetchStmt->execute(['task_id' => $taskId]);
+            $task = $fetchStmt->fetch();
+
+            if (!$task) {
+                throw new Exception("Task record not found for ID {$taskId}.");
+            }
+
+            if ($task['status'] !== 'PRECOMPLETE') {
+                throw new Exception("Only tasks in PRECOMPLETE status can be approved for completion (Current: {$task['status']}).");
+            }
+
+            // 1. Update report status to COMPLETED
+            $repSql = "UPDATE damage_reports SET status = 'COMPLETED' WHERE report_id = :report_id";
+            $repStmt = $this->db->prepare($repSql);
+            $repStmt->execute(['report_id' => $task['report_id']]);
+
+            // 2. Update task completed_at timestamp
+            $taskSql = "UPDATE maintenance_tasks 
+                        SET completed_at = CURRENT_TIMESTAMP,
+                            admin_return_reason = NULL,
+                            decline_reason = NULL
+                        WHERE task_id = :task_id";
+            $taskStmt = $this->db->prepare($taskSql);
+            $taskStmt->execute(['task_id' => $task['task_id']]);
+
+            // 3. Award performance score (+5.0 points) to the assigned crew
+            if (!empty($task['assigned_crew_id'])) {
+                $crewSql = "UPDATE maintenance_crews 
+                            SET performance_score = LEAST(100.0, performance_score + :reward) 
+                            WHERE crew_id = :crew_id";
+                $crewStmt = $this->db->prepare($crewSql);
+                $crewStmt->execute([
+                    'reward'  => $rewardPoints,
+                    'crew_id' => $task['assigned_crew_id']
+                ]);
+
+                // 4. Ensure crew availability is AVAILABLE if no remaining IN_PROGRESS jobs
+                $crewCheck = "SELECT COUNT(*) as cnt 
+                              FROM maintenance_tasks t 
+                              JOIN damage_reports r ON t.report_id = r.report_id 
+                              WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+                $cStmt = $this->db->prepare($crewCheck);
+                $cStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                $cnt = (int)($cStmt->fetch()['cnt'] ?? 0);
+                if ($cnt === 0) {
+                    $cUpdate = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
+                    $cuStmt = $this->db->prepare($cUpdate);
+                    $cuStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                }
+            }
+
+            $this->db->commit();
+            return [
+                'success'       => true,
+                'task_id'       => $task['task_id'],
+                'report_id'     => $task['report_id'],
+                'crew_id'       => $task['assigned_crew_id'],
+                'crew_name'     => $task['crew_name'] ?? 'Technician',
+                'district'      => $task['district'] ?? 'Incident Site',
+                'reward_points' => $rewardPoints
+            ];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error in TaskDAO::approveTaskCompletion: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Admin rejects a PRECOMPLETE submission -> returns task back to IN_PROGRESS with mandatory return remarks.
+     */
+    public function rejectTaskCompletion(string $taskId, string $adminId, string $returnReason): array
+    {
+        if (empty(trim($returnReason))) {
+            throw new Exception("Return reason is required when sending a work order back for rework.");
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $fetchSql = "SELECT t.task_id, t.report_id, t.assigned_crew_id, r.status, u.full_name as crew_name, r.district
+                         FROM maintenance_tasks t
+                         JOIN damage_reports r ON t.report_id = r.report_id
+                         LEFT JOIN users u ON t.assigned_crew_id = u.user_id
+                         WHERE t.task_id = :task_id OR t.report_id = :task_id";
+            $fetchStmt = $this->db->prepare($fetchSql);
+            $fetchStmt->execute(['task_id' => $taskId]);
+            $task = $fetchStmt->fetch();
+
+            if (!$task) {
+                throw new Exception("Task record not found for ID {$taskId}.");
+            }
+
+            if ($task['status'] !== 'PRECOMPLETE') {
+                throw new Exception("Only tasks in PRECOMPLETE status can be returned for rework (Current: {$task['status']}).");
+            }
+
+            // 1. Revert report status back to IN_PROGRESS
+            $repSql = "UPDATE damage_reports SET status = 'IN_PROGRESS' WHERE report_id = :report_id";
+            $repStmt = $this->db->prepare($repSql);
+            $repStmt->execute(['report_id' => $task['report_id']]);
+
+            // 2. Save return reason in maintenance_tasks
+            $taskSql = "UPDATE maintenance_tasks 
+                        SET admin_return_reason = :reason,
+                            decline_reason = :reason,
+                            completed_at = NULL
+                        WHERE task_id = :task_id";
+            $taskStmt = $this->db->prepare($taskSql);
+            $taskStmt->execute([
+                'reason'  => trim($returnReason),
+                'task_id' => $task['task_id']
+            ]);
+
+            // 3. Mark crew as BUSY since they have an active in-progress job again
+            if (!empty($task['assigned_crew_id'])) {
+                $cUpdate = "UPDATE maintenance_crews SET availability_status = 'BUSY' WHERE crew_id = :crew_id";
+                $cuStmt = $this->db->prepare($cUpdate);
+                $cuStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+            }
+
+            $this->db->commit();
+            return [
+                'success'       => true,
+                'task_id'       => $task['task_id'],
+                'report_id'     => $task['report_id'],
+                'crew_id'       => $task['assigned_crew_id'],
+                'crew_name'     => $task['crew_name'] ?? 'Technician',
+                'district'      => $task['district'] ?? 'Incident Site',
+                'return_reason' => trim($returnReason)
+            ];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error in TaskDAO::rejectTaskCompletion: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Drop an accepted task due to field complications (-10 penalty to crew, status -> DROPPED).
      */
     public function dropTask(string $taskId, string $crewId, string $dropReason, float $penalty = 10.0): bool
