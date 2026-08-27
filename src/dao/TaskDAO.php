@@ -633,6 +633,168 @@ class TaskDAO
     }
 
     /**
+     * Admin approves a PRE_INVALID flag -> transitions to INVALID_RESOLVED, penalizes reporting tourist (-20 reputation points).
+     */
+    public function approveInvalidTask(string $taskIdOrReportId, string $adminId, float $penalty = 20.0): array
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $fetchSql = "SELECT t.task_id, t.report_id, t.assigned_crew_id, r.user_id as reporter_id, r.status, r.district,
+                                u.full_name as reporter_name, c.full_name as crew_name
+                         FROM damage_reports r
+                         LEFT JOIN maintenance_tasks t ON r.report_id = t.report_id
+                         LEFT JOIN users u ON r.user_id = u.user_id
+                         LEFT JOIN users c ON t.assigned_crew_id = c.user_id
+                         WHERE t.task_id = :id OR r.report_id = :id";
+            $fetchStmt = $this->db->prepare($fetchSql);
+            $fetchStmt->execute(['id' => $taskIdOrReportId]);
+            $task = $fetchStmt->fetch();
+
+            if (!$task) {
+                throw new Exception("Task or damage report not found for ID {$taskIdOrReportId}.");
+            }
+
+            if ($task['status'] !== 'PRE_INVALID') {
+                throw new Exception("Only tasks in PRE_INVALID status can be approved as invalid (Current: {$task['status']}).");
+            }
+
+            // 1. Update report status to INVALID_RESOLVED
+            $repSql = "UPDATE damage_reports SET status = 'INVALID_RESOLVED' WHERE report_id = :report_id";
+            $repStmt = $this->db->prepare($repSql);
+            $repStmt->execute(['report_id' => $task['report_id']]);
+
+            // 2. Update task completed_at timestamp (for 7-day recent display on crew terminal)
+            if (!empty($task['task_id'])) {
+                $taskSql = "UPDATE maintenance_tasks 
+                            SET completed_at = CURRENT_TIMESTAMP,
+                                admin_return_reason = NULL,
+                                decline_reason = NULL
+                            WHERE task_id = :task_id";
+                $taskStmt = $this->db->prepare($taskSql);
+                $taskStmt->execute(['task_id' => $task['task_id']]);
+            }
+
+            // 3. Deduct reputation points (-20) from the reporting tourist
+            if (!empty($task['reporter_id'])) {
+                $penSql = "UPDATE tourist_profiles 
+                           SET reputation_score = GREATEST(0, reputation_score - :penalty) 
+                           WHERE user_id = :reporter_id";
+                $penStmt = $this->db->prepare($penSql);
+                $penStmt->execute([
+                    'penalty'     => (int)$penalty,
+                    'reporter_id' => $task['reporter_id']
+                ]);
+            }
+
+            // 4. Sync crew availability: if 0 active in-progress tasks, set to AVAILABLE
+            if (!empty($task['assigned_crew_id'])) {
+                $crewCheck = "SELECT COUNT(*) as cnt 
+                              FROM maintenance_tasks t 
+                              JOIN damage_reports r ON t.report_id = r.report_id 
+                              WHERE t.assigned_crew_id = :crew_id AND r.status = 'IN_PROGRESS'";
+                $cStmt = $this->db->prepare($crewCheck);
+                $cStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                $cnt = (int)($cStmt->fetch()['cnt'] ?? 0);
+                if ($cnt === 0) {
+                    $cUpdate = "UPDATE maintenance_crews SET availability_status = 'AVAILABLE' WHERE crew_id = :crew_id";
+                    $cuStmt = $this->db->prepare($cUpdate);
+                    $cuStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+                }
+            }
+
+            $this->db->commit();
+            return [
+                'success'        => true,
+                'task_id'        => $task['task_id'] ?? $task['report_id'],
+                'report_id'      => $task['report_id'],
+                'reporter_id'    => $task['reporter_id'],
+                'reporter_name'  => $task['reporter_name'] ?? 'Citizen Reporter',
+                'crew_name'      => $task['crew_name'] ?? 'Technician',
+                'district'       => $task['district'] ?? 'Incident Site',
+                'penalty_points' => $penalty
+            ];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error in TaskDAO::approveInvalidTask: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Admin rejects a PRE_INVALID submission -> returns task back to IN_PROGRESS with mandatory return remarks.
+     */
+    public function rejectInvalidTask(string $taskIdOrReportId, string $adminId, string $returnReason): array
+    {
+        if (empty(trim($returnReason))) {
+            throw new Exception("Rejection remarks are required when returning an invalid flag to the technician.");
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $fetchSql = "SELECT t.task_id, t.report_id, t.assigned_crew_id, r.status, r.district,
+                                c.full_name as crew_name
+                         FROM damage_reports r
+                         LEFT JOIN maintenance_tasks t ON r.report_id = t.report_id
+                         LEFT JOIN users c ON t.assigned_crew_id = c.user_id
+                         WHERE t.task_id = :id OR r.report_id = :id";
+            $fetchStmt = $this->db->prepare($fetchSql);
+            $fetchStmt->execute(['id' => $taskIdOrReportId]);
+            $task = $fetchStmt->fetch();
+
+            if (!$task) {
+                throw new Exception("Task or damage report not found for ID {$taskIdOrReportId}.");
+            }
+
+            if ($task['status'] !== 'PRE_INVALID') {
+                throw new Exception("Only tasks in PRE_INVALID status can be returned for rework (Current: {$task['status']}).");
+            }
+
+            // 1. Revert report status back to IN_PROGRESS
+            $repSql = "UPDATE damage_reports SET status = 'IN_PROGRESS' WHERE report_id = :report_id";
+            $repStmt = $this->db->prepare($repSql);
+            $repStmt->execute(['report_id' => $task['report_id']]);
+
+            // 2. Save return reason in maintenance_tasks
+            if (!empty($task['task_id'])) {
+                $taskSql = "UPDATE maintenance_tasks 
+                            SET admin_return_reason = :reason,
+                                decline_reason = :reason,
+                                completed_at = NULL
+                            WHERE task_id = :task_id";
+                $taskStmt = $this->db->prepare($taskSql);
+                $taskStmt->execute([
+                    'reason'  => trim($returnReason),
+                    'task_id' => $task['task_id']
+                ]);
+            }
+
+            // 3. Mark crew as BUSY since they have an active in-progress job again
+            if (!empty($task['assigned_crew_id'])) {
+                $cUpdate = "UPDATE maintenance_crews SET availability_status = 'BUSY' WHERE crew_id = :crew_id";
+                $cuStmt = $this->db->prepare($cUpdate);
+                $cuStmt->execute(['crew_id' => $task['assigned_crew_id']]);
+            }
+
+            $this->db->commit();
+            return [
+                'success'       => true,
+                'task_id'       => $task['task_id'] ?? $task['report_id'],
+                'report_id'     => $task['report_id'],
+                'crew_id'       => $task['assigned_crew_id'],
+                'crew_name'     => $task['crew_name'] ?? 'Technician',
+                'district'      => $task['district'] ?? 'Incident Site',
+                'return_reason' => trim($returnReason)
+            ];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error in TaskDAO::rejectInvalidTask: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Retrieve all unassigned damage reports in the prioritization queue, sorted by Pscore descending.
      */
     public function getUnassignedQueue(): array

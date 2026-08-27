@@ -529,5 +529,67 @@ class AdminController
             ResponseUtil::error('Failed to return task to Open Pool: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * Admin approves a PRE_INVALID flag (POST /api/v1/admin/tasks/{id}/approve-invalid)
+     */
+    public function approveInvalid(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        try {
+            $result = $this->taskDAO->approveInvalidTask($taskId, $admin['user_id']);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_INVALID_APPROVED',
+                    "Admin approved invalid flag for task {$taskId}. -20 reputation points deducted from citizen {$result['reporter_name']}."
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Incident flagged as INVALID_RESOLVED. -20 reputation points deducted from {$result['reporter_name']}.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to approve invalid flag: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Admin rejects a PRE_INVALID flag and returns task for rework (POST /api/v1/admin/tasks/{id}/reject-invalid)
+     */
+    public function rejectInvalid(string $taskId): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $reason = trim($input['return_reason'] ?? ($_POST['return_reason'] ?? ''));
+
+        if (empty($reason)) {
+            ResponseUtil::error('A rejection reason / remarks is required when returning an invalid flag for rework.', 400);
+            return;
+        }
+
+        try {
+            $result = $this->taskDAO->rejectInvalidTask($taskId, $admin['user_id'], $reason);
+
+            try {
+                $this->auditLogDAO->log(
+                    $admin['user_id'],
+                    'TASK_INVALID_REJECTED',
+                    "Admin rejected invalid flag for task {$taskId} and returned to technician {$result['crew_name']}: {$reason}"
+                );
+            } catch (Exception $e) {
+                // Non-blocking
+            }
+
+            ResponseUtil::success($result, "Invalid flag rejected. Work order returned to technician {$result['crew_name']} for rework.");
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to reject invalid flag: ' . $e->getMessage(), 500);
+        }
+    }
 }
 

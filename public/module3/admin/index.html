@@ -633,13 +633,15 @@
         </div>
       </div>
 
-      <label class="form-label">Administrative Action</label>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <label class="form-label" style="margin-top: 14px;">Admin Rejection Remarks / Return Notes (Compulsory only if returning to crew)</label>
+      <textarea id="invalidRejectReason" class="form-textarea" rows="2" placeholder="e.g., Checked wrong boundary line; please re-inspect near southern entrance gate..."></textarea>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
         <button class="btn-action" style="background: #e11d48; color: #ffffff; padding: 12px;" onclick="handleApproveInvalid()">
           <span>🚩 Confirm Invalid (-20 Citizen Penalty)</span>
         </button>
-        <button class="btn-action btn-secondary" onclick="handleRejectInvalid()">
-          <span>↩️ Reject Flag & Resume Work Order</span>
+        <button class="btn-action btn-secondary" style="color: #b91c1c; border-color: #fca5a5;" onclick="handleRejectInvalid()">
+          <span>↩️ Reject Flag & Return to Crew</span>
         </button>
       </div>
     </div>
@@ -1605,6 +1607,62 @@
           }
           pendingAdminAction = null;
         }
+      } else if (action.type === 'APPROVE_INVALID') {
+        try {
+          const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/admin/tasks/${action.taskId}/approve-invalid`, {
+            method: 'POST'
+          });
+          const res = await response.json();
+          closeModal('adminConfirmationModal');
+          closeModal('verifyInvalidModal');
+          closeModal('taskDetailModal');
+
+          if (res.status === 'success') {
+            showToast(`🚩 Incident confirmed as INVALID_RESOLVED. -20 reputation points deducted from ${action.reporterName}.`);
+            await loadAdminTasks();
+          } else {
+            showToast(res.message || res.error || 'Failed to approve invalid flag.', true);
+          }
+        } catch (err) {
+          console.error('Error approving invalid flag:', err);
+          showToast('Network error while approving invalid flag: ' + err.message, true);
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>Yes, Confirm</span>`;
+          }
+          pendingAdminAction = null;
+        }
+      } else if (action.type === 'REJECT_INVALID') {
+        try {
+          const response = await AuthGuard.fetchWithAuth(`/api/index.php/api/v1/admin/tasks/${action.taskId}/reject-invalid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              return_reason: action.reason
+            })
+          });
+          const res = await response.json();
+          closeModal('adminConfirmationModal');
+          closeModal('verifyInvalidModal');
+          closeModal('taskDetailModal');
+
+          if (res.status === 'success') {
+            showToast(`↩️ Invalid flag rejected. Work order returned to ${action.crewName} for rework.`);
+            await loadAdminTasks();
+          } else {
+            showToast(res.message || res.error || 'Failed to reject invalid flag.', true);
+          }
+        } catch (err) {
+          console.error('Error rejecting invalid flag:', err);
+          showToast('Network error while rejecting invalid flag: ' + err.message, true);
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>Yes, Confirm</span>`;
+          }
+          pendingAdminAction = null;
+        }
       }
     };
 
@@ -1889,32 +1947,109 @@
       const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
 
-      document.getElementById('modalInvalidReportImg').src = task.photo_url;
-      document.getElementById('modalInvalidReportDesc').textContent = `Reported: ${task.description}`;
-      document.getElementById('modalInvalidClearImg').src = task.flag_invalid_photo_url || task.photo_url;
-      document.getElementById('modalInvalidNotes').textContent = `Technician Inspection Findings: ${task.flag_invalid_notes || 'No defect found at site.'}`;
+      const originalPhoto = task.photo_url || task.report_photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+      const clearPhoto = task.flag_invalid_photo_url || originalPhoto;
+
+      document.getElementById('modalInvalidReportImg').src = originalPhoto;
+      document.getElementById('modalInvalidReportDesc').innerHTML = `
+        <strong>Reporter:</strong> ${escapeHtml(task.reporter_name || 'Citizen Reporter')}<br>
+        <strong>Reported:</strong> ${escapeHtml(task.district || 'Incident Site')} • ${escapeHtml(task.description || '')}
+      `;
+      
+      document.getElementById('modalInvalidClearImg').src = clearPhoto;
+      document.getElementById('modalInvalidNotes').innerHTML = `
+        <strong>Technician:</strong> ${escapeHtml(task.assigned_crew_name || 'Assigned Crew')}<br>
+        <strong>Inspection Findings:</strong> ${escapeHtml(task.flag_invalid_notes || 'No defect found at GPS coordinates on site.')}
+      `;
+
+      const reasonInput = document.getElementById('invalidRejectReason');
+      if (reasonInput) {
+        reasonInput.value = '';
+        reasonInput.style.borderColor = '#e2e8f0';
+      }
 
       openModal('verifyInvalidModal');
     };
 
     window.handleApproveInvalid = function() {
-      closeModal('verifyInvalidModal');
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
-      if (task) {
-        task.status = 'INVALID_RESOLVED';
-        renderTaskCards();
-        showToast(`🚩 Task confirmed as Invalid. Citizen reputation adjusted (-20 pts).`);
+      const taskId = activeActionTaskId || (task ? task.task_id : null);
+      if (!taskId) {
+        showToast('⚠️ No task selected.', true);
+        return;
       }
+
+      pendingAdminAction = {
+        type: 'APPROVE_INVALID',
+        taskId: taskId,
+        reporterName: (task && task.reporter_name) ? task.reporter_name : 'Citizen Reporter',
+        crewName: (task && task.assigned_crew_name) ? task.assigned_crew_name : 'Technician',
+        district: (task && task.district) ? task.district : 'Incident Site'
+      };
+
+      document.getElementById('adminConfirmIcon').textContent = '🚩';
+      document.getElementById('adminConfirmTitle').textContent = 'Confirm Invalid Incident Flag';
+      document.getElementById('adminConfirmDesc').innerHTML = `
+        Are you sure you want to validate this report as <strong style="color:#e11d48;">INVALID (No Fault Found)</strong> for <strong>${escapeHtml((task && task.district) || 'this site')}</strong>?<br><br>
+        • Status will transition to <strong style="color:#e11d48;">INVALID_RESOLVED</strong>.<br>
+        • A penalty of <strong style="color:#e11d48;">-20 reputation points</strong> will be deducted from citizen <strong>${escapeHtml((task && task.reporter_name) || 'Reporter')}</strong>.<br>
+        • The work order will be finalized and archived.
+      `;
+
+      const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+      if (submitBtn) {
+        submitBtn.style.background = '#e11d48';
+        submitBtn.innerHTML = `<span>🚩 Yes, Confirm Invalid Flag</span>`;
+      }
+
+      openModal('adminConfirmationModal');
     };
 
     window.handleRejectInvalid = function() {
-      closeModal('verifyInvalidModal');
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
-      if (task) {
-        task.status = 'IN_PROGRESS';
-        renderTaskCards();
-        showToast(`↩️ Invalid flag rejected. Work order resumed in progress.`);
+      const taskId = activeActionTaskId || (task ? task.task_id : null);
+      if (!taskId) {
+        showToast('⚠️ No task selected.', true);
+        return;
       }
+
+      const reasonInput = document.getElementById('invalidRejectReason');
+      const reason = reasonInput ? reasonInput.value.trim() : '';
+
+      if (!reason) {
+        if (reasonInput) {
+          reasonInput.style.borderColor = '#ef4444';
+          reasonInput.focus();
+        }
+        showToast('⚠️ Rejection remarks are compulsory when returning an invalid flag to the crew.', true);
+        return;
+      }
+
+      pendingAdminAction = {
+        type: 'REJECT_INVALID',
+        taskId: taskId,
+        reason: reason,
+        crewName: (task && task.assigned_crew_name) ? task.assigned_crew_name : 'Technician',
+        district: (task && task.district) ? task.district : 'Incident Site'
+      };
+
+      document.getElementById('adminConfirmIcon').textContent = '↩️';
+      document.getElementById('adminConfirmTitle').textContent = 'Reject Invalid Flag & Resume Work';
+      document.getElementById('adminConfirmDesc').innerHTML = `
+        Are you sure you want to reject the invalid flag and return this work order back to <strong style="color:#0284c7;">IN_PROGRESS</strong> for <strong>${escapeHtml((task && task.assigned_crew_name) || 'the technician')}</strong>?<br><br>
+        <strong>Rejection Remarks:</strong><br>
+        <div style="background:#fef2f2; border-left:3px solid #ef4444; padding:8px 10px; border-radius:6px; font-size:12.5px; color:#7f1d1d; margin-top:6px; text-align:left;">
+          ${escapeHtml(reason)}
+        </div>
+      `;
+
+      const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+      if (submitBtn) {
+        submitBtn.style.background = '#dc2626';
+        submitBtn.innerHTML = `<span>↩️ Yes, Reject Flag & Return</span>`;
+      }
+
+      openModal('adminConfirmationModal');
     };
 
     // =========================================================================

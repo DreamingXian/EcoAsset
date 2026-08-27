@@ -103,6 +103,10 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
     (new AdminController())->rejectCompletion($m[1]);
 } elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/return-open-pool$#i', $cleanUri, $m)) {
     (new AdminController())->returnToOpenPool($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/approve-invalid$#i', $cleanUri, $m)) {
+    (new AdminController())->approveInvalid($m[1]);
+} elseif ($method === 'POST' && preg_match('#^/api/v1/admin/tasks/([a-f0-9\-]+)/reject-invalid$#i', $cleanUri, $m)) {
+    (new AdminController())->rejectInvalid($m[1]);
 } elseif ($method === 'POST' && ($cleanUri === '/api/v1/admin/tasks/batch-dispatch' || $uri === '/api/v1/admin/tasks/batch-dispatch')) {
     (new AdminController())->runBatchDispatch();
 
