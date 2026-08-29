@@ -1221,7 +1221,10 @@
           localStorage.setItem('ecoasset_token', result.data.token);
           localStorage.setItem('ecoasset_user', JSON.stringify(result.data.user));
 
-          const mustChange = (result.data.must_change_password === true) || (result.data.user && result.data.user.must_change_password === true);
+          const userRole = result.data.user?.role || '';
+          const isStaff = userRole !== 'TOURIST';
+          const mustChange = isStaff && ((result.data.must_change_password === true) || (result.data.user && result.data.user.must_change_password === true));
+
           if (mustChange) {
             localStorage.setItem('ecoasset_first_login', 'true');
             showGeneralAlert(`Welcome, ${result.data.user.full_name}! Please update your default password to continue...`, 'success');
@@ -1229,12 +1232,15 @@
               window.location.href = 'update-account.html?first_login=1';
             }, 800);
             return;
+          } else {
+            localStorage.removeItem('ecoasset_first_login');
           }
 
           showGeneralAlert(`Welcome back, ${result.data.user.full_name}! Redirecting...`, 'success');
           setTimeout(() => {
             redirectByRole(result.data.user.role);
           }, 600);
+
 
 
         } else {

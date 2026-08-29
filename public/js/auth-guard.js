@@ -28,6 +28,7 @@ const AuthGuard = {
   clearSession() {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('ecoasset_first_login');
   },
 
   getLoginUrl() {
@@ -91,12 +92,13 @@ const AuthGuard = {
       return null;
     }
 
-    // Force first-time login users to update password before performing any action
-    if (user.must_change_password === true && !window.location.pathname.includes('update-account.html')) {
+    // Force first-time login staff users to update password before performing any action (excludes Tourists)
+    if (user.role !== 'TOURIST' && user.must_change_password === true && !window.location.pathname.includes('update-account.html')) {
       const updateUrl = window.location.pathname.includes('/module') ? '../module5/update-account.html?first_login=1' : 'module5/update-account.html?first_login=1';
       window.location.href = updateUrl;
       return null;
     }
+
 
     return user;
   },
