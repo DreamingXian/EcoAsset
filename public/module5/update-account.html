@@ -748,7 +748,6 @@
         if (logoutRow) logoutRow.style.display = 'none';
       }
 
-
       // 5. Fetch fresh user info from server
       const freshUser = await AuthGuard.syncUserProfile();
       if (freshUser) {
@@ -760,7 +759,7 @@
 
     function setupRoleNavigation(user) {
       if (user.role === 'ADMINISTRATOR') {
-        backBtn.href = 'index.html';
+        backBtn.href = '../admin/profile.html';
         dynamicBottomNav.style.display = 'none';
       } else if (user.role === 'MAINTENANCE_CREW') {
         backBtn.href = '../module3/profile.html';
@@ -987,7 +986,7 @@
           // Return to dashboard/profile after 1.5s
           setTimeout(() => {
             if (currentUser.role === 'ADMINISTRATOR') {
-              window.location.href = 'index.html';
+              window.location.href = '../admin/profile.html';
             } else if (currentUser.role === 'MAINTENANCE_CREW') {
               window.location.href = '../module3/profile.html';
             } else {

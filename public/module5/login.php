@@ -1241,8 +1241,6 @@
             redirectByRole(result.data.user.role);
           }, 600);
 
-
-
         } else {
           const errorMsg = result.message || 'Unable to log in. Please try again.';
           const errorDetails = result.details?.errors || {};
@@ -1278,16 +1276,14 @@
           window.location.href = '../module3/index.html';
           break;
         case 'ADMINISTRATOR':
-          window.location.href = 'index.html';
-          break;
-        case 'ADMINISTRATOR':
-          window.location.href = 'admin/index.html';
+          window.location.href = '../admin/index.html';
           break;
         default:
           window.location.href = '../module1/index.html';
           break;
       }
     }
+
 
     function setLoginLoading(isLoading) {
       loginBtn.disabled = isLoading;

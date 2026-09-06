@@ -279,6 +279,7 @@ class TaskController
             return;
         }
 
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $photoUrl = null;
 
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
@@ -288,9 +289,8 @@ class TaskController
             }
         } elseif (!empty($_POST['photo_url'])) {
             $photoUrl = trim($_POST['photo_url']);
-        } else {
-            $input = json_decode(file_get_contents('php://input'), true) ?? [];
-            $photoUrl = $input['photo_url'] ?? null;
+        } elseif (!empty($input['photo_url'])) {
+            $photoUrl = trim($input['photo_url']);
         }
 
         if (empty($photoUrl)) {

@@ -6,21 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EcoAsset - User Management</title>
 
-  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <!-- Google Fonts: Inter, Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap"
     rel="stylesheet">
 
-  <!-- Global Styles -->
+  <!-- Global & Admin Shared Stylesheets -->
   <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../admin/admin.css?v=1.3">
   <style>
     :root {
-      --sidebar-bg: #133827;
-      --sidebar-card-bg: #0e2a1d;
-      --sidebar-active-btn: #00a884;
-      --sidebar-active-hover: #008f70;
       --primary-green: #1e4a38;
       --primary-hover: #16382b;
       --app-bg: #f8fafc;
@@ -30,204 +27,8 @@
       --text-placeholder: #94a3b8;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      width: 100% !important;
-      min-height: 100vh !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background-color: var(--app-bg) !important;
-      display: block !important;
-      overflow-x: hidden;
-      font-family: 'Plus Jakarta Sans', var(--font-body), sans-serif;
-      color: var(--text-dark);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Outer Desktop Flex Wrapper */
-    .admin-desktop-layout {
-      width: 100%;
-      min-height: 100vh;
-      position: relative;
-    }
-
     /* -------------------------------------------------------------
-       1. Left Desktop Sidebar (Completely Fixed & Non-Scrollable)
-       ------------------------------------------------------------- */
-    .admin-sidebar {
-      width: 260px;
-      min-width: 260px;
-      max-width: 260px;
-      background-color: var(--sidebar-bg);
-      color: #ffffff;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 24px 18px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      z-index: 100;
-      flex-shrink: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
-    .sidebar-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .brand-icon-box {
-      width: 40px;
-      height: 40px;
-      background: #00a884;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0, 168, 132, 0.3);
-    }
-
-    .brand-icon-box svg {
-      width: 22px;
-      height: 22px;
-      stroke: #ffffff;
-      fill: none;
-      stroke-width: 2.2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .brand-title-group h2 {
-      font-size: 17px;
-      font-weight: 800;
-      line-height: 1.2;
-      color: #ffffff;
-    }
-
-    .brand-title-group p {
-      font-size: 11px;
-      color: #94a3b8;
-      font-weight: 500;
-    }
-
-    /* Admin Signed-in Profile Badge */
-    .admin-profile-card {
-      background-color: var(--sidebar-card-bg);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .signed-in-label {
-      font-size: 11px;
-      color: #a7f3d0;
-      font-weight: 500;
-      margin-bottom: 3px;
-    }
-
-    .admin-name {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #ffffff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .admin-email {
-      font-size: 11.5px;
-      color: #94a3b8;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 1px;
-    }
-
-    /* Navigation Links */
-    .sidebar-nav {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex-grow: 1;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      color: #cbd5e1;
-      font-size: 13.5px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-
-    .nav-item:hover {
-      background-color: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
-    }
-
-    .nav-item.active {
-      background-color: var(--sidebar-active-btn);
-      color: #ffffff;
-      font-weight: 700;
-      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.25);
-    }
-
-    .nav-icon {
-      font-size: 17px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-    }
-
-    .sidebar-footer {
-      padding-top: 16px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .btn-sidebar-logout {
-      width: 100%;
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 13.5px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      font-family: inherit;
-    }
-
-    .btn-sidebar-logout:hover {
-      background-color: rgba(239, 68, 68, 0.15);
-      color: #f87171;
-    }
-
-    /* -------------------------------------------------------------
-       2. Main Content Area (Offset by 260px sidebar width)
+       User Management Content Styles
        ------------------------------------------------------------- */
     .admin-main {
       margin-left: 260px;
@@ -988,60 +789,8 @@
   <!-- Outer Desktop Flex Layout Wrapper -->
   <div class="admin-desktop-layout">
 
-    <!-- Left Desktop Navigation Sidebar (Fixed & Non-Scrollable) -->
-    <aside class="admin-sidebar">
-      <div>
-        <!-- Branding -->
-        <a href="index.html" class="sidebar-brand">
-          <div class="brand-icon-box">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-              <path d="M2 12l10 5 10-5"></path>
-              <path d="M2 17l10 5 10-5"></path>
-            </svg>
-          </div>
-          <div class="brand-title-group">
-            <h2>EcoAsset</h2>
-            <p>Municipal Platform</p>
-          </div>
-        </a>
-
-        <!-- Current Admin Profile Card -->
-        <div class="admin-profile-card">
-          <div class="signed-in-label">Signed in as</div>
-          <div class="admin-name" id="sidebarAdminName">Admin User</div>
-          <div class="admin-email" id="sidebarAdminEmail">admin@ecoasset.my</div>
-        </div>
-
-        <!-- Nav Links -->
-        <nav class="sidebar-nav">
-          <a href="../module1/index.html" class="nav-item">
-            <span class="nav-icon">🗺️</span>
-            <span>Public Map</span>
-          </a>
-          <a href="../module2/index.html" class="nav-item">
-            <span class="nav-icon">🎛️</span>
-            <span>Dashboard</span>
-          </a>
-          <a href="index.html" class="nav-item active">
-            <span class="nav-icon">👥</span>
-            <span>User Roster</span>
-          </a>
-          <a href="update-account.html" class="nav-item">
-            <span class="nav-icon">👤</span>
-            <span>Account</span>
-          </a>
-        </nav>
-      </div>
-
-      <!-- Sign Out Button -->
-      <div class="sidebar-footer">
-        <button type="button" class="btn-sidebar-logout" onclick="handleLogout()">
-          <span>🚪</span>
-          <span>Sign Out</span>
-        </button>
-      </div>
-    </aside>
+    <!-- Reusable Admin Sidebar Container -->
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
 
     <!-- Main Content View -->
     <main class="admin-main">
@@ -1365,6 +1114,7 @@
 
   <!-- Client-side Logic & Auth Guard -->
   <script src="../js/auth-guard.js"></script>
+  <script src="../js/admin-sidebar.js?v=1.0"></script>
   <script>
     let staffRoster = [];
     let currentAdmin = null;
@@ -1383,14 +1133,13 @@
       currentAdmin = AuthGuard.requireAuth(['ADMINISTRATOR']);
       if (!currentAdmin) return;
 
-      // Update sidebar admin info
-      document.getElementById('sidebarAdminName').textContent = currentAdmin.full_name || 'Admin User';
-      document.getElementById('sidebarAdminEmail').textContent = currentAdmin.email || 'admin@ecoasset.my';
+      // 2. Initialize Shared Admin Sidebar
+      initAdminSidebar('users');
 
-      // 2. Fetch User Roster
+      // 3. Fetch User Roster
       await fetchStaffRoster();
 
-      // 3. Filter event listeners
+      // 4. Filter event listeners
       searchInput.addEventListener('input', () => fetchStaffRoster());
       roleFilter.addEventListener('change', () => fetchStaffRoster());
       statusFilter.addEventListener('change', () => fetchStaffRoster());
@@ -1795,4 +1544,4 @@
   </script>
 </body>
 
-</html>
+</html>

@@ -113,6 +113,9 @@ async function fetchMyTasks() {
       myTasksList = res.data.tasks || [];
       renderMyTasksPane();
       renderInProgressPane();
+      renderUnderReviewPane();
+      renderCompletedPane();
+      renderApplicationResultPane();
       updateTabBadges();
       updateDutyBadge();
     }
@@ -153,14 +156,34 @@ async function fetchOpenPool(skill = selectedPoolSkill) {
 function updateTabBadges() {
   const pendingTasks = myTasksList.filter(t => (t.status === 'PENDING_ACCEPTANCE' || t.report_status === 'PENDING_ACCEPTANCE'));
   const inProgressTasks = myTasksList.filter(t => (t.status === 'IN_PROGRESS' || t.report_status === 'IN_PROGRESS'));
+  const underReviewTasks = myTasksList.filter(t => (
+    t.status === 'PRECOMPLETE' || t.report_status === 'PRECOMPLETE' ||
+    t.status === 'PRE_INVALID' || t.report_status === 'PRE_INVALID'
+  ));
+  const completedTasks = myTasksList.filter(t => (t.status === 'COMPLETED' || t.report_status === 'COMPLETED'));
+
+  const nowTs = new Date().getTime();
+  const appResultTasks = myTasksList.filter(t => {
+    const isInvalid = (t.status === 'INVALID_RESOLVED' || t.report_status === 'INVALID_RESOLVED');
+    if (!isInvalid) return false;
+    if (!t.completed_at) return true;
+    const compTs = new Date(t.completed_at).getTime();
+    return (nowTs - compTs) <= (7 * 24 * 3600 * 1000);
+  });
 
   const myBadge = document.getElementById('myTasksBadge');
   const poolBadge = document.getElementById('openPoolBadge');
   const progBadge = document.getElementById('inProgressBadge');
+  const reviewBadge = document.getElementById('underReviewBadge');
+  const compBadge = document.getElementById('completedBadge');
+  const appBadge = document.getElementById('appResultBadge');
 
   if (myBadge) myBadge.textContent = pendingTasks.length;
   if (poolBadge) poolBadge.textContent = openPoolList.length;
   if (progBadge) progBadge.textContent = inProgressTasks.length;
+  if (reviewBadge) reviewBadge.textContent = underReviewTasks.length;
+  if (compBadge) compBadge.textContent = completedTasks.length;
+  if (appBadge) appBadge.textContent = appResultTasks.length;
 }
 
 /**
@@ -319,7 +342,7 @@ function handleClaimButtonClick(taskId, isBusy) {
 }
 
 /* =============================================================================
-   PANE 3: RENDER IN PROGRESS (ACTIVE WORK ORDERS)
+   PANE 3: RENDER IN PROGRESS (ACTIVE WORK ORDERS + REJECTION / RETURN ALERTS)
    ============================================================================= */
 function renderInProgressPane() {
   const container = document.getElementById('inProgressListContainer');
@@ -345,8 +368,29 @@ function renderInProgressPane() {
     const pScore = parseFloat(task.priority_score) || 0.0;
     const catClass = getCategoryBadgeClass(task.category);
 
+    const returnReason = task.admin_return_reason || task.decline_reason;
+    let returnAlertHtml = '';
+    if (returnReason && returnReason.trim().length > 0) {
+      returnAlertHtml = `
+        <div class="rejection-notice-box" style="background:#fef2f2; border:2px solid #ef4444; border-radius:12px; padding:12px 14px; margin-bottom:12px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.12);">
+          <div style="display:flex; align-items:center; gap:6px; font-weight:800; font-size:12.5px; color:#991b1b; margin-bottom:4px;">
+            <span style="font-size:16px;">↩️</span>
+            <span>RETURNED BY ADMIN FOR REWORK</span>
+          </div>
+          <div style="font-size:12.5px; color:#7f1d1d; line-height:1.45; background:#ffffff; padding:8px 10px; border-radius:8px; border-left:3px solid #dc2626;">
+            <strong>Admin Remarks / Reason:</strong> ${escapeHtml(returnReason)}
+          </div>
+          <div style="font-size:11.5px; color:#b91c1c; margin-top:6px;">
+            ⚠️ Please review the admin remarks, rectify the issue on-site, and resubmit completion proof or flag evidence.
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="task-card in-progress-card" onclick="openTaskDetailModal('${task.task_id}', 'in-progress')">
+        ${returnAlertHtml}
+
         <div class="task-card-header">
           <div class="task-badges-cluster">
             <span class="badge badge-pscore">P ${pScore.toFixed(1)}</span>
@@ -354,7 +398,7 @@ function renderInProgressPane() {
             <span class="badge badge-resolved">In Progress</span>
           </div>
           <div class="sla-badge">
-            <span>⏱️ Active SLA</span>
+            <span>⏱️ Active Work Order</span>
           </div>
         </div>
 
@@ -392,6 +436,264 @@ function renderInProgressPane() {
 }
 
 /* =============================================================================
+   PANE 4: RENDER UNDER REVIEW (PRECOMPLETE & PRE_INVALID AWAITING ADMIN REVIEW)
+   ============================================================================= */
+function renderUnderReviewPane() {
+  const container = document.getElementById('underReviewListContainer');
+  if (!container) return;
+
+  const underReviewTasks = myTasksList.filter(t => (
+    t.status === 'PRECOMPLETE' || t.report_status === 'PRECOMPLETE' ||
+    t.status === 'PRE_INVALID' || t.report_status === 'PRE_INVALID'
+  ));
+
+  if (underReviewTasks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-card">
+        <span style="font-size: 36px;">⏳</span>
+        <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b; margin-top: 6px;">No Submissions Under Review</h4>
+        <p style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
+          Tasks you have submitted for completion validation or flagged as invalid will appear here while under review by municipal administration.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = underReviewTasks.map(task => {
+    const isPreComplete = (task.status === 'PRECOMPLETE' || task.report_status === 'PRECOMPLETE');
+    const pScore = parseFloat(task.priority_score) || 0.0;
+    const catClass = getCategoryBadgeClass(task.category);
+
+    const originalPhoto = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+    const proofPhoto = isPreComplete 
+      ? (task.completion_photo_url || originalPhoto)
+      : (task.flag_invalid_photo_url || originalPhoto);
+
+    let badgeHtml = '';
+    let statusNoticeHtml = '';
+    let notesPreviewHtml = '';
+
+    if (isPreComplete) {
+      badgeHtml = `<span class="badge" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">⚖️ PRE-COMPLETE</span>`;
+      statusNoticeHtml = `
+        <div style="background:#faf5ff; border:1px solid #e9d5ff; padding:10px 12px; border-radius:10px; font-size:12px; color:#6b21a8; margin-top:8px;">
+          ⏳ <strong>Awaiting Admin Review:</strong> Municipal administration will verify the before/after repair proof and award performance points (+5.0 pts).
+        </div>
+      `;
+      notesPreviewHtml = `
+        <div style="font-size:12.5px; color:#475569; background:#f8fafc; padding:8px 10px; border-radius:8px; margin-top:8px; border-left:3px solid #7e22ce;">
+          <strong>Your Resolution Notes:</strong> ${escapeHtml(task.resolution_notes || 'Repairs completed on-site.')}
+        </div>
+      `;
+    } else {
+      badgeHtml = `<span class="badge" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3;">🚩 PRE-INVALID</span>`;
+      statusNoticeHtml = `
+        <div style="background:#fff1f2; border:1px solid #fecdd3; padding:10px 12px; border-radius:10px; font-size:12px; color:#9f1239; margin-top:8px;">
+          🚩 <strong>Flag Under Investigation:</strong> Municipal administration is reviewing clear-site evidence to approve invalid closure.
+        </div>
+      `;
+      notesPreviewHtml = `
+        <div style="font-size:12.5px; color:#475569; background:#f8fafc; padding:8px 10px; border-radius:8px; margin-top:8px; border-left:3px solid #be123c;">
+          <strong>Your Inspection Findings:</strong> ${escapeHtml(task.flag_invalid_notes || 'Clear site verified on-site.')}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="task-card under-review-card" onclick="openTaskDetailModal('${task.task_id}', 'under-review')">
+        <div class="task-card-header">
+          <div class="task-badges-cluster">
+            <span class="badge badge-pscore">P ${pScore.toFixed(1)}</span>
+            <span class="badge ${catClass}">${formatCategory(task.category)}</span>
+            ${badgeHtml}
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; color: #7e22ce;">⏳ In Review</span>
+        </div>
+
+        <div>
+          <h4 class="task-card-title">${escapeHtml(task.district || 'Incident Location')}</h4>
+          <div class="task-card-location">
+            <span>📍 ${escapeHtml(task.district || 'Incident Location')}</span>
+            <span>• Tap to inspect proof</span>
+          </div>
+        </div>
+
+        <p class="task-card-desc">${escapeHtml(task.description || '')}</p>
+
+        <!-- Photo Comparison Preview -->
+        <div class="proof-comparison-grid">
+          <div class="proof-photo-item">
+            <img src="${originalPhoto}" alt="Original Reported Damage">
+            <div class="proof-photo-label">1. Reported Defect</div>
+          </div>
+          <div class="proof-photo-item">
+            <img src="${proofPhoto}" alt="Submitted Field Proof">
+            <div class="proof-photo-label">${isPreComplete ? '2. Your Repair Proof' : '2. Clear Site Proof'}</div>
+          </div>
+        </div>
+
+        ${notesPreviewHtml}
+        ${statusNoticeHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+/* =============================================================================
+   PANE 5: RENDER COMPLETED (ADMIN APPROVED WORK ORDERS)
+   ============================================================================= */
+function renderCompletedPane() {
+  const container = document.getElementById('completedListContainer');
+  if (!container) return;
+
+  const completedTasks = myTasksList.filter(t => (t.status === 'COMPLETED' || t.report_status === 'COMPLETED'));
+
+  if (completedTasks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-card">
+        <span style="font-size: 36px;">✅</span>
+        <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b; margin-top: 6px;">No Completed Tasks Yet</h4>
+        <p style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
+          Work orders verified and approved by municipal administration will appear here with performance rewards.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = completedTasks.map(task => {
+    const pScore = parseFloat(task.priority_score) || 0.0;
+    const catClass = getCategoryBadgeClass(task.category);
+    const originalPhoto = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+    const completionPhoto = task.completion_photo_url || originalPhoto;
+
+    return `
+      <div class="task-card completed-card" onclick="openTaskDetailModal('${task.task_id}', 'completed')">
+        <div class="task-card-header">
+          <div class="task-badges-cluster">
+            <span class="badge badge-pscore">P ${pScore.toFixed(1)}</span>
+            <span class="badge ${catClass}">${formatCategory(task.category)}</span>
+            <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">✅ COMPLETED</span>
+            <span class="badge badge-pscore" style="background:#059669; color:#fff;">★ +5.0 PTS</span>
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; color: #047857;">Approved</span>
+        </div>
+
+        <div>
+          <h4 class="task-card-title">${escapeHtml(task.district || 'Incident Location')}</h4>
+          <div class="task-card-location">
+            <span>📍 ${escapeHtml(task.district || 'Incident Location')}</span>
+            <span>• Approved: ${formatDateTime(task.completed_at || task.created_at)}</span>
+          </div>
+        </div>
+
+        <p class="task-card-desc">${escapeHtml(task.description || '')}</p>
+
+        <!-- Before vs After Photo Proof -->
+        <div class="proof-comparison-grid">
+          <div class="proof-photo-item">
+            <img src="${originalPhoto}" alt="Original Reported Defect">
+            <div class="proof-photo-label">Before Repair</div>
+          </div>
+          <div class="proof-photo-item">
+            <img src="${completionPhoto}" alt="Completed Repair Proof">
+            <div class="proof-photo-label">After Repair (Verified)</div>
+          </div>
+        </div>
+
+        <div style="font-size:12.5px; color:#1e293b; background:#ffffff; padding:10px 12px; border-radius:8px; border:1px solid #d1fae5; margin-top:8px;">
+          <div style="font-weight:700; color:#047857; margin-bottom:2px;">🛠️ Resolution Details:</div>
+          <div>${escapeHtml(task.resolution_notes || 'All repairs completed and verified by municipal administrator.')}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* =============================================================================
+   PANE 6: RENDER APPLICATION RESULT (INVALID RESOLVED - LAST 7 DAYS)
+   ============================================================================= */
+function renderApplicationResultPane() {
+  const container = document.getElementById('appResultListContainer');
+  if (!container) return;
+
+  const nowTs = new Date().getTime();
+  const appResultTasks = myTasksList.filter(t => {
+    const isInvalid = (t.status === 'INVALID_RESOLVED' || t.report_status === 'INVALID_RESOLVED');
+    if (!isInvalid) return false;
+    if (!t.completed_at) return true;
+    const compTs = new Date(t.completed_at).getTime();
+    return (nowTs - compTs) <= (7 * 24 * 3600 * 1000);
+  });
+
+  if (appResultTasks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-card">
+        <span style="font-size: 36px;">📋</span>
+        <h4 style="font-family: var(--font-heading); font-size: 15px; color: #1e293b; margin-top: 6px;">No Recent Application Results</h4>
+        <p style="font-size: 12.5px; color: #64748b; margin-top: 4px;">
+          Outcomes for invalid report clearance applications approved in the last 7 days will be displayed here.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = appResultTasks.map(task => {
+    const pScore = parseFloat(task.priority_score) || 0.0;
+    const catClass = getCategoryBadgeClass(task.category);
+    const originalPhoto = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+    const clearSitePhoto = task.flag_invalid_photo_url || originalPhoto;
+
+    return `
+      <div class="task-card invalid-card" onclick="openTaskDetailModal('${task.task_id}', 'application-result')">
+        <div class="task-card-header">
+          <div class="task-badges-cluster">
+            <span class="badge badge-pscore">P ${pScore.toFixed(1)}</span>
+            <span class="badge ${catClass}">${formatCategory(task.category)}</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">⚪ INVALID RESOLVED</span>
+            <span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">✓ Approved by Admin</span>
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; color: #64748b;">Resolved (7 Days)</span>
+        </div>
+
+        <div>
+          <h4 class="task-card-title">${escapeHtml(task.district || 'Incident Location')}</h4>
+          <div class="task-card-location">
+            <span>📍 ${escapeHtml(task.district || 'Incident Location')}</span>
+            <span>• Marked Invalid: ${formatDateTime(task.completed_at || task.created_at)}</span>
+          </div>
+        </div>
+
+        <p class="task-card-desc">${escapeHtml(task.description || '')}</p>
+
+        <!-- Reported Photo vs Clear Site Evidence -->
+        <div class="proof-comparison-grid">
+          <div class="proof-photo-item">
+            <img src="${originalPhoto}" alt="Original Reported Defect">
+            <div class="proof-photo-label">Reported Defect</div>
+          </div>
+          <div class="proof-photo-item">
+            <img src="${clearSitePhoto}" alt="Clear Site Proof">
+            <div class="proof-photo-label">Clear Site Proof (Approved)</div>
+          </div>
+        </div>
+
+        <div style="font-size:12.5px; color:#1e293b; background:#ffffff; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0; margin-top:8px;">
+          <div style="font-weight:700; color:#475569; margin-bottom:2px;">🔍 Inspection Findings:</div>
+          <div>${escapeHtml(task.flag_invalid_notes || 'Site inspected and verified as no fault found.')}</div>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 12px; border-radius:10px; font-size:12px; color:#166534; margin-top:8px;">
+          ✅ <strong>Application Approved:</strong> Municipal administration verified your on-site evidence and marked this report as invalid (no penalty applied).
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* =============================================================================
    TASK DETAIL DRAWER MODAL
    ============================================================================= */
 window.openTaskDetailModal = function(taskId, sourceTab) {
@@ -400,8 +702,84 @@ window.openTaskDetailModal = function(taskId, sourceTab) {
 
   activeModalTask = task;
 
-  const photoEl = document.getElementById('modalTaskPhoto');
-  if (photoEl) photoEl.src = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+  const originalPhoto = task.report_photo_url || task.photo_url || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80';
+  const taskStatus = task.status || task.report_status;
+
+  const singleWrap = document.getElementById('modalSinglePhotoWrap');
+  const dualWrap = document.getElementById('modalDualPhotoWrap');
+
+  // Check if this is a dual-photo state (Pre-Complete, Pre-Invalid, Completed, Invalid Resolved)
+  const isDualState = ['PRECOMPLETE', 'PRE_INVALID', 'COMPLETED', 'INVALID_RESOLVED'].includes(taskStatus);
+
+  if (isDualState) {
+    if (singleWrap) singleWrap.style.display = 'none';
+    if (dualWrap) {
+      dualWrap.style.display = 'block';
+
+      const beforeImg = document.getElementById('modalDualBeforePhoto');
+      const afterImg = document.getElementById('modalDualAfterPhoto');
+      const beforeLbl = document.getElementById('modalDualBeforeLabel');
+      const afterLbl = document.getElementById('modalDualAfterLabel');
+      const statBadge = document.getElementById('modalDualStatusBadge');
+      const catBadge = document.getElementById('modalDualCategoryBadge');
+      const tradeBadge = document.getElementById('modalDualTradeBadge');
+
+      if (catBadge) {
+        catBadge.textContent = formatCategory(task.category);
+        catBadge.className = `badge ${getCategoryBadgeClass(task.category)}`;
+      }
+      if (tradeBadge) tradeBadge.textContent = formatSkill(task.required_skill);
+
+      if (taskStatus === 'PRECOMPLETE') {
+        if (beforeImg) beforeImg.src = originalPhoto;
+        if (afterImg) afterImg.src = task.completion_photo_url || originalPhoto;
+        if (beforeLbl) beforeLbl.textContent = '1. Reported Defect';
+        if (afterLbl) afterLbl.textContent = '2. Your Repair Proof';
+        if (statBadge) {
+          statBadge.textContent = '⚖️ Pre-Complete';
+          statBadge.style.background = '#f3e8ff';
+          statBadge.style.color = '#7e22ce';
+        }
+      } else if (taskStatus === 'COMPLETED') {
+        if (beforeImg) beforeImg.src = originalPhoto;
+        if (afterImg) afterImg.src = task.completion_photo_url || originalPhoto;
+        if (beforeLbl) beforeLbl.textContent = 'Before Repair';
+        if (afterLbl) afterLbl.textContent = 'After Repair (Verified)';
+        if (statBadge) {
+          statBadge.textContent = '✅ Completed (+5.0 pts)';
+          statBadge.style.background = '#ecfdf5';
+          statBadge.style.color = '#047857';
+        }
+      } else if (taskStatus === 'PRE_INVALID') {
+        if (beforeImg) beforeImg.src = originalPhoto;
+        if (afterImg) afterImg.src = task.flag_invalid_photo_url || originalPhoto;
+        if (beforeLbl) beforeLbl.textContent = '1. Reported Incident';
+        if (afterLbl) afterLbl.textContent = '2. Clear Site Proof';
+        if (statBadge) {
+          statBadge.textContent = '🚩 Pre-Invalid';
+          statBadge.style.background = '#fff1f2';
+          statBadge.style.color = '#be123c';
+        }
+      } else if (taskStatus === 'INVALID_RESOLVED') {
+        if (beforeImg) beforeImg.src = originalPhoto;
+        if (afterImg) afterImg.src = task.flag_invalid_photo_url || originalPhoto;
+        if (beforeLbl) beforeLbl.textContent = 'Reported Defect';
+        if (afterLbl) afterLbl.textContent = 'Clear Site Proof (Approved)';
+        if (statBadge) {
+          statBadge.textContent = '⚪ Invalid Resolved';
+          statBadge.style.background = '#f1f5f9';
+          statBadge.style.color = '#475569';
+        }
+      }
+    }
+  } else {
+    if (dualWrap) dualWrap.style.display = 'none';
+    if (singleWrap) {
+      singleWrap.style.display = 'block';
+      const photoEl = document.getElementById('modalTaskPhoto');
+      if (photoEl) photoEl.src = originalPhoto;
+    }
+  }
   
   const titleEl = document.getElementById('modalTaskTitle');
   if (titleEl) titleEl.textContent = task.district || 'Damage Incident';
@@ -410,7 +788,20 @@ window.openTaskDetailModal = function(taskId, sourceTab) {
   if (locEl) locEl.textContent = `📍 ${computeDistanceString(task.latitude, task.longitude)} (${parseFloat(task.latitude).toFixed(4)}, ${parseFloat(task.longitude).toFixed(4)})`;
 
   const descEl = document.getElementById('modalTaskDesc');
-  if (descEl) descEl.textContent = task.description || 'No description provided.';
+  if (descEl) {
+    const returnReason = task.admin_return_reason || task.decline_reason;
+    if (task.status === 'IN_PROGRESS' && returnReason && returnReason.trim().length > 0) {
+      descEl.innerHTML = `
+        <div style="background:#fef2f2; border:1.5px solid #f87171; border-radius:8px; padding:10px; margin-bottom:10px; color:#991b1b;">
+          <strong>↩️ Returned by Admin for Rework:</strong><br>
+          <span style="color:#7f1d1d;">${escapeHtml(returnReason)}</span>
+        </div>
+        <div>${escapeHtml(task.description || 'No description provided.')}</div>
+      `;
+    } else {
+      descEl.textContent = task.description || 'No description provided.';
+    }
+  }
 
   const repEl = document.getElementById('modalTaskReporter');
   if (repEl) repEl.textContent = task.reporter_name || 'Citizen User';
@@ -422,7 +813,12 @@ window.openTaskDetailModal = function(taskId, sourceTab) {
   if (pScoreEl) pScoreEl.textContent = `P ${(parseFloat(task.priority_score) || 0).toFixed(1)}`;
 
   const slaEl = document.getElementById('modalTaskSla');
-  if (slaEl) slaEl.textContent = '24h SLA';
+  if (slaEl) {
+    if (task.status === 'COMPLETED') slaEl.textContent = 'Completed';
+    else if (task.status === 'INVALID_RESOLVED') slaEl.textContent = 'Resolved';
+    else if (task.status === 'PRECOMPLETE' || task.status === 'PRE_INVALID') slaEl.textContent = 'In Review';
+    else slaEl.textContent = '24h SLA';
+  }
 
   const catBadge = document.getElementById('modalCategoryBadge');
   if (catBadge) {
@@ -471,6 +867,12 @@ window.openTaskDetailModal = function(taskId, sourceTab) {
             </button>
           </div>
         </div>
+      `;
+    } else {
+      footer.innerHTML = `
+        <button class="btn btn-secondary btn-block" onclick="closeTaskDetailModal()">
+          <span>Close Details</span>
+        </button>
       `;
     }
   }
@@ -992,3 +1394,14 @@ function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '--';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return dateStr;
+  }
+}
+

@@ -99,8 +99,8 @@ const AuthGuard = {
       return null;
     }
 
-
     return user;
+
   },
 
   async fetchWithAuth(url, options = {}) {
