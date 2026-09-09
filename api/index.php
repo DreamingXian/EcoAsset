@@ -120,8 +120,21 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 } elseif (($method === 'PUT' || $method === 'POST') && preg_match('#^/api/v1/admin/users/([a-f0-9\-]+)$#i', $cleanUri, $m)) {
     (new AdminController())->updateUser($m[1]);
 
-// 9. API Welcome / Root Route
+// 9. Module 4: Admin Analytics & Reports Routes
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/analytics/dashboard' || $uri === '/api/v1/admin/analytics/dashboard')) {
+    (new AdminController())->getAnalyticsDashboard();
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/analytics/active-queue' || $uri === '/api/v1/admin/analytics/active-queue')) {
+    (new AdminController())->getActiveQueueDetails();
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/analytics/resolution-metrics' || $uri === '/api/v1/admin/analytics/resolution-metrics')) {
+    (new AdminController())->getResolutionMetrics();
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/analytics/incident-intake' || $uri === '/api/v1/admin/analytics/incident-intake')) {
+    (new AdminController())->getIncidentIntakeDetails();
+} elseif ($method === 'GET' && ($cleanUri === '/api/v1/admin/analytics/crew-fleet' || $uri === '/api/v1/admin/analytics/crew-fleet')) {
+    (new AdminController())->getCrewFleetDetails();
+
+// 10. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
+
     echo json_encode([
         "name" => "EcoAsset REST API",
         "version" => "1.0.0",

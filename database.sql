@@ -72,6 +72,7 @@ CREATE TABLE users (
     full_name VARCHAR(150) NOT NULL,
     role user_role NOT NULL DEFAULT 'TOURIST',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
