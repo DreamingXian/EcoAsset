@@ -12,10 +12,10 @@ class Database
   public static function getConnection(): PDO
   {
     if (self::$instance === null) {
-      $host = getenv('DB_HOST') ?: 'db.wwypceildoytilmogpxm.supabase.co';
-      $port = getenv('DB_PORT') ?: '5432';
+      $host = getenv('DB_HOST') ?: 'aws-0-ap-southeast-1.pooler.supabase.com';
+      $port = getenv('DB_PORT') ?: '6543';
       $db   = getenv('DB_NAME') ?: 'postgres';
-      $user = getenv('DB_USER') ?: 'postgres';
+      $user = getenv('DB_USER') ?: 'postgres.wwypceildoytilmogpxm';
       $pass = getenv('DB_PASS') ?: 'Abc123VIP888ok';
 
       // sslmode=require is mandatory for connecting to Supabase PostgreSQL
@@ -25,6 +25,7 @@ class Database
         self::$instance = new PDO($dsn, $user, $pass, [
           PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
           PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+          PDO::ATTR_EMULATE_PREPARES => true,
           PDO::ATTR_TIMEOUT => 5
         ]);
       } catch (PDOException $e) {

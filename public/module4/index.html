@@ -1,48 +1,1272 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EcoAsset - Incident & Analytics Reports</title>
+  <title>EcoAsset - Administrative Dashboard & Analytics Reports</title>
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Core Admin Stylesheet -->
   <link rel="stylesheet" href="../admin/admin.css?v=1.3">
+  <!-- Module 4 Analytics Stylesheet -->
+  <link rel="stylesheet" href="module4.css?v=2.1">
+
+  <!-- Chart.js for Interactive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
 
   <!-- Unified Desktop Admin Layout -->
   <div class="admin-desktop-layout">
 
-    <!-- Reusable Admin Sidebar Container -->
+    <!-- Reusable Admin Sidebar Container (Maintains unified navigation & functions) -->
     <aside class="admin-sidebar" id="adminSidebar"></aside>
 
     <!-- Main Content Area -->
-    <main class="admin-main" style="justify-content: center; align-items: center;">
-      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 24px; padding: 48px 36px; max-width: 640px; width: 100%; text-align: center; box-shadow: var(--shadow-sm);">
-        <span style="font-size: 48px; display: block; margin-bottom: 16px;">📊</span>
-        <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
-          Incident & Analytics Reporting Module
-        </h2>
-        <p style="font-size: 13.5px; color: #64748b; margin-bottom: 24px; line-height: 1.5;">
-          This module (Module 4) is assigned to teammate scope (Geospatial damage heatmaps, Category analytics, Upvote distributions, SLA resolution metrics).
-        </p>
-        <a href="../module3/admin/index.html" class="btn-action btn-primary" style="text-decoration: none; display: inline-flex; padding: 12px 24px;">
-          <span>🛠️ Go to Task Control Dashboard (Module 3)</span>
-        </a>
-      </div>
+    <main class="admin-main analytics-dashboard-main">
+
+      <!-- Header Row with Filters & Export -->
+      <header class="dashboard-header">
+        <div class="dashboard-title-group">
+          <h1>Administrative Dashboard</h1>
+          <p>DBKL · Wilayah Persekutuan Kuala Lumpur</p>
+        </div>
+
+        <div class="dashboard-actions">
+          <!-- Calendar Date Range Picker -->
+          <div class="calendar-picker-wrapper" id="calendarPickerWrapper">
+            <button type="button" class="calendar-trigger-btn" id="calendarTriggerBtn" onclick="toggleCalendarPopover()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span id="calendarBtnLabel">Last 30 Days</span>
+            </button>
+
+            <div class="calendar-popover" id="calendarPopover">
+              <div class="calendar-popover-title">
+                <span>Select Date Range</span>
+              </div>
+
+              <!-- Quick Preset Chips -->
+              <div class="calendar-presets-grid">
+                <button type="button" class="preset-chip" data-preset="7d" onclick="selectPreset(this)">Last 7 Days</button>
+                <button type="button" class="preset-chip active" data-preset="30d" onclick="selectPreset(this)">Last 30 Days</button>
+                <button type="button" class="preset-chip" data-preset="90d" onclick="selectPreset(this)">Last 90 Days</button>
+                <button type="button" class="preset-chip" data-preset="ytd" onclick="selectPreset(this)">Year to Date</button>
+                <button type="button" class="preset-chip" data-preset="all" onclick="selectPreset(this)">All Time</button>
+                <button type="button" class="preset-chip" data-preset="custom" onclick="selectPreset(this)">Custom</button>
+              </div>
+
+              <!-- Date Inputs -->
+              <div class="calendar-inputs-row">
+                <div class="calendar-input-group">
+                  <label for="startDateInput">Start Date</label>
+                  <input type="date" class="calendar-date-input" id="startDateInput" onchange="onCustomDateChange()">
+                </div>
+                <div class="calendar-input-group">
+                  <label for="endDateInput">End Date</label>
+                  <input type="date" class="calendar-date-input" id="endDateInput" onchange="onCustomDateChange()">
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="calendar-popover-actions">
+                <button type="button" class="btn-calendar-reset" onclick="resetCalendar()">Reset</button>
+                <button type="button" class="btn-calendar-apply" onclick="applyCalendarFilter()">Apply Filter</button>
+              </div>
+            </div>
+          </div>
+
+          <select class="filter-select" id="districtFilter" onchange="handleFilterChange()">
+            <option value="All Districts" selected>All Districts</option>
+            <option value="KLCC">KLCC</option>
+            <option value="Bukit Bintang">Bukit Bintang</option>
+            <option value="Chow Kit">Chow Kit</option>
+            <option value="Titiwangsa">Titiwangsa</option>
+            <option value="Sentul">Sentul</option>
+            <option value="Brickfields">Brickfields</option>
+          </select>
+
+          <button type="button" class="btn-export-pdf" onclick="window.print()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Export PDF</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 4 Top KPI Metric Cards Grid -->
+      <section class="kpi-cards-grid">
+
+        <!-- KPI Card 1: Total Reported Issues -->
+        <div class="kpi-card" onclick="openDrawer('drawerTotalIssues')">
+          <div>
+            <div class="kpi-card-header">
+              <div class="kpi-icon-wrap hazard">⚠️</div>
+              <span class="kpi-clickable-tag">View Details ↗</span>
+            </div>
+            <div class="kpi-title">Total Reported Issues</div>
+            <div class="kpi-value" id="kpiTotalReported">1,250</div>
+            <div class="kpi-desc">Total facility damage reports received from public submissions.</div>
+          </div>
+          <div>
+            <div class="kpi-trend trend-up" id="kpiReportedTrend">↑ 8.7% this month</div>
+            <div class="kpi-src">src: fault reports</div>
+          </div>
+        </div>
+
+        <!-- KPI Card 2: Active Maintenance Queue -->
+        <div class="kpi-card" onclick="openDrawer('drawerActiveQueue')">
+          <div>
+            <div class="kpi-card-header">
+              <div class="kpi-icon-wrap lightning">⚡</div>
+              <span class="kpi-clickable-tag">View Details ↗</span>
+            </div>
+            <div class="kpi-title">Active Maintenance Queue</div>
+            <div class="kpi-value" id="kpiActiveQueue">86 Pending</div>
+            <div class="kpi-desc">Verified maintenance requests currently awaiting crew completion.</div>
+          </div>
+          <div>
+            <div class="kpi-trend highlight-orange" id="kpiCriticalItems">18 critical items</div>
+            <div class="kpi-src">src: maintenance request</div>
+          </div>
+        </div>
+
+        <!-- KPI Card 3: Avg. Resolution Time -->
+        <div class="kpi-card" onclick="openDrawer('drawerResolutionTime')">
+          <div>
+            <div class="kpi-card-header">
+              <div class="kpi-icon-wrap clock">⏱️</div>
+              <span class="kpi-clickable-tag">View Details ↗</span>
+            </div>
+            <div class="kpi-title">Avg. Resolution Time</div>
+            <div class="kpi-value" id="kpiAvgResolution">3.2 Days</div>
+            <div class="kpi-desc">Average time taken to resolve facility issues across all districts.</div>
+          </div>
+          <div>
+            <div class="kpi-trend trend-down" id="kpiResolutionTrend">↓ 0.4d vs last month</div>
+            <div class="kpi-src">src: maintenance record</div>
+          </div>
+        </div>
+
+        <!-- KPI Card 4: Active Maintenance Crews -->
+        <div class="kpi-card" onclick="openDrawer('drawerCrews')">
+          <div>
+            <div class="kpi-card-header">
+              <div class="kpi-icon-wrap crew">👥</div>
+              <span class="kpi-clickable-tag">View Details ↗</span>
+            </div>
+            <div class="kpi-title">Active Maintenance Crews</div>
+            <div class="kpi-value" id="kpiTotalCrews">15 Teams</div>
+            <div class="kpi-desc">Currently available maintenance teams across all districts.</div>
+          </div>
+          <div>
+            <div class="kpi-trend highlight-gray" id="kpiBusyCrews">7 on active jobs</div>
+            <div class="kpi-src">src: maintenance crew</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Prioritized Maintenance Queue Table -->
+      <section class="table-card">
+        <div class="table-card-header">
+          <h2>Prioritized Maintenance Queue</h2>
+          <span class="table-subtitle" id="queueSubtitle">6 items · sorted by P-score</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>TASK ID</th>
+                <th>CATEGORY</th>
+                <th>P-SCORE</th>
+                <th>LOCATION</th>
+                <th>UPVOTES</th>
+                <th>STATUS</th>
+                <th style="text-align: right;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="prioritizedQueueBody">
+              <!-- Dynamically Hydrated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Two Analytics Charts Side-by-Side (Screenshot 3) -->
+      <section class="charts-grid">
+
+        <!-- Chart 1: Hotspot Frequency by District -->
+        <div class="chart-card">
+          <h3>Hotspot Frequency by District</h3>
+          <div class="chart-container">
+            <canvas id="hotspotChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Resolution Delays vs. Tourist Footfall -->
+        <div class="chart-card">
+          <h3>Resolution Delays vs. Tourist Footfall</h3>
+          <div class="chart-container">
+            <canvas id="footfallChart"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Crew Workload & Availability Table (Screenshot 3) -->
+      <section class="table-card">
+        <div class="table-card-header">
+          <h2>Crew Workload & Availability</h2>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>NAME</th>
+                <th>ROLE</th>
+                <th>ACTIVE TASKS</th>
+                <th>RATING</th>
+                <th>AVAILABILITY</th>
+              </tr>
+            </thead>
+            <tbody id="crewWorkloadBody">
+              <!-- Dynamically Hydrated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
   </div>
+
+  <!-- =========================================================================
+       Slide-Over Drawer 1: Active Maintenance Queue (Screenshot 2)
+       ========================================================================= -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeAllDrawers()"></div>
+
+  <aside class="drawer-panel" id="drawerActiveQueue">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <div class="drawer-icon-wrap lightning">⚡</div>
+        <div class="drawer-title-content">
+          <h3>Active Maintenance Queue</h3>
+          <h2 id="drawerQueueTotalHeader">86 Pending Repairs</h2>
+          <div class="drawer-datasource">
+            <span class="dot" style="background: #f97316;"></span>
+            <span>Data source: Maintenance_Request · Priority_Queue</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-drawer-close" onclick="closeAllDrawers()">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- 4 Priority Stat Cards -->
+      <div class="drawer-tiles-grid grid-4">
+        <div class="drawer-stat-tile tile-critical">
+          <div class="num" id="drawerStatCritical">18</div>
+          <div class="lbl">Critical</div>
+        </div>
+        <div class="drawer-stat-tile tile-high">
+          <div class="num" id="drawerStatHigh">29</div>
+          <div class="lbl">High</div>
+        </div>
+        <div class="drawer-stat-tile tile-med">
+          <div class="num" id="drawerStatMed">25</div>
+          <div class="lbl">Medium</div>
+        </div>
+        <div class="drawer-stat-tile tile-low">
+          <div class="num" id="drawerStatLow">14</div>
+          <div class="lbl">Low</div>
+        </div>
+      </div>
+
+      <!-- Priority Level Distribution Bar Chart -->
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar orange"></span>
+          <span>Priority Level Distribution</span>
+        </div>
+        <div style="height: 180px; position: relative;">
+          <canvas id="drawerPriorityChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Active Queue - Sorted by P-Score Table -->
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar teal"></span>
+          <span>Active Queue — Sorted by P-Score</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>P-SCORE</th>
+                <th>DISTRICT</th>
+                <th>SKILL</th>
+                <th>PENDING</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="drawerActiveQueueTableBody">
+              <!-- Dynamically Hydrated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       Slide-Over Drawer 2: Average Resolution Time (Screenshot 5)
+       ========================================================================= -->
+  <aside class="drawer-panel" id="drawerResolutionTime">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <div class="drawer-icon-wrap clock">⏱️</div>
+        <div class="drawer-title-content">
+          <h3>Average Resolution Time</h3>
+          <h2 id="drawerResolutionHeader">3.2 Days</h2>
+          <div class="drawer-datasource">
+            <span class="dot" style="background: #0d9488;"></span>
+            <span>Data source: Maintenance_Record · Completion_Log</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-drawer-close" onclick="closeAllDrawers()">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- 3 Metric Cards -->
+      <div class="drawer-tiles-grid grid-3">
+        <div class="drawer-stat-tile tile-low">
+          <div class="num" id="drawerStatAvgRes">3.2d</div>
+          <div class="lbl">Avg Resolution</div>
+        </div>
+        <div class="drawer-stat-tile tile-green">
+          <div class="num" id="drawerStatCompletedMonth">124</div>
+          <div class="lbl">Completed (Jul)</div>
+        </div>
+        <div class="drawer-stat-tile tile-med">
+          <div class="num" id="drawerStatSlaPct">83%</div>
+          <div class="lbl">SLA Compliance</div>
+        </div>
+      </div>
+
+      <!-- Avg. Resolution Time by District Chart -->
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar teal"></span>
+          <span>Avg. Resolution Time by District (days)</span>
+        </div>
+        <div style="height: 180px; position: relative;">
+          <canvas id="drawerDistrictResolutionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Completed vs Delayed Repairs Chart -->
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar teal"></span>
+          <span>Completed vs Delayed Repairs</span>
+        </div>
+        <div style="height: 180px; position: relative;">
+          <canvas id="drawerCompletedDelayedChart"></canvas>
+        </div>
+      </div>
+
+      <!-- SLA Performance Table -->
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar teal"></span>
+          <span>SLA Performance by District</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>DISTRICT</th>
+                <th>SLA ON-TIME</th>
+                <th>AVG DURATION</th>
+                <th>COMPLIANCE</th>
+              </tr>
+            </thead>
+            <tbody id="drawerSlaTableBody">
+              <!-- Hydrated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       Slide-Over Drawer 3: Total Reported Issues Detail
+       ========================================================================= -->
+  <aside class="drawer-panel" id="drawerTotalIssues">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <div class="drawer-icon-wrap hazard">⚠️</div>
+        <div class="drawer-title-content">
+          <h3>Incident Intake Analytics</h3>
+          <h2 id="drawerTotalIssuesHeader">1,250 Submissions</h2>
+          <div class="drawer-datasource">
+            <span class="dot" style="background: #ef4444;"></span>
+            <span>Data source: Citizen_Reports · Geospatial_Intake</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-drawer-close" onclick="closeAllDrawers()">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="drawer-tiles-grid grid-3">
+        <div class="drawer-stat-tile tile-critical">
+          <div class="num" id="drawerStatSafetyHazards">38%</div>
+          <div class="lbl">Safety Hazards</div>
+        </div>
+        <div class="drawer-stat-tile tile-high">
+          <div class="num" id="drawerStatVerifiedToday">412</div>
+          <div class="lbl">Verified Today</div>
+        </div>
+        <div class="drawer-stat-tile tile-green">
+          <div class="num" id="drawerStatCitizenAccuracy">92.4%</div>
+          <div class="lbl">Citizen Accuracy</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar orange"></span>
+          <span>Issue Category Breakdown</span>
+        </div>
+        <div style="height: 200px; position: relative;">
+          <canvas id="drawerCategoryDoughnut"></canvas>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       Slide-Over Drawer 4: Maintenance Crews Fleet Detail
+       ========================================================================= -->
+  <aside class="drawer-panel" id="drawerCrews">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <div class="drawer-icon-wrap crew">👥</div>
+        <div class="drawer-title-content">
+          <h3>Field Fleets & Crews</h3>
+          <h2 id="drawerCrewsHeader">15 Teams on Duty</h2>
+          <div class="drawer-datasource">
+            <span class="dot" style="background: #10b981;"></span>
+            <span>Data source: Municipal_Workforce · Fleet_GPS</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-drawer-close" onclick="closeAllDrawers()">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="drawer-tiles-grid grid-3">
+        <div class="drawer-stat-tile tile-green">
+          <div class="num" id="drawerCrewsAvailable">8</div>
+          <div class="lbl">Available</div>
+        </div>
+        <div class="drawer-stat-tile tile-high">
+          <div class="num" id="drawerCrewsBusy">7</div>
+          <div class="lbl">On Active Jobs</div>
+        </div>
+        <div class="drawer-stat-tile tile-med">
+          <div class="num" id="drawerCrewsRating">4.8★</div>
+          <div class="lbl">Fleet Rating</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="drawer-section-title">
+          <span class="bar teal"></span>
+          <span>Skills Coverage Across Fleets</span>
+        </div>
+        <div style="height: 180px; position: relative;">
+          <canvas id="drawerSkillsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </aside>
 
   <!-- Scripts -->
   <script src="../js/auth-guard.js?v=4.2"></script>
   <script src="../js/admin-sidebar.js?v=1.0"></script>
   <script>
+    // Global Chart Instances
+    let hotspotChartInst = null;
+    let footfallChartInst = null;
+    let priorityChartInst = null;
+    let districtResChartInst = null;
+    let completedDelayedChartInst = null;
+    let categoryDoughnutInst = null;
+    let skillsChartInst = null;
+
+    // Calendar Date Range Picker State
+    let calendarPreset = '30d';   // active preset key
+    let calendarStartDate = null; // YYYY-MM-DD string or null
+    let calendarEndDate = null;   // YYYY-MM-DD string or null
+
     document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Authenticate Administrator
       const user = await AuthGuard.requireAuth(['ADMINISTRATOR']);
       if (!user) return;
+
+      // 2. Initialize Shared Admin Sidebar (preserves all sidebar functions, clocks, links, logout)
       initAdminSidebar('reports');
+
+      // 3. Initialize calendar default dates (Last 30 Days)
+      initCalendarDefaults();
+
+      // 4. Load Dashboard Data
+      await loadDashboardData();
+
+      // 5. Listen for ESC key to close open slide-over drawers
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeAllDrawers();
+          closeCalendarPopover();
+        }
+      });
+
+      // 6. Close calendar popover when clicking outside
+      document.addEventListener('click', (e) => {
+        const wrapper = document.getElementById('calendarPickerWrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+          closeCalendarPopover();
+        }
+      });
     });
+
+    /**
+     * Fetch complete dashboard payload from API
+     */
+    async function loadDashboardData() {
+      const district = document.getElementById('districtFilter').value;
+
+      // Build query params from calendar state
+      const params = new URLSearchParams();
+      params.set('district', district);
+      if (calendarPreset && calendarPreset !== 'custom') {
+        params.set('timeframe', calendarPreset);
+      }
+      if (calendarStartDate) params.set('start_date', calendarStartDate);
+      if (calendarEndDate) params.set('end_date', calendarEndDate);
+
+      try {
+        const token = localStorage.getItem('ecoasset_token');
+        const res = await fetch(`/api/index.php/api/v1/admin/analytics/dashboard?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        const json = await res.json();
+        const data = json.data || {};
+
+        // 1. Hydrate Top 4 KPI Metrics
+        renderKpis(data.kpis || {});
+
+        // 2. Hydrate Prioritized Maintenance Queue Table
+        renderPrioritizedQueue(data.prioritized_queue || []);
+
+        // 3. Render Hotspot Frequency Bar Chart
+        renderHotspotChart(data.hotspots || []);
+
+        // 4. Render Resolution Delays vs Footfall Chart
+        renderFootfallChart(data.correlation || {});
+
+        // 5. Render Crew Workload Table
+        renderCrewWorkload(data.crew_workload || []);
+
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      }
+    }
+
+    function renderKpis(kpis) {
+      document.getElementById('kpiTotalReported').textContent = Number(kpis.total_reported || 1250).toLocaleString();
+      document.getElementById('kpiReportedTrend').textContent = kpis.reported_trend || '↑ 8.7% this month';
+      
+      document.getElementById('kpiActiveQueue').textContent = `${kpis.active_queue || 86} Pending`;
+      document.getElementById('kpiCriticalItems').textContent = `${kpis.critical_items || 18} critical items`;
+      
+      document.getElementById('kpiAvgResolution').textContent = `${kpis.avg_resolution_days || 3.2} Days`;
+      document.getElementById('kpiResolutionTrend').textContent = kpis.resolution_trend || '↓ 0.4d vs last month';
+      
+      document.getElementById('kpiTotalCrews').textContent = `${kpis.total_crews || 15} Teams`;
+      document.getElementById('kpiBusyCrews').textContent = `${kpis.busy_crews || 7} on active jobs`;
+    }
+
+    function renderPrioritizedQueue(items) {
+      const tbody = document.getElementById('prioritizedQueueBody');
+      tbody.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: #94a3b8;">No maintenance items in queue.</td></tr>`;
+        return;
+      }
+
+      document.getElementById('queueSubtitle').textContent = `${items.length} items · sorted by P-score`;
+
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        const catClass = item.category_type || 'neutral';
+        const pscoreClass = (item.p_score_num || 9.0) >= 8.5 ? 'pscore-pill' : 'pscore-pill pscore-orange';
+        const statusClass = (item.status || '').includes('Verified') ? 'status-text progress' : 'status-text pending';
+
+        tr.innerHTML = `
+          <td><span class="task-id-code">${item.task_id}</span></td>
+          <td><span class="pill-badge ${catClass}">${item.category}</span></td>
+          <td><span class="${pscoreClass}">${item.p_score}</span></td>
+          <td style="color: #334155; font-weight: 500;">${item.location}</td>
+          <td><span style="font-weight: 700; color: #475569;">👍 ${item.upvotes}</span></td>
+          <td><span class="${statusClass}">${item.status}</span></td>
+          <td style="text-align: right;">
+            <button type="button" class="btn-dispatch" onclick="handleDispatchClick('${item.task_id}')">Dispatch</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderHotspotChart(hotspots) {
+      const ctx = document.getElementById('hotspotChart').getContext('2d');
+      if (hotspotChartInst) hotspotChartInst.destroy();
+
+      const labels = hotspots.map(h => h.district);
+      const data = hotspots.map(h => h.count);
+
+      hotspotChartInst = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.length ? labels : ['KLCC', 'Bukit Bintang', 'Chow Kit', 'Titiwangsa', 'Sentul', 'Brickfields'],
+          datasets: [{
+            data: data.length ? data : [42, 35, 28, 22, 17, 14],
+            backgroundColor: '#00a884',
+            hoverBackgroundColor: '#008f70',
+            borderRadius: 6,
+            barPercentage: 0.65
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleFont: { family: 'Inter', size: 12 },
+              bodyFont: { family: 'Inter', size: 13, weight: 'bold' },
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                label: (ctx) => `${ctx.parsed.y} reported issues`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }
+            },
+            y: {
+              beginAtZero: true,
+              max: 60,
+              ticks: { stepSize: 15, font: { family: 'Inter', size: 11 }, color: '#64748b' },
+              grid: { color: '#f1f5f9', borderDash: [4, 4] }
+            }
+          }
+        }
+      });
+    }
+
+    function renderFootfallChart(correlation) {
+      const ctx = document.getElementById('footfallChart').getContext('2d');
+      if (footfallChartInst) footfallChartInst.destroy();
+
+      const labels = correlation.labels || ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+      const delays = correlation.avg_delay_hrs || [18.2, 22.4, 15.1, 28.6, 21.3, 13.8];
+      const footfall = correlation.footfall || [2400, 2900, 2100, 3950, 3100, 1850];
+
+      footfallChartInst = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Avg Delay (hrs)',
+              data: delays,
+              borderColor: '#ef4444',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.35,
+              pointBackgroundColor: '#ffffff',
+              pointBorderColor: '#ef4444',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Footfall',
+              data: footfall,
+              borderColor: '#00a884',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.35,
+              pointBackgroundColor: '#ffffff',
+              pointBorderColor: '#00a884',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'line',
+                font: { family: 'Inter', size: 11.5, weight: 600 },
+                color: '#64748b',
+                boxWidth: 20
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }
+            },
+            y: {
+              type: 'linear',
+              position: 'left',
+              beginAtZero: true,
+              max: 28,
+              ticks: { stepSize: 7, font: { family: 'Inter', size: 11 }, color: '#64748b' },
+              grid: { color: '#f1f5f9', borderDash: [4, 4] }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              beginAtZero: true,
+              max: 4000,
+              ticks: { stepSize: 1000, font: { family: 'Inter', size: 11 }, color: '#64748b' },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    function renderCrewWorkload(crews) {
+      const tbody = document.getElementById('crewWorkloadBody');
+      tbody.innerHTML = '';
+
+      if (!crews || crews.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 24px; color: #94a3b8;">No crew members on roster.</td></tr>`;
+        return;
+      }
+
+      crews.slice(0, 5).forEach(c => {
+        const tr = document.createElement('tr');
+        
+        const roleClass = c.role_type === 'ranger' ? 'role-tag ranger' : 'role-tag crew';
+        const availClass = c.availability === 'Available' ? 'avail-badge available' : (c.availability === 'Busy' ? 'avail-badge busy' : 'avail-badge inactive');
+
+        // Render 5 dots
+        const activeNum = c.active_tasks || 0;
+        let dotsHtml = '';
+        for (let i = 0; i < 5; i++) {
+          dotsHtml += `<span class="workload-dot ${i < activeNum ? 'filled' : ''}"></span>`;
+        }
+
+        tr.innerHTML = `
+          <td style="font-weight: 700; color: #0f172a;">${c.name}</td>
+          <td><span class="${roleClass}">${c.role}</span></td>
+          <td>
+            <div class="workload-dots">
+              ${dotsHtml}
+              <span class="workload-count">${activeNum}</span>
+            </div>
+          </td>
+          <td>
+            <div class="rating-stars">
+              <span class="star-icon">★</span>
+              <span>${c.rating || '4.8'}</span>
+            </div>
+          </td>
+          <td><span class="${availClass}">${c.availability}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // Slide-Over Drawers Handlers & Charts
+    // =========================================================================
+
+    function openDrawer(drawerId) {
+      closeAllDrawers();
+      document.getElementById('drawerBackdrop').classList.add('open');
+      const drawer = document.getElementById(drawerId);
+      if (drawer) {
+        drawer.classList.add('open');
+        
+        if (drawerId === 'drawerActiveQueue') {
+          initActiveQueueDrawer();
+        } else if (drawerId === 'drawerResolutionTime') {
+          initResolutionTimeDrawer();
+        } else if (drawerId === 'drawerTotalIssues') {
+          initTotalIssuesDrawer();
+        } else if (drawerId === 'drawerCrews') {
+          initCrewsDrawer();
+        }
+      }
+    }
+
+    function closeAllDrawers() {
+      document.getElementById('drawerBackdrop').classList.remove('open');
+      document.querySelectorAll('.drawer-panel').forEach(p => p.classList.remove('open'));
+    }
+
+    /**
+     * Active Queue Slide-over Drawer (Screenshot 2)
+     */
+    async function initActiveQueueDrawer() {
+      const token = localStorage.getItem('ecoasset_token');
+      const district = document.getElementById('districtFilter').value;
+
+      const params = new URLSearchParams();
+      params.set('district', district);
+      if (calendarPreset && calendarPreset !== 'custom') {
+        params.set('timeframe', calendarPreset);
+      }
+      if (calendarStartDate) params.set('start_date', calendarStartDate);
+      if (calendarEndDate) params.set('end_date', calendarEndDate);
+      
+      try {
+        const res = await fetch(`/api/index.php/api/v1/admin/analytics/active-queue?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        const data = json.data || {};
+
+        const summary = data.summary || { total_pending: 0, critical: 0, high: 0, medium: 0, low: 0 };
+        document.getElementById('drawerQueueTotalHeader').textContent = `${summary.total_pending} Pending Repairs`;
+        document.getElementById('drawerStatCritical').textContent = summary.critical;
+        document.getElementById('drawerStatHigh').textContent = summary.high;
+        document.getElementById('drawerStatMed').textContent = summary.medium;
+        document.getElementById('drawerStatLow').textContent = summary.low;
+
+        const ctx = document.getElementById('drawerPriorityChart').getContext('2d');
+        if (priorityChartInst) priorityChartInst.destroy();
+
+        priorityChartInst = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Critical', 'High', 'Medium', 'Low'],
+            datasets: [{
+              data: [summary.critical, summary.high, summary.medium, summary.low],
+              backgroundColor: ['#ef4444', '#f97316', '#3b82f6', '#64748b'],
+              borderRadius: 6,
+              barPercentage: 0.6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
+              y: { beginAtZero: true, max: Math.max(10, ...[summary.critical, summary.high, summary.medium, summary.low]), ticks: { stepSize: 8 }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
+            }
+          }
+        });
+
+        const tbody = document.getElementById('drawerActiveQueueTableBody');
+        tbody.innerHTML = '';
+        (data.queue || []).forEach(q => {
+          const tr = document.createElement('tr');
+          const pscoreClass = (q.p_score_num || 9.0) >= 8.5 ? 'pscore-pill' : 'pscore-pill pscore-orange';
+          const statusBadge = q.status === 'Assigned' 
+            ? '<span class="avail-badge available">Assigned</span>' 
+            : '<span class="avail-badge inactive">Unassigned</span>';
+
+          tr.innerHTML = `
+            <td><span class="task-id-code">${q.id}</span></td>
+            <td><span class="${pscoreClass}">${q.p_score}</span></td>
+            <td>${q.district}</td>
+            <td>${q.skill}</td>
+            <td style="color: #ea580c; font-weight: 700; font-family: var(--font-mono);">${q.pending}</td>
+            <td>${statusBadge}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    /**
+     * Average Resolution Time Slide-over Drawer (Screenshot 5)
+     */
+    async function initResolutionTimeDrawer() {
+      const token = localStorage.getItem('ecoasset_token');
+      const district = document.getElementById('districtFilter').value;
+
+      const params = new URLSearchParams();
+      params.set('district', district);
+      if (calendarPreset && calendarPreset !== 'custom') {
+        params.set('timeframe', calendarPreset);
+      }
+      if (calendarStartDate) params.set('start_date', calendarStartDate);
+      if (calendarEndDate) params.set('end_date', calendarEndDate);
+
+      try {
+        const res = await fetch(`/api/index.php/api/v1/admin/analytics/resolution-metrics?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        const data = json.data || {};
+
+        const metrics = data.metrics || { avg_resolution_days: 3.2, completed_count: 124, sla_compliance_pct: 83 };
+        document.getElementById('drawerResolutionHeader').textContent = `${metrics.avg_resolution_days} Days`;
+        document.getElementById('drawerStatAvgRes').textContent = `${metrics.avg_resolution_days}d`;
+        document.getElementById('drawerStatCompletedMonth').textContent = metrics.completed_count;
+        document.getElementById('drawerStatSlaPct').textContent = `${metrics.sla_compliance_pct}%`;
+
+        const ctx1 = document.getElementById('drawerDistrictResolutionChart').getContext('2d');
+        if (districtResChartInst) districtResChartInst.destroy();
+
+        districtResChartInst = new Chart(ctx1, {
+          type: 'bar',
+          data: {
+            labels: ['KLCC', 'Brickfields', 'Bukit Bintang', 'Chow Kit', 'Titiwangsa', 'Sentul'],
+            datasets: [{
+              data: [2.1, 2.5, 2.8, 3.6, 3.9, 4.2],
+              backgroundColor: '#00a884',
+              borderRadius: 6,
+              barPercentage: 0.6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10.5 } } },
+              y: { beginAtZero: true, max: 6, ticks: { stepSize: 2 }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
+            }
+          }
+        });
+
+        const ctx2 = document.getElementById('drawerCompletedDelayedChart').getContext('2d');
+        if (completedDelayedChartInst) completedDelayedChartInst.destroy();
+
+        completedDelayedChartInst = new Chart(ctx2, {
+          type: 'bar',
+          data: {
+            labels: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [
+              {
+                label: 'Completed',
+                data: [78, 92, 85, 110, 102, 124],
+                backgroundColor: '#00a884',
+                borderRadius: 4,
+                barPercentage: 0.7
+              },
+              {
+                label: 'Delayed',
+                data: [18, 14, 19, 21, 16, 12],
+                backgroundColor: '#ef4444',
+                borderRadius: 4,
+                barPercentage: 0.7
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { font: { family: 'Inter', size: 11 }, boxWidth: 12 }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10.5 } } },
+              y: { beginAtZero: true, max: 160, ticks: { stepSize: 40 }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
+            }
+          }
+        });
+
+        const tbody = document.getElementById('drawerSlaTableBody');
+        tbody.innerHTML = '';
+        (data.sla_by_district || []).forEach(row => {
+          const tr = document.createElement('tr');
+          const badgeClass = row.status === 'Excellent' ? 'available' : (row.status === 'Good' ? 'available' : 'busy');
+          tr.innerHTML = `
+            <td style="font-weight: 700;">${row.district}</td>
+            <td style="font-weight: 700; color: #00a884;">${row.sla}</td>
+            <td>${row.avg_days}</td>
+            <td><span class="avail-badge ${badgeClass}">${row.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function initTotalIssuesDrawer() {
+      const token = localStorage.getItem('ecoasset_token');
+      const district = document.getElementById('districtFilter').value;
+
+      const params = new URLSearchParams();
+      params.set('district', district);
+      if (calendarPreset && calendarPreset !== 'custom') {
+        params.set('timeframe', calendarPreset);
+      }
+      if (calendarStartDate) params.set('start_date', calendarStartDate);
+      if (calendarEndDate) params.set('end_date', calendarEndDate);
+
+      try {
+        const res = await fetch(`/api/index.php/api/v1/admin/analytics/incident-intake?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        const data = json.data || {};
+
+        document.getElementById('drawerTotalIssuesHeader').textContent = `${Number(data.total_reported || 0).toLocaleString()} Submissions`;
+        document.getElementById('drawerStatSafetyHazards').textContent = `${data.safety_hazards_pct || 38}%`;
+        document.getElementById('drawerStatVerifiedToday').textContent = data.verified_today || 0;
+        document.getElementById('drawerStatCitizenAccuracy').textContent = `${data.citizen_accuracy || 92.4}%`;
+
+        const ctx = document.getElementById('drawerCategoryDoughnut').getContext('2d');
+        if (categoryDoughnutInst) categoryDoughnutInst.destroy();
+
+        const catData = data.categories || { labels: [], counts: [] };
+
+        categoryDoughnutInst = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: catData.labels.length ? catData.labels : ['Critical Safety', 'Operational', 'Major Blockage', 'Minor Defect', 'Aesthetic'],
+            datasets: [{
+              data: catData.counts.length ? catData.counts : [0, 0, 0, 0, 0],
+              backgroundColor: ['#ef4444', '#f59e0b', '#f97316', '#3b82f6', '#94a3b8'],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 14 } }
+            },
+            cutout: '65%'
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function initCrewsDrawer() {
+      const token = localStorage.getItem('ecoasset_token');
+      const district = document.getElementById('districtFilter').value;
+
+      try {
+        const res = await fetch(`/api/index.php/api/v1/admin/analytics/crew-fleet?district=${encodeURIComponent(district)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        const data = json.data || {};
+
+        document.getElementById('drawerCrewsHeader').textContent = `${data.total_crews || 0} Teams on Duty`;
+        document.getElementById('drawerCrewsAvailable').textContent = data.available || 0;
+        document.getElementById('drawerCrewsBusy').textContent = data.busy || 0;
+        document.getElementById('drawerCrewsRating').textContent = `${data.rating || '4.8'}★`;
+
+        const ctx = document.getElementById('drawerSkillsChart').getContext('2d');
+        if (skillsChartInst) skillsChartInst.destroy();
+
+        const skillsData = data.skills || { labels: [], counts: [] };
+
+        skillsChartInst = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: skillsData.labels.length ? skillsData.labels : ['Structural', 'Electrical', 'Sanitation', 'General'],
+            datasets: [{
+              data: skillsData.counts.length ? skillsData.counts : [0, 0, 0, 0],
+              backgroundColor: '#10b981',
+              borderRadius: 6,
+              barPercentage: 0.55
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false } },
+              y: { beginAtZero: true, max: Math.max(10, ...skillsData.counts), ticks: { stepSize: 2 } }
+            }
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function handleFilterChange() {
+      loadDashboardData();
+    }
+
+    // =========================================================================
+    // Calendar Date Range Picker Logic
+    // =========================================================================
+
+    function initCalendarDefaults() {
+      const today = new Date();
+      const end = formatDate(today);
+      const start = formatDate(new Date(today.getTime() - 30 * 86400000));
+      calendarStartDate = start;
+      calendarEndDate = end;
+      document.getElementById('startDateInput').value = start;
+      document.getElementById('endDateInput').value = end;
+    }
+
+    function formatDate(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function toggleCalendarPopover() {
+      const popover = document.getElementById('calendarPopover');
+      popover.classList.toggle('open');
+    }
+
+    function closeCalendarPopover() {
+      document.getElementById('calendarPopover').classList.remove('open');
+    }
+
+    function selectPreset(chip) {
+      // Remove active from all chips
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+
+      const preset = chip.dataset.preset;
+      calendarPreset = preset;
+
+      const today = new Date();
+      const endStr = formatDate(today);
+      let startStr = '';
+
+      switch (preset) {
+        case '7d':
+          startStr = formatDate(new Date(today.getTime() - 7 * 86400000));
+          break;
+        case '30d':
+          startStr = formatDate(new Date(today.getTime() - 30 * 86400000));
+          break;
+        case '90d':
+          startStr = formatDate(new Date(today.getTime() - 90 * 86400000));
+          break;
+        case 'ytd':
+          startStr = today.getFullYear() + '-01-01';
+          break;
+        case 'all':
+          startStr = '2020-01-01';
+          break;
+        case 'custom':
+          // Don't change dates, let user pick manually
+          return;
+      }
+
+      calendarStartDate = startStr;
+      calendarEndDate = endStr;
+      document.getElementById('startDateInput').value = startStr;
+      document.getElementById('endDateInput').value = endStr;
+    }
+
+    function onCustomDateChange() {
+      // When user manually changes dates, switch to custom preset
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      const customChip = document.querySelector('.preset-chip[data-preset="custom"]');
+      if (customChip) customChip.classList.add('active');
+      calendarPreset = 'custom';
+
+      calendarStartDate = document.getElementById('startDateInput').value || null;
+      calendarEndDate = document.getElementById('endDateInput').value || null;
+    }
+
+    function applyCalendarFilter() {
+      // Update button label
+      const label = document.getElementById('calendarBtnLabel');
+      if (calendarPreset === 'custom' && calendarStartDate && calendarEndDate) {
+        label.textContent = calendarStartDate + ' → ' + calendarEndDate;
+      } else {
+        const presetLabels = { '7d': 'Last 7 Days', '30d': 'Last 30 Days', '90d': 'Last 90 Days', 'ytd': 'Year to Date', 'all': 'All Time', 'custom': 'Custom Range' };
+        label.textContent = presetLabels[calendarPreset] || 'Last 30 Days';
+      }
+
+      closeCalendarPopover();
+      loadDashboardData();
+    }
+
+    function resetCalendar() {
+      calendarPreset = '30d';
+      initCalendarDefaults();
+
+      // Reset active chip
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      const chip30d = document.querySelector('.preset-chip[data-preset="30d"]');
+      if (chip30d) chip30d.classList.add('active');
+
+      document.getElementById('calendarBtnLabel').textContent = 'Last 30 Days';
+      closeCalendarPopover();
+      loadDashboardData();
+    }
+
+    function handleDispatchClick(taskId) {
+      window.location.href = `../module3/admin/index.html?task=${encodeURIComponent(taskId)}`;
+    }
   </script>
 </body>
+
 </html>
