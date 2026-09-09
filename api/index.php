@@ -134,6 +134,7 @@ if ($method === 'POST' && ($cleanUri === '/api/v1/auth/login' || $uri === '/api/
 
 // 10. API Welcome / Root Route
 } elseif ($cleanUri === '/' || $cleanUri === '/api' || $cleanUri === '/api/v1') {
+
     echo json_encode([
         "name" => "EcoAsset REST API",
         "version" => "1.0.0",

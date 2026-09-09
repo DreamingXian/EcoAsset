@@ -712,11 +712,14 @@
       nameInput.value = currentUser.full_name || '';
       emailInput.value = currentUser.email || '';
 
-      // 4. Check for first login condition
+      // 4. Check for first login condition (applies ONLY to staff, NEVER to tourists)
       const urlParams = new URLSearchParams(window.location.search);
-      const isFirstLogin = urlParams.get('first_login') === '1' || 
-                           localStorage.getItem('ecoasset_first_login') === 'true' || 
-                           currentUser.must_change_password === true;
+      const isTourist = currentUser.role === 'TOURIST';
+      const isFirstLogin = !isTourist && (
+        urlParams.get('first_login') === '1' || 
+        (localStorage.getItem('ecoasset_first_login') === 'true' && currentUser.must_change_password === true) || 
+        currentUser.must_change_password === true
+      );
 
       if (isFirstLogin) {
         firstLoginBanner.style.display = 'block';
@@ -738,6 +741,11 @@
         setTimeout(() => {
           currPassInput.focus();
         }, 400);
+      } else {
+        localStorage.removeItem('ecoasset_first_login');
+        if (firstLoginBanner) firstLoginBanner.style.display = 'none';
+        const logoutRow = document.getElementById('firstLoginLogoutRow');
+        if (logoutRow) logoutRow.style.display = 'none';
       }
 
       // 5. Fetch fresh user info from server
@@ -852,9 +860,13 @@
       const confirmPassword = confirmPassInput.value;
 
       const urlParams = new URLSearchParams(window.location.search);
-      const isFirstLogin = urlParams.get('first_login') === '1' || 
-                           localStorage.getItem('ecoasset_first_login') === 'true' || 
-                           (currentUser && currentUser.must_change_password === true);
+      const isTourist = currentUser && currentUser.role === 'TOURIST';
+      const isFirstLogin = !isTourist && (
+        urlParams.get('first_login') === '1' || 
+        (localStorage.getItem('ecoasset_first_login') === 'true' && currentUser && currentUser.must_change_password === true) || 
+        (currentUser && currentUser.must_change_password === true)
+      );
+
 
       let hasError = false;
 
