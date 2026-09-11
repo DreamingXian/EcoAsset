@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\DAO\UserDAO;
 use App\DAO\TaskDAO;
 use App\DAO\AuditLogDAO;
+use App\DAO\AnalyticsDAO;
 use App\Utils\JWTUtil;
 use App\Utils\ResponseUtil;
 use Exception;
@@ -14,12 +15,14 @@ class AdminController
     private UserDAO $userDAO;
     private TaskDAO $taskDAO;
     private AuditLogDAO $auditLogDAO;
+    private AnalyticsDAO $analyticsDAO;
 
     public function __construct()
     {
         $this->userDAO = new UserDAO();
         $this->taskDAO = new TaskDAO();
         $this->auditLogDAO = new AuditLogDAO();
+        $this->analyticsDAO = new AnalyticsDAO();
     }
 
 
@@ -591,6 +594,123 @@ class AdminController
             ResponseUtil::success($result, "Invalid flag rejected. Work order returned to technician {$result['crew_name']} for rework.");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to reject invalid flag: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // =========================================================================
+    // MODULE 4: INCIDENT & ANALYTICS REPORTS ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Complete Administrative Analytics Dashboard payload (GET /api/v1/admin/analytics/dashboard)
+     */
+    public function getAnalyticsDashboard(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $district = $_GET['district'] ?? null;
+        $timeframe = $_GET['timeframe'] ?? null;
+        $startDate = $_GET['start_date'] ?? null;
+        $endDate = $_GET['end_date'] ?? null;
+
+        try {
+            $kpis = $this->analyticsDAO->getKpiSummary($district, $timeframe, $startDate, $endDate);
+            $prioritizedQueue = $this->analyticsDAO->getPrioritizedQueue($district, 6);
+            $hotspots = $this->analyticsDAO->getHotspotFrequencyByDistrict($timeframe);
+            $correlation = $this->analyticsDAO->getResolutionDelaysVsFootfall($district);
+            $crews = $this->analyticsDAO->getCrewWorkloadAndAvailability();
+
+            ResponseUtil::success([
+                'kpis'              => $kpis,
+                'prioritized_queue' => $prioritizedQueue,
+                'hotspots'          => $hotspots,
+                'correlation'       => $correlation,
+                'crew_workload'     => $crews
+            ], 'Administrative analytics dashboard data retrieved.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve analytics dashboard: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Active Queue Slide-over Drawer Details (GET /api/v1/admin/analytics/active-queue)
+     */
+    public function getActiveQueueDetails(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $district = $_GET['district'] ?? null;
+        $timeframe = $_GET['timeframe'] ?? null;
+        $startDate = $_GET['start_date'] ?? null;
+        $endDate = $_GET['end_date'] ?? null;
+
+        try {
+            $data = $this->analyticsDAO->getActiveQueueDrawerData($district, $timeframe, $startDate, $endDate);
+            ResponseUtil::success($data, 'Active maintenance queue details retrieved.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve active queue details: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Average Resolution Time Slide-over Drawer Details (GET /api/v1/admin/analytics/resolution-metrics)
+     */
+    public function getResolutionMetrics(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $district = $_GET['district'] ?? null;
+        $timeframe = $_GET['timeframe'] ?? null;
+        $startDate = $_GET['start_date'] ?? null;
+        $endDate = $_GET['end_date'] ?? null;
+
+        try {
+            $data = $this->analyticsDAO->getResolutionTimeDrawerData($district, $timeframe, $startDate, $endDate);
+            ResponseUtil::success($data, 'Resolution metrics retrieved.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve resolution metrics: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Incident Intake (Total Reported Issues) Slide-over Drawer Details (GET /api/v1/admin/analytics/incident-intake)
+     */
+    public function getIncidentIntakeDetails(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $district = $_GET['district'] ?? null;
+        $timeframe = $_GET['timeframe'] ?? null;
+        $startDate = $_GET['start_date'] ?? null;
+        $endDate = $_GET['end_date'] ?? null;
+
+        try {
+            $data = $this->analyticsDAO->getIncidentIntakeDrawerData($district, $timeframe, $startDate, $endDate);
+            ResponseUtil::success($data, 'Incident intake metrics retrieved.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve incident intake details: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Crew Fleet Slide-over Drawer Details (GET /api/v1/admin/analytics/crew-fleet)
+     */
+    public function getCrewFleetDetails(): void
+    {
+        $admin = $this->requireAdmin();
+        if (!$admin) return;
+
+        $district = $_GET['district'] ?? null;
+
+        try {
+            $data = $this->analyticsDAO->getCrewFleetDrawerData($district);
+            ResponseUtil::success($data, 'Crew fleet metrics retrieved.');
+        } catch (Exception $e) {
+            ResponseUtil::error('Failed to retrieve crew fleet details: ' . $e->getMessage(), 500);
         }
     }
 }
