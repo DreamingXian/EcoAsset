@@ -245,8 +245,8 @@ function renderMyTasksPane() {
             <span class="badge ${catClass}">${formatCategory(task.category)}</span>
             <span class="badge badge-aesthetic">${formatSkill(task.required_skill)}</span>
           </div>
-          <div class="sla-badge">
-            <span>⏱️ 24h SLA</span>
+          <div class="sla-badge live-sla-timer" data-sla="${task.sla_expires_at || ''}">
+            <span>⏱️ ${formatRemainingSlaTime(task.sla_expires_at)}</span>
           </div>
         </div>
 
@@ -814,10 +814,26 @@ window.openTaskDetailModal = function(taskId, sourceTab) {
 
   const slaEl = document.getElementById('modalTaskSla');
   if (slaEl) {
-    if (task.status === 'COMPLETED') slaEl.textContent = 'Completed';
-    else if (task.status === 'INVALID_RESOLVED') slaEl.textContent = 'Resolved';
-    else if (task.status === 'PRECOMPLETE' || task.status === 'PRE_INVALID') slaEl.textContent = 'In Review';
-    else slaEl.textContent = '24h SLA';
+    if (task.status === 'COMPLETED') {
+      slaEl.textContent = 'Completed';
+      slaEl.style.color = '#059669';
+    } else if (task.status === 'INVALID_RESOLVED') {
+      slaEl.textContent = 'Resolved';
+      slaEl.style.color = '#64748b';
+    } else if (task.status === 'PRECOMPLETE' || task.status === 'PRE_INVALID') {
+      slaEl.textContent = 'In Review';
+      slaEl.style.color = '#7c3aed';
+    } else if (task.status === 'PENDING_ACCEPTANCE' || task.report_status === 'PENDING_ACCEPTANCE') {
+      const remaining = formatRemainingSlaTime(task.sla_expires_at);
+      slaEl.textContent = remaining;
+      slaEl.style.color = (remaining === 'SLA Expired') ? '#dc2626' : '#d97706';
+    } else if (task.status === 'IN_PROGRESS' || task.report_status === 'IN_PROGRESS') {
+      slaEl.textContent = 'In Progress';
+      slaEl.style.color = '#0284c7';
+    } else {
+      slaEl.textContent = 'Open for Claim';
+      slaEl.style.color = '#059669';
+    }
   }
 
   const catBadge = document.getElementById('modalCategoryBadge');
@@ -1404,4 +1420,80 @@ function formatDateTime(dateStr) {
     return dateStr;
   }
 }
+
+/* =============================================================================
+   REAL-TIME SLA TIMER TICKER FOR PENDING WORK ORDERS
+   ============================================================================= */
+function parseTimestamp(tsStr) {
+  if (!tsStr) return null;
+  let formatted = String(tsStr).replace(' ', 'T');
+  let d = new Date(formatted);
+  if (isNaN(d.getTime())) {
+    d = new Date(tsStr);
+  }
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatRemainingSlaTime(slaExpiresAt) {
+  if (!slaExpiresAt) return '24h SLA';
+
+  const d = parseTimestamp(slaExpiresAt);
+  if (!d) return '24h SLA';
+
+  const now = Date.now();
+  const diffSec = Math.floor((d.getTime() - now) / 1000);
+
+  if (diffSec <= 0) {
+    return 'SLA Expired';
+  }
+
+  const hours = Math.floor(diffSec / 3600);
+  const mins = Math.floor((diffSec % 3600) / 60);
+  const secs = diffSec % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s left`;
+  } else {
+    return `${mins}m ${String(secs).padStart(2, '0')}s left`;
+  }
+}
+
+function updateAllLiveSlaTimers() {
+  // 1. Update all task card badges in DOM
+  document.querySelectorAll('.live-sla-timer').forEach(el => {
+    const slaExpires = el.getAttribute('data-sla');
+    if (slaExpires) {
+      const formatted = formatRemainingSlaTime(slaExpires);
+      const span = el.querySelector('span') || el;
+      span.textContent = `⏱️ ${formatted}`;
+      if (formatted === 'SLA Expired') {
+        el.style.color = '#dc2626';
+        el.style.borderColor = '#fca5a5';
+        el.style.background = '#fef2f2';
+      } else {
+        el.style.color = '#d97706';
+        el.style.borderColor = '#fde68a';
+        el.style.background = '#fef3c7';
+      }
+    }
+  });
+
+  // 2. Update task detail modal timer if active task is pending acceptance
+  if (activeModalTask && (activeModalTask.status === 'PENDING_ACCEPTANCE' || activeModalTask.report_status === 'PENDING_ACCEPTANCE')) {
+    const modalSlaEl = document.getElementById('modalTaskSla');
+    if (modalSlaEl && activeModalTask.sla_expires_at) {
+      const formatted = formatRemainingSlaTime(activeModalTask.sla_expires_at);
+      modalSlaEl.textContent = formatted;
+      if (formatted === 'SLA Expired') {
+        modalSlaEl.style.color = '#dc2626';
+      } else {
+        modalSlaEl.style.color = '#d97706';
+      }
+    }
+  }
+}
+
+// Start global 1-second interval ticker for live SLA countdowns
+setInterval(updateAllLiveSlaTimers, 1000);
+
 
