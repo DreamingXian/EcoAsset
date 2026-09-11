@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\DAO\ReportDAO;
+use App\DAO\TaskDAO;
 use App\DAO\UserDAO;
 use App\DAO\AuditLogDAO;
 use App\Models\DamageReport;
@@ -18,12 +19,14 @@ use Exception;
 class ReportController
 {
     private ReportDAO $reportDAO;
+    private TaskDAO $taskDAO;
     private UserDAO $userDAO;
     private AuditLogDAO $auditLogDAO;
 
     public function __construct()
     {
         $this->reportDAO = new ReportDAO();
+        $this->taskDAO = new TaskDAO();
         $this->userDAO = new UserDAO();
         $this->auditLogDAO = new AuditLogDAO();
     }
@@ -159,19 +162,36 @@ class ReportController
                 return;
             }
 
-            // 7. Audit log creation event
+            // 7. Auto-run spatial dispatch algorithm immediately upon report creation
+            $dispatchResult = $this->taskDAO->autoDispatchSingleReport($reportId);
+
+            // 8. Audit log creation & automated dispatch event
             try {
-                $this->auditLogDAO->log($user['user_id'], 'REPORT_CREATED', "Report {$reportId} created under category {$category->value} ({$district}).");
+                $statusDesc = $dispatchResult['dispatched'] 
+                    ? "automatically dispatched to crew {$dispatchResult['assigned_crew_name']} (24h acceptance window)"
+                    : "placed in Open Maintenance Pool ({$dispatchResult['reason']})";
+
+                $this->auditLogDAO->log(
+                    $user['user_id'],
+                    'REPORT_CREATED',
+                    "Report {$reportId} created under category {$category->value} ({$district}) and {$statusDesc}."
+                );
             } catch (Exception $e) {
                 // Non-blocking
             }
 
-            // 8. Return created report
+            // 9. Return created report with live dispatch details
             $createdData = $report->jsonSerialize();
             $createdData['report_id'] = $reportId;
+            $createdData['status'] = $dispatchResult['status'];
             $createdData['reporter_name'] = $user['full_name'] ?? 'Citizen Reporter';
+            $createdData['dispatch_result'] = $dispatchResult;
 
-            ResponseUtil::success($createdData, 'Damage report submitted successfully! Queued for maintenance dispatch.', 201);
+            $successMsg = $dispatchResult['dispatched']
+                ? "Damage report submitted! Automatically dispatched to {$dispatchResult['assigned_crew_name']} (24h SLA acceptance window)."
+                : "Damage report submitted! Placed in Open Maintenance Pool for crew claiming or scheduled batch dispatch.";
+
+            ResponseUtil::success($createdData, $successMsg, 201);
 
         } catch (Exception $e) {
             ResponseUtil::error('Service error creating report: ' . $e->getMessage(), 500);
