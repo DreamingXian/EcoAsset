@@ -256,11 +256,6 @@
       font-weight: 700;
     }
 
-    .role-badge.ranger {
-      background-color: #eff6ff;
-      color: #2563eb;
-    }
-
     .role-badge.crew {
       background-color: #fffbeb;
       color: #d97706;
@@ -799,7 +794,6 @@
       <div class="main-header">
         <div class="header-titles">
           <h1>User Management</h1>
-          <p>Internal staff roster · Admin access only</p>
         </div>
 
         <!-- Create Account Button with Circled Plus Icon -->
@@ -831,7 +825,6 @@
 
         <select id="roleFilter" class="filter-select">
           <option value="ALL">All Roles</option>
-          <option value="SITE_RANGER">Site Ranger</option>
           <option value="MAINTENANCE_CREW">Maintenance Crew</option>
           <option value="ADMINISTRATOR">Administrator</option>
           <option value="TOURIST">Tourist</option>
@@ -846,7 +839,7 @@
 
       <div class="results-count-label" id="resultsCount">0 users found</div>
 
-      <!-- Staff Roster Data Table Card -->
+      <!-- User Data Table Card -->
       <div class="table-card">
         <table class="data-table">
           <thead>
@@ -862,7 +855,7 @@
           <tbody id="userTableBody">
             <tr>
               <td colspan="6" style="text-align: center; color: #94a3b8; padding: 40px;">
-                Loading staff roster...
+                Loading user roster...
               </td>
             </tr>
           </tbody>
@@ -935,7 +928,6 @@
         <div class="form-group" id="createRoleGroup">
           <label class="form-label">Role</label>
           <select id="createRole" class="modal-select">
-            <option value="SITE_RANGER">Site Ranger</option>
             <option value="MAINTENANCE_CREW">Maintenance Crew</option>
             <option value="ADMINISTRATOR">Administrator</option>
           </select>
@@ -1045,7 +1037,6 @@
         <div class="form-group" id="editRoleGroup">
           <label class="form-label">Role</label>
           <select id="editRole" class="modal-select">
-            <option value="SITE_RANGER">Site Ranger</option>
             <option value="MAINTENANCE_CREW">Maintenance Crew</option>
             <option value="ADMINISTRATOR">Administrator</option>
             <option value="TOURIST">Tourist</option>
@@ -1190,9 +1181,8 @@
       }
 
       userTableBody.innerHTML = users.map(user => {
-        let roleBadgeClass = 'ranger';
-        if (user.role === 'MAINTENANCE_CREW') roleBadgeClass = 'crew';
-        else if (user.role === 'ADMINISTRATOR') roleBadgeClass = 'admin';
+        let roleBadgeClass = 'crew';
+        if (user.role === 'ADMINISTRATOR') roleBadgeClass = 'admin';
         else if (user.role === 'TOURIST') roleBadgeClass = 'tourist';
 
         const statusClass = user.is_active ? 'active' : 'inactive';

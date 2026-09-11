@@ -241,10 +241,9 @@ class AnalyticsDAO
                            COUNT(CASE WHEN r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS') THEN 1 END) as active_tasks_count
                     FROM users u
                     LEFT JOIN maintenance_crews mc ON u.user_id = mc.crew_id
-                    LEFT JOIN site_ranger_profiles rp ON u.user_id = rp.user_id
                     LEFT JOIN maintenance_tasks t ON mc.crew_id = t.assigned_crew_id
                     LEFT JOIN damage_reports r ON t.report_id = r.report_id
-                    WHERE u.role IN ('SITE_RANGER', 'MAINTENANCE_CREW')
+                    WHERE u.role = 'MAINTENANCE_CREW'
                     GROUP BY u.user_id, u.full_name, u.email, u.role, u.is_active, mc.availability_status, mc.performance_score, mc.skill_tags, mc.station_region
                     ORDER BY active_tasks_count DESC, mc.performance_score DESC";
 
@@ -253,8 +252,8 @@ class AnalyticsDAO
 
             $list = [];
             foreach ($rows as $row) {
-                $roleLabel = $row['role'] === 'SITE_RANGER' ? 'Site Ranger' : 'Maintenance Crew';
-                $roleType = $row['role'] === 'SITE_RANGER' ? 'ranger' : 'crew';
+                $roleLabel = 'Maintenance Crew';
+                $roleType = 'crew';
                 $activeCount = (int)($row['active_tasks_count'] ?? 0);
                 $isActive = (bool)$row['is_active'];
                 $status = $isActive ? (($row['availability_status'] ?? 'AVAILABLE') === 'AVAILABLE' ? 'Available' : 'Busy') : 'Inactive';

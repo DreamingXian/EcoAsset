@@ -20,9 +20,9 @@ $password = "Secret123!";
 
 try {
     // 1.1 Create active user
-    $activeUserId = $userDAO->createUser($activeEmail, $password, "Active Test User", "SITE_RANGER", [
-        'station_region' => 'Kuala Lumpur',
-        'employee_id' => "RNG-{$suffix}"
+    $activeUserId = $userDAO->createUser($activeEmail, $password, "Active Test User", "MAINTENANCE_CREW", [
+        'skill_tags' => ['STRUCTURAL'],
+        'station_region' => 'Kuala Lumpur'
     ]);
 
     // 1.2 Create user to deactivate
@@ -57,7 +57,7 @@ try {
         'role' => $user['role']
     ]);
     $decoded = JWTUtil::validateToken($token);
-    $results['cases']['5_jwt_issuance_and_validation'] = ($decoded && $decoded['user_id'] === $user['user_id'] && $decoded['role'] === 'SITE_RANGER');
+    $results['cases']['5_jwt_issuance_and_validation'] = ($decoded && $decoded['user_id'] === $user['user_id'] && $decoded['role'] === 'MAINTENANCE_CREW');
 
     $allPassed = !in_array(false, array_values($results['cases']), true);
     $results['all_passed'] = $allPassed;

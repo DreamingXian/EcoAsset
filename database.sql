@@ -1,6 +1,6 @@
 -- ============================================================================
 -- EcoAsset Database Schema (Supabase PostgreSQL)
--- Enhanced with Site Ranger Profiles, Crew Coordinates, Required Skills & SLA Fields
+-- Enhanced with Maintenance Crew Coordinates, Required Skills & SLA Fields
 -- ============================================================================
 
 -- 1. Drop existing tables and types if they exist (Clean Slate)
@@ -8,7 +8,6 @@ DROP TABLE IF EXISTS system_audit_logs CASCADE;
 DROP TABLE IF EXISTS maintenance_tasks CASCADE;
 DROP TABLE IF EXISTS report_upvotes CASCADE;
 DROP TABLE IF EXISTS damage_reports CASCADE;
-DROP TABLE IF EXISTS site_ranger_profiles CASCADE;
 DROP TABLE IF EXISTS maintenance_crews CASCADE;
 DROP TABLE IF EXISTS tourist_profiles CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -25,7 +24,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 3. Create Custom ENUM Types
 CREATE TYPE user_role AS ENUM (
     'TOURIST', 
-    'SITE_RANGER', 
     'MAINTENANCE_CREW', 
     'ADMINISTRATOR'
 );
@@ -86,14 +84,7 @@ CREATE TABLE tourist_profiles (
     reputation_score INT NOT NULL DEFAULT 100
 );
 
--- 5.2 Site Ranger Profiles
-CREATE TABLE site_ranger_profiles (
-    user_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-    station_region VARCHAR(100) NOT NULL DEFAULT 'Kuala Lumpur',
-    employee_id VARCHAR(50) NOT NULL
-);
-
--- 5.3 Maintenance Crews
+-- 5.2 Maintenance Crews
 CREATE TABLE maintenance_crews (
     crew_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
     skill_tags skill_category[] NOT NULL DEFAULT '{}',

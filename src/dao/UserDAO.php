@@ -40,15 +40,13 @@ class UserDAO
     }
 
     /**
-     * Retrieve all internal staff users (Site Ranger, Maintenance Crew, Administrator).
+     * Retrieve all internal staff users (Maintenance Crew, Administrator).
      */
     public function getAllInternalUsers(): array
     {
         $sql = "SELECT u.user_id, u.email, u.full_name, u.role, u.is_active, u.must_change_password, u.created_at,
-                       srp.station_region AS ranger_station, srp.employee_id AS ranger_emp_id,
                        mc.skill_tags, mc.availability_status, mc.performance_score, mc.station_region AS crew_station
                 FROM users u
-                LEFT JOIN site_ranger_profiles srp ON u.user_id = srp.user_id
                 LEFT JOIN maintenance_crews mc ON u.user_id = mc.crew_id
                 WHERE u.role != 'TOURIST'
                 ORDER BY u.created_at DESC";
@@ -69,12 +67,10 @@ class UserDAO
     {
         $sql = "SELECT u.user_id, u.email, u.password_hash, u.full_name, u.role, u.is_active, u.must_change_password, u.created_at,
                        tp.reputation_score,
-                       srp.station_region AS ranger_station, srp.employee_id AS ranger_emp_id,
                        mc.skill_tags, mc.availability_status, mc.performance_score,
                        mc.current_latitude, mc.current_longitude, mc.station_region AS crew_station
                 FROM users u
                 LEFT JOIN tourist_profiles tp ON u.user_id = tp.user_id
-                LEFT JOIN site_ranger_profiles srp ON u.user_id = srp.user_id
                 LEFT JOIN maintenance_crews mc ON u.user_id = mc.crew_id
                 WHERE u.user_id = :user_id";
 
@@ -94,12 +90,10 @@ class UserDAO
     {
         $sql = "SELECT u.user_id, u.email, u.password_hash, u.full_name, u.role, u.is_active, u.must_change_password, u.created_at,
                        tp.reputation_score,
-                       srp.station_region AS ranger_station, srp.employee_id AS ranger_emp_id,
                        mc.skill_tags, mc.availability_status, mc.performance_score,
                        mc.current_latitude, mc.current_longitude
                 FROM users u
                 LEFT JOIN tourist_profiles tp ON u.user_id = tp.user_id
-                LEFT JOIN site_ranger_profiles srp ON u.user_id = srp.user_id
                 LEFT JOIN maintenance_crews mc ON u.user_id = mc.crew_id
                 WHERE LOWER(u.email) = LOWER(:email)";
 
@@ -197,17 +191,6 @@ class UserDAO
                 $profileSql = "INSERT INTO tourist_profiles (user_id, reputation_score) VALUES (:id, :rep)";
                 $profileStmt = $this->db->prepare($profileSql);
                 $profileStmt->execute(['id' => $newUserId, 'rep' => $reputation]);
-            } elseif ($role === 'SITE_RANGER') {
-                $station = $extraData['station_region'] ?? 'Kuala Lumpur';
-                $empId = $extraData['employee_id'] ?? ('RNG-' . rand(1000, 9999));
-                $rangerSql = "INSERT INTO site_ranger_profiles (user_id, station_region, employee_id) 
-                              VALUES (:id, :station, :emp_id)";
-                $rangerStmt = $this->db->prepare($rangerSql);
-                $rangerStmt->execute([
-                    'id' => $newUserId,
-                    'station' => $station,
-                    'emp_id' => $empId
-                ]);
             } elseif ($role === 'MAINTENANCE_CREW') {
                 $skillTags = $extraData['skill_tags'] ?? ['STRUCTURAL'];
                 $skillsParam = empty($skillTags) ? '{}' : '{' . implode(',', array_map('strtoupper', $skillTags)) . '}';
@@ -308,14 +291,7 @@ class UserDAO
             ]);
 
             // Ensure role-specific profiles exist if transitioned
-            if ($role === 'SITE_RANGER') {
-                $check = $this->db->prepare("SELECT user_id FROM site_ranger_profiles WHERE user_id = :id");
-                $check->execute(['id' => $userId]);
-                if (!$check->fetch()) {
-                    $ins = $this->db->prepare("INSERT INTO site_ranger_profiles (user_id, station_region, employee_id) VALUES (:id, 'Kuala Lumpur', :emp)");
-                    $ins->execute(['id' => $userId, 'emp' => 'RNG-' . rand(1000, 9999)]);
-                }
-            } elseif ($role === 'MAINTENANCE_CREW') {
+            if ($role === 'MAINTENANCE_CREW') {
                 $check = $this->db->prepare("SELECT crew_id FROM maintenance_crews WHERE crew_id = :id");
                 $check->execute(['id' => $userId]);
                 if (!$check->fetch()) {

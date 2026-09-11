@@ -59,7 +59,8 @@ class AdminController
     public function getUsers(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $search = strtolower(trim($_GET['search'] ?? ''));
         $roleFilter = strtoupper(trim($_GET['role'] ?? ''));
@@ -76,7 +77,7 @@ class AdminController
             foreach ($orderedUsers as $user) {
                 $userCode = sprintf("U%03d", $index++);
                 $role = strtoupper($user['role'] ?? 'TOURIST');
-                $isActive = (bool)$user['is_active'];
+                $isActive = (bool) $user['is_active'];
 
                 // Filter by role
                 if (!empty($roleFilter) && $roleFilter !== 'ALL' && $roleFilter !== 'ALL ROLES') {
@@ -98,22 +99,24 @@ class AdminController
                     $email = strtolower($user['email'] ?? '');
                     $code = strtolower($userCode);
 
-                    if (strpos($fullName, $search) === false && 
-                        strpos($email, $search) === false && 
-                        strpos($code, $search) === false) {
+                    if (
+                        strpos($fullName, $search) === false &&
+                        strpos($email, $search) === false &&
+                        strpos($code, $search) === false
+                    ) {
                         continue;
                     }
                 }
 
                 $formattedUsers[] = [
-                    'id'          => $userCode,
-                    'user_id'     => $user['user_id'],
-                    'full_name'   => $user['full_name'],
-                    'email'       => $user['email'],
-                    'role'        => $role,
-                    'role_label'  => self::getRoleLabel($role),
-                    'is_active'   => $isActive,
-                    'created_at'  => $user['created_at']
+                    'id' => $userCode,
+                    'user_id' => $user['user_id'],
+                    'full_name' => $user['full_name'],
+                    'email' => $user['email'],
+                    'role' => $role,
+                    'role_label' => self::getRoleLabel($role),
+                    'is_active' => $isActive,
+                    'created_at' => $user['created_at']
                 ];
             }
 
@@ -123,7 +126,7 @@ class AdminController
             ResponseUtil::success([
                 'users' => $formattedUsers,
                 'count' => count($formattedUsers)
-            ], 'Staff roster retrieved successfully.');
+            ], 'User roster retrieved successfully.');
 
         } catch (Exception $e) {
             ResponseUtil::error('Failed to retrieve user roster: ' . $e->getMessage(), 500);
@@ -136,14 +139,15 @@ class AdminController
     public function createUser(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true) ?? $_POST;
 
         $fullName = trim($data['full_name'] ?? '');
         $email = strtolower(trim($data['email'] ?? ''));
-        $role = strtoupper(trim($data['role'] ?? 'SITE_RANGER'));
+        $role = strtoupper(trim($data['role'] ?? 'MAINTENANCE_CREW'));
         $password = $data['password'] ?? 'Pass1234!';
 
         $errors = [];
@@ -160,7 +164,7 @@ class AdminController
             $errors['email'] = 'This email address is already registered.';
         }
 
-        $validRoles = ['SITE_RANGER', 'MAINTENANCE_CREW', 'ADMINISTRATOR', 'TOURIST'];
+        $validRoles = ['MAINTENANCE_CREW', 'ADMINISTRATOR', 'TOURIST'];
         if (!in_array($role, $validRoles, true)) {
             $errors['role'] = 'Invalid role selected.';
         }
@@ -189,8 +193,8 @@ class AdminController
 
             ResponseUtil::success([
                 'user_id' => $newUserId,
-                'email'   => $email,
-                'role'    => $role
+                'email' => $email,
+                'role' => $role
             ], 'Staff account created successfully.');
 
         } catch (Exception $e) {
@@ -204,7 +208,8 @@ class AdminController
     public function updateUser(string $userId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $existingUser = $this->userDAO->getUserById($userId);
         if (!$existingUser) {
@@ -236,7 +241,7 @@ class AdminController
             }
         }
 
-        $validRoles = ['SITE_RANGER', 'MAINTENANCE_CREW', 'ADMINISTRATOR', 'TOURIST'];
+        $validRoles = ['MAINTENANCE_CREW', 'ADMINISTRATOR', 'TOURIST'];
         if (!in_array($role, $validRoles, true)) {
             $errors['role'] = 'Invalid role selected.';
         }
@@ -271,7 +276,8 @@ class AdminController
     public function updateStatus(string $userId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $existingUser = $this->userDAO->getUserById($userId);
         if (!$existingUser) {
@@ -282,7 +288,7 @@ class AdminController
         $rawInput = file_get_contents('php://input');
         $data = json_decode($rawInput, true) ?? $_POST;
 
-        $isActive = isset($data['is_active']) ? (bool)$data['is_active'] : !$existingUser['is_active'];
+        $isActive = isset($data['is_active']) ? (bool) $data['is_active'] : !$existingUser['is_active'];
 
         // Prevent admin self-deactivation
         if ($admin['user_id'] === $userId && !$isActive) {
@@ -304,7 +310,7 @@ class AdminController
             }
 
             ResponseUtil::success([
-                'user_id'   => $userId,
+                'user_id' => $userId,
                 'is_active' => $isActive
             ], $isActive ? 'User account activated.' : 'User account deactivated.');
 
@@ -316,11 +322,14 @@ class AdminController
     private static function getRoleLabel(string $role): string
     {
         switch ($role) {
-            case 'SITE_RANGER': return 'Site Ranger';
-            case 'MAINTENANCE_CREW': return 'Maintenance Crew';
-            case 'ADMINISTRATOR': return 'Administrator';
-            case 'TOURIST': return 'Tourist';
-            default: return ucfirst(strtolower($role));
+            case 'MAINTENANCE_CREW':
+                return 'Maintenance Crew';
+            case 'ADMINISTRATOR':
+                return 'Administrator';
+            case 'TOURIST':
+                return 'Tourist';
+            default:
+                return ucfirst(strtolower($role));
         }
     }
 
@@ -335,7 +344,8 @@ class AdminController
     public function getTasks(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $status = $_GET['status'] ?? null;
         $search = $_GET['search'] ?? null;
@@ -356,7 +366,8 @@ class AdminController
     public function getCrewCandidatesForTask(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         try {
             $data = $this->taskDAO->getCrewsFleetForTask($taskId);
@@ -372,7 +383,8 @@ class AdminController
     public function previewSingleTaskAutoDispatch(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         try {
             $result = $this->taskDAO->previewSingleTaskAutoDispatch($taskId);
@@ -388,7 +400,8 @@ class AdminController
     public function assignCrew(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $crewId = trim($input['crew_id'] ?? ($_POST['crew_id'] ?? ''));
@@ -425,15 +438,16 @@ class AdminController
     public function runBatchDispatch(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         try {
             $result = $this->taskDAO->runAutoDispatch();
 
             try {
                 $this->auditLogDAO->log(
-                    $admin['user_id'], 
-                    'BATCH_AUTO_DISPATCH_TRIGGERED', 
+                    $admin['user_id'],
+                    'BATCH_AUTO_DISPATCH_TRIGGERED',
                     "Batch auto-dispatch ran: {$result['assigned_count']} assigned, {$result['unassigned_count']} unassigned."
                 );
             } catch (Exception $e) {
@@ -452,7 +466,8 @@ class AdminController
     public function approveCompletion(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         try {
             $result = $this->taskDAO->approveTaskCompletion($taskId, $admin['user_id']);
@@ -479,7 +494,8 @@ class AdminController
     public function rejectCompletion(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $reason = trim($input['return_reason'] ?? ($_POST['return_reason'] ?? ''));
@@ -514,7 +530,8 @@ class AdminController
     public function returnToOpenPool(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         try {
             $result = $this->taskDAO->returnTaskToOpenPool($taskId, $admin['user_id']);
@@ -541,7 +558,8 @@ class AdminController
     public function approveInvalid(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         try {
             $result = $this->taskDAO->approveInvalidTask($taskId, $admin['user_id']);
@@ -568,7 +586,8 @@ class AdminController
     public function rejectInvalid(string $taskId): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $reason = trim($input['return_reason'] ?? ($_POST['return_reason'] ?? ''));
@@ -607,7 +626,8 @@ class AdminController
     public function getAnalyticsDashboard(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $district = $_GET['district'] ?? null;
         $timeframe = $_GET['timeframe'] ?? null;
@@ -622,11 +642,11 @@ class AdminController
             $crews = $this->analyticsDAO->getCrewWorkloadAndAvailability();
 
             ResponseUtil::success([
-                'kpis'              => $kpis,
+                'kpis' => $kpis,
                 'prioritized_queue' => $prioritizedQueue,
-                'hotspots'          => $hotspots,
-                'correlation'       => $correlation,
-                'crew_workload'     => $crews
+                'hotspots' => $hotspots,
+                'correlation' => $correlation,
+                'crew_workload' => $crews
             ], 'Administrative analytics dashboard data retrieved.');
         } catch (Exception $e) {
             ResponseUtil::error('Failed to retrieve analytics dashboard: ' . $e->getMessage(), 500);
@@ -639,7 +659,8 @@ class AdminController
     public function getActiveQueueDetails(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $district = $_GET['district'] ?? null;
         $timeframe = $_GET['timeframe'] ?? null;
@@ -660,7 +681,8 @@ class AdminController
     public function getResolutionMetrics(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $district = $_GET['district'] ?? null;
         $timeframe = $_GET['timeframe'] ?? null;
@@ -681,7 +703,8 @@ class AdminController
     public function getIncidentIntakeDetails(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $district = $_GET['district'] ?? null;
         $timeframe = $_GET['timeframe'] ?? null;
@@ -702,7 +725,8 @@ class AdminController
     public function getCrewFleetDetails(): void
     {
         $admin = $this->requireAdmin();
-        if (!$admin) return;
+        if (!$admin)
+            return;
 
         $district = $_GET['district'] ?? null;
 
