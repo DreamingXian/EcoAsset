@@ -120,8 +120,6 @@ class AuthController
                     'role'                 => $user['role'],
                     'must_change_password' => $mustChangePassword,
                     'reputation_score'     => isset($user['reputation_score']) ? (int)$user['reputation_score'] : null,
-                    'ranger_station'       => $user['ranger_station'] ?? null,
-                    'ranger_emp_id'        => $user['ranger_emp_id'] ?? null,
                     'skill_tags'           => $user['skill_tags'] ?? [],
                     'availability_status'  => $user['availability_status'] ?? null,
                     'performance_score'    => isset($user['performance_score']) ? (float)$user['performance_score'] : null

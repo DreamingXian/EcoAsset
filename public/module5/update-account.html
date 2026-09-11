@@ -702,7 +702,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Enforce Authentication Guard
-      currentUser = AuthGuard.requireAuth(['TOURIST', 'SITE_RANGER', 'MAINTENANCE_CREW', 'ADMINISTRATOR']);
+      currentUser = AuthGuard.requireAuth(['TOURIST', 'MAINTENANCE_CREW', 'ADMINISTRATOR']);
       if (!currentUser) return;
 
       // 2. Setup Back Link and Bottom Navigation based on user role
@@ -774,7 +774,7 @@
           </a>
         `;
       } else {
-        // TOURIST or SITE_RANGER
+        // TOURIST
         backBtn.href = '../module1/profile.html';
         dynamicBottomNav.innerHTML = `
           <a href="../module1/index.html" class="nav-tab">

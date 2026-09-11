@@ -803,7 +803,7 @@
       crews.slice(0, 5).forEach(c => {
         const tr = document.createElement('tr');
         
-        const roleClass = c.role_type === 'ranger' ? 'role-tag ranger' : 'role-tag crew';
+        const roleClass = 'role-tag crew';
         const availClass = c.availability === 'Available' ? 'avail-badge available' : (c.availability === 'Busy' ? 'avail-badge busy' : 'avail-badge inactive');
 
         // Render 5 dots

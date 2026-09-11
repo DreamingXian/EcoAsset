@@ -27,17 +27,17 @@ try {
     // 3. Test Create New Staff Account
     $uniqueSuffix = time() . '_' . rand(100, 999);
     $testStaffEmail = "staff_{$uniqueSuffix}@dbkl.gov.my";
-    $newUserId = $userDAO->createUser($testStaffEmail, 'Pass1234!', 'Staff Test Member', 'SITE_RANGER');
+    $newUserId = $userDAO->createUser($testStaffEmail, 'Pass1234!', 'Staff Test Member', 'MAINTENANCE_CREW');
     $results['cases']['2_create_staff_user'] = ($newUserId !== null);
 
     // 4. Test Update User Details By Admin
     $updatedName = "Staff Member Renamed";
-    $updateSuccess = $userDAO->updateUserByAdmin($newUserId, $updatedName, $testStaffEmail, 'MAINTENANCE_CREW');
+    $updateSuccess = $userDAO->updateUserByAdmin($newUserId, $updatedName, $testStaffEmail, 'ADMINISTRATOR');
     $freshUser = $userDAO->getUserById($newUserId);
     $results['cases']['3_update_user_details'] = (
         $updateSuccess &&
         $freshUser['full_name'] === $updatedName &&
-        $freshUser['role'] === 'MAINTENANCE_CREW'
+        $freshUser['role'] === 'ADMINISTRATOR'
     );
 
     // 5. Test Deactivate User Status

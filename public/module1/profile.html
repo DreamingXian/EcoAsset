@@ -268,8 +268,8 @@
   <script src="../js/auth-guard.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Enforce Authentication Guard (Must be logged in as TOURIST or SITE_RANGER)
-      const currentUser = AuthGuard.requireAuth(['TOURIST', 'SITE_RANGER']);
+      // 1. Enforce Authentication Guard (Must be logged in as TOURIST)
+      const currentUser = AuthGuard.requireAuth(['TOURIST']);
       if (!currentUser) return;
 
       // 2. Render Initial Local Cached Data
@@ -300,12 +300,7 @@
 
       // Role badge
       const roleBadge = document.getElementById('userRoleBadge');
-      if (user.role === 'SITE_RANGER') {
-        const station = user.ranger_station ? ` • ${user.ranger_station}` : '';
-        roleBadge.textContent = `🛡️ Site Ranger${station}`;
-      } else {
-        roleBadge.textContent = '👤 Public User (Tourist)';
-      }
+      roleBadge.textContent = '👤 Public User (Tourist)';
 
       // Reputation score & Progress Bar
       const repScore = (user.reputation_score !== undefined && user.reputation_score !== null) 

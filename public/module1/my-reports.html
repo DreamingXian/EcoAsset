@@ -288,7 +288,7 @@
     let currentTab = 'my-reports';
 
     document.addEventListener('DOMContentLoaded', () => {
-      AuthGuard.requireAuth(['TOURIST', 'SITE_RANGER', 'MAINTENANCE_CREW']);
+      AuthGuard.requireAuth(['TOURIST', 'MAINTENANCE_CREW']);
       loadUserActivity();
     });
 

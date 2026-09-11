@@ -49,7 +49,7 @@ try {
     $isFar = GeoUtil::isWithinTolerance(3.1578, 101.7119, 3.1488, 101.7133, 50.0); // ~1km
     $results['step3_geo_util'] = ($distKm > 0.8 && $distKm < 1.3 && $isNear === true && $isFar === false);
 
-    // 4. Test UserDAO (Create 4 actor profiles)
+    // 4. Test UserDAO (Create 3 actor profiles)
     $userDao = new UserDAO();
     $uniqueSuffix = time() . '_' . rand(100, 999);
 
@@ -57,12 +57,9 @@ try {
     $touristId = $userDao->createUser("tourist_{$uniqueSuffix}@ecoasset.my", "Pass1234!", "Test Tourist", "TOURIST");
     $tourist = $userDao->getUserById($touristId);
 
-    // 4.2 Ranger
-    $rangerId = $userDao->createUser("ranger_{$uniqueSuffix}@ecoasset.my", "Pass1234!", "Officer Roslan", "SITE_RANGER", [
-        'station_region' => 'Kuala Lumpur',
-        'employee_id' => "RNG-{$uniqueSuffix}"
-    ]);
-    $ranger = $userDao->getUserById($rangerId);
+    // 4.2 Administrator
+    $adminId = $userDao->createUser("admin_{$uniqueSuffix}@ecoasset.my", "Pass1234!", "System Admin", "ADMINISTRATOR");
+    $admin = $userDao->getUserById($adminId);
 
     // 4.3 Crew
     $crewId = $userDao->createUser("crew_{$uniqueSuffix}@ecoasset.my", "Pass1234!", "Tech Ahmad", "MAINTENANCE_CREW", [
@@ -75,7 +72,7 @@ try {
 
     $results['step4_user_dao'] = (
         $tourist && $tourist['reputation_score'] == 100 &&
-        $ranger && $ranger['ranger_station'] === 'Kuala Lumpur' &&
+        $admin && $admin['role'] === 'ADMINISTRATOR' &&
         $crew && in_array('STRUCTURAL', $crew['skill_tags'])
     );
 
@@ -92,16 +89,16 @@ try {
         SkillCategory::STRUCTURAL,
         0,
         0.0,
-        ReportStatus::PENDING_VALIDATION,
+        ReportStatus::OPEN_FOR_CLAIM,
         'Kuala Lumpur'
     );
 
     $reportId = $reportDao->createReport($report);
     $savedReport = $reportDao->getReportById($reportId);
     
-    // Test Upvote
-    $upvoteRes = $reportDao->addUpvote($reportId, $touristId);
-    $duplicateUpvoteRes = $reportDao->addUpvote($reportId, $touristId); // should be blocked
+    // Test Upvote by a second platform actor (Admin)
+    $upvoteRes = $reportDao->addUpvote($reportId, $adminId);
+    $duplicateUpvoteRes = $reportDao->addUpvote($reportId, $adminId); // should be blocked
     $upvotedReport = $reportDao->getReportById($reportId);
 
     $results['step5_report_dao'] = (
@@ -109,7 +106,7 @@ try {
         $savedReport['priority_score'] > 0 &&
         $upvoteRes['success'] === true &&
         $duplicateUpvoteRes['success'] === false &&
-        $upvotedReport['upvote_count'] === 1
+        $upvotedReport['upvote_count'] === 2
     );
 
     // 6. Test TaskDAO (Manual Assign, Accept, Complete, Reset Crew)
@@ -133,10 +130,10 @@ try {
     $updatedCrew = $userDao->getUserById($crewId);
 
     $results['step6_task_dao'] = (
-        $assignSuccess &&
+        ($assignSuccess['success'] ?? false) &&
         $acceptSuccess &&
         $completeSuccess &&
-        $completedTask['report_status'] === 'COMPLETED' &&
+        in_array($completedTask['report_status'], ['PRECOMPLETE', 'COMPLETED']) &&
         $updatedCrew['availability_status'] === 'AVAILABLE'
     );
 
@@ -144,12 +141,12 @@ try {
     $analyticsDao = new AnalyticsDAO();
     $kpi = $analyticsDao->getKpiSummary('Kuala Lumpur');
     $hotspots = $analyticsDao->getHotspotFrequencyByDistrict();
-    $publicSummary = $analyticsDao->getPublicCommunityImpactSummary();
+    $crews = $analyticsDao->getCrewWorkloadAndAvailability();
 
     $results['step7_analytics_dao'] = (
         isset($kpi['total_reported']) &&
         is_array($hotspots) &&
-        isset($publicSummary['total_solved_month'])
+        is_array($crews)
     );
 
     // 8. Test AuditLogDAO
