@@ -1269,9 +1269,6 @@
         case 'TOURIST':
           window.location.href = '../module1/index.html';
           break;
-        case 'SITE_RANGER':
-          window.location.href = '../module1/index.html?role=ranger';
-          break;
         case 'MAINTENANCE_CREW':
           window.location.href = '../module3/index.html';
           break;
