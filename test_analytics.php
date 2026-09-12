@@ -8,24 +8,19 @@ header('Content-Type: application/json');
 $dao = new AnalyticsDAO();
 $kpis = $dao->getKpiSummary();
 $queue = $dao->getPrioritizedQueue();
-$hotspots = $dao->getHotspotFrequencyByDistrict();
-$correlation = $dao->getResolutionDelaysVsFootfall();
+$hotspots30d = $dao->getHotspotFrequencyByDistrict('All Districts', '30d');
+$hotspots7d = $dao->getHotspotFrequencyByDistrict('KLCC', '7d');
+$correlation30d = $dao->getResolutionDelaysVsFootfall('All Districts', '30d');
+$correlation7d = $dao->getResolutionDelaysVsFootfall('KLCC', '7d');
 $crews = $dao->getCrewWorkloadAndAvailability();
-$activeDrawer = $dao->getActiveQueueDrawerData();
-$resDrawer = $dao->getResolutionTimeDrawerData();
-$incidentDrawer = $dao->getIncidentIntakeDrawerData();
-$crewDrawer = $dao->getCrewFleetDrawerData();
 
 echo json_encode([
     'status' => 'SUCCESS',
     'kpis' => $kpis,
     'queue_count' => count($queue),
-    'hotspots_count' => count($hotspots),
-    'correlation_labels' => $correlation['labels'],
-    'crews_count' => count($crews),
-    'active_drawer_pending' => $activeDrawer['summary']['total_pending'],
-    'res_drawer_avg_days' => $resDrawer['metrics']['avg_resolution_days'],
-    'incident_drawer_total' => $incidentDrawer['total_reported'],
-    'crew_drawer_total' => $crewDrawer['total_crews'],
-    'crew_drawer_skills' => $crewDrawer['skills']
+    'hotspots_30d' => $hotspots30d,
+    'hotspots_7d_klcc' => $hotspots7d,
+    'correlation_30d' => $correlation30d,
+    'correlation_7d_klcc' => $correlation7d,
+    'crews_count' => count($crews)
 ], JSON_PRETTY_PRINT);

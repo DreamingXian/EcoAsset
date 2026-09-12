@@ -14,6 +14,7 @@ use App\Utils\JWTUtil;
 use App\Utils\GeoUtil;
 use App\Utils\StorageUtil;
 use App\Utils\ResponseUtil;
+use App\Utils\CacheUtil;
 use Exception;
 
 class ReportController
@@ -187,6 +188,7 @@ class ReportController
             $createdData['reporter_name'] = $user['full_name'] ?? 'Citizen Reporter';
             $createdData['dispatch_result'] = $dispatchResult;
 
+            CacheUtil::flush();
             $successMsg = $dispatchResult['dispatched']
                 ? "Damage report submitted! Automatically dispatched to {$dispatchResult['assigned_crew_name']} (24h SLA acceptance window)."
                 : "Damage report submitted! Placed in Open Maintenance Pool for crew claiming or scheduled batch dispatch.";
@@ -291,6 +293,7 @@ class ReportController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($res, 'Upvote registered! Priority score recalculated.');
         } catch (Exception $e) {
             ResponseUtil::error('Failed to process upvote: ' . $e->getMessage(), 500);
