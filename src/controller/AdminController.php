@@ -8,6 +8,7 @@ use App\DAO\AuditLogDAO;
 use App\DAO\AnalyticsDAO;
 use App\Utils\JWTUtil;
 use App\Utils\ResponseUtil;
+use App\Utils\CacheUtil;
 use Exception;
 
 class AdminController
@@ -352,8 +353,12 @@ class AdminController
         $category = $_GET['category'] ?? null;
         $skill = $_GET['skill'] ?? null;
 
+        $cacheKey = 'admin_tasks_' . md5(json_encode([$status, $search, $category, $skill]));
+
         try {
-            $data = $this->taskDAO->getAdminTasksOverview($status, $search, $category, $skill);
+            $data = CacheUtil::remember($cacheKey, 8, function() use ($status, $search, $category, $skill) {
+                return $this->taskDAO->getAdminTasksOverview($status, $search, $category, $skill);
+            });
             ResponseUtil::success($data, 'Admin task control overview retrieved.');
         } catch (Exception $e) {
             ResponseUtil::error('Failed to retrieve task control data: ' . $e->getMessage(), 500);
@@ -426,6 +431,8 @@ class AdminController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
+
             ResponseUtil::success($result, "Task successfully assigned to {$result['assigned_crew_name']} (24-hour acceptance window).");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to assign task: ' . $e->getMessage(), 500);
@@ -453,6 +460,8 @@ class AdminController
             } catch (Exception $e) {
                 // Non-blocking
             }
+
+            CacheUtil::flush();
 
             ResponseUtil::success($result, "Batch auto-dispatch completed: {$result['assigned_count']} tasks dispatched.");
         } catch (Exception $e) {
@@ -482,6 +491,7 @@ class AdminController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($result, "Work order completion approved! +5.0 performance points awarded to {$result['crew_name']}.");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to approve completion: ' . $e->getMessage(), 500);
@@ -518,6 +528,7 @@ class AdminController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($result, "Work order returned to technician {$result['crew_name']} for rework.");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to return task for rework: ' . $e->getMessage(), 500);
@@ -546,6 +557,7 @@ class AdminController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($result, "Work order successfully returned to Open Maintenance Pool.");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to return task to Open Pool: ' . $e->getMessage(), 500);
@@ -574,6 +586,7 @@ class AdminController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($result, "Incident flagged as INVALID_RESOLVED. -20 reputation points deducted from {$result['reporter_name']}.");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to approve invalid flag: ' . $e->getMessage(), 500);
@@ -610,6 +623,7 @@ class AdminController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($result, "Invalid flag rejected. Work order returned to technician {$result['crew_name']} for rework.");
         } catch (Exception $e) {
             ResponseUtil::error('Failed to reject invalid flag: ' . $e->getMessage(), 500);
@@ -634,20 +648,28 @@ class AdminController
         $startDate = $_GET['start_date'] ?? null;
         $endDate = $_GET['end_date'] ?? null;
 
-        try {
-            $kpis = $this->analyticsDAO->getKpiSummary($district, $timeframe, $startDate, $endDate);
-            $prioritizedQueue = $this->analyticsDAO->getPrioritizedQueue($district, 6);
-            $hotspots = $this->analyticsDAO->getHotspotFrequencyByDistrict($timeframe);
-            $correlation = $this->analyticsDAO->getResolutionDelaysVsFootfall($district);
-            $crews = $this->analyticsDAO->getCrewWorkloadAndAvailability();
+        $cacheKey = 'analytics_dashboard_' . md5(json_encode([$district, $timeframe, $startDate, $endDate]));
 
-            ResponseUtil::success([
-                'kpis' => $kpis,
-                'prioritized_queue' => $prioritizedQueue,
-                'hotspots' => $hotspots,
-                'correlation' => $correlation,
-                'crew_workload' => $crews
-            ], 'Administrative analytics dashboard data retrieved.');
+        try {
+            $data = CacheUtil::remember($cacheKey, 15, function() use ($district, $timeframe, $startDate, $endDate) {
+                $kpis = $this->analyticsDAO->getKpiSummary($district, $timeframe, $startDate, $endDate);
+                $prioritizedQueue = $this->analyticsDAO->getPrioritizedQueue($district, 6);
+                $hotspots = $this->analyticsDAO->getHotspotFrequencyByDistrict($district, $timeframe, $startDate, $endDate);
+                $correlation = $this->analyticsDAO->getResolutionDelaysVsFootfall($district, $timeframe, $startDate, $endDate);
+                $crews = $this->analyticsDAO->getCrewWorkloadAndAvailability();
+                $earliestDate = $this->analyticsDAO->getEarliestReportDate($district);
+
+                return [
+                    'kpis'              => $kpis,
+                    'prioritized_queue' => $prioritizedQueue,
+                    'hotspots'          => $hotspots,
+                    'correlation'       => $correlation,
+                    'crew_workload'     => $crews,
+                    'earliest_date'     => $earliestDate
+                ];
+            });
+
+            ResponseUtil::success($data, 'Administrative analytics dashboard data retrieved.');
         } catch (Exception $e) {
             ResponseUtil::error('Failed to retrieve analytics dashboard: ' . $e->getMessage(), 500);
         }

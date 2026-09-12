@@ -830,48 +830,49 @@ class TaskDAO
      */
     public function getAllCrewsFleet(): array
     {
-        $sql = "SELECT u.user_id, u.full_name, u.email,
-                       mc.skill_tags, mc.availability_status, mc.performance_score,
-                       mc.current_latitude, mc.current_longitude, mc.station_region,
-                       (
-                           SELECT COUNT(*) 
-                           FROM maintenance_tasks t 
-                           JOIN damage_reports r ON t.report_id = r.report_id 
-                           WHERE t.assigned_crew_id = u.user_id AND r.status = 'IN_PROGRESS'
-                       ) as active_tasks_count,
-                       (
-                           SELECT COUNT(*) 
-                           FROM maintenance_tasks t 
-                           JOIN damage_reports r ON t.report_id = r.report_id 
-                           WHERE t.assigned_crew_id = u.user_id AND r.status = 'PENDING_ACCEPTANCE'
-                       ) as pending_tasks_count
-                FROM users u
-                JOIN maintenance_crews mc ON u.user_id = mc.crew_id
-                WHERE u.role = 'MAINTENANCE_CREW' AND u.is_active = TRUE
-                ORDER BY u.full_name ASC";
+        return \App\Utils\CacheUtil::remember('all_crews_fleet', 15, function() {
+            $sql = "SELECT u.user_id, u.full_name, u.email,
+                           mc.skill_tags, mc.availability_status, mc.performance_score,
+                           mc.current_latitude, mc.current_longitude, mc.station_region,
+                           COALESCE(tc.active_count, 0) as active_tasks_count,
+                           COALESCE(tc.pending_count, 0) as pending_tasks_count
+                    FROM users u
+                    JOIN maintenance_crews mc ON u.user_id = mc.crew_id
+                    LEFT JOIN (
+                        SELECT t.assigned_crew_id,
+                               SUM(CASE WHEN r.status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as active_count,
+                               SUM(CASE WHEN r.status = 'PENDING_ACCEPTANCE' THEN 1 ELSE 0 END) as pending_count
+                        FROM maintenance_tasks t
+                        JOIN damage_reports r ON t.report_id = r.report_id
+                        WHERE r.status IN ('IN_PROGRESS', 'PENDING_ACCEPTANCE')
+                        GROUP BY t.assigned_crew_id
+                    ) tc ON u.user_id = tc.assigned_crew_id
+                    WHERE u.role = 'MAINTENANCE_CREW' AND u.is_active = TRUE
+                    ORDER BY u.full_name ASC";
 
-        $stmt = $this->db->query($sql);
-        $crews = $stmt->fetchAll();
+            $stmt = $this->db->query($sql);
+            $crews = $stmt->fetchAll();
 
-        foreach ($crews as &$crew) {
-            $crew['skill_tags'] = UserDAO::parsePgArray($crew['skill_tags']);
-            $crew['performance_score'] = (float)$crew['performance_score'];
-            $crew['current_latitude'] = (float)$crew['current_latitude'];
-            $crew['current_longitude'] = (float)$crew['current_longitude'];
-            $crew['active_tasks_count'] = (int)$crew['active_tasks_count'];
-            $crew['pending_tasks_count'] = (int)$crew['pending_tasks_count'];
+            foreach ($crews as &$crew) {
+                $crew['skill_tags'] = UserDAO::parsePgArray($crew['skill_tags']);
+                $crew['performance_score'] = (float)$crew['performance_score'];
+                $crew['current_latitude'] = (float)$crew['current_latitude'];
+                $crew['current_longitude'] = (float)$crew['current_longitude'];
+                $crew['active_tasks_count'] = (int)$crew['active_tasks_count'];
+                $crew['pending_tasks_count'] = (int)$crew['pending_tasks_count'];
 
-            // Sync computed availability: Must have 0 in-progress AND 0 pending acceptance
-            if ($crew['active_tasks_count'] > 0) {
-                $crew['computed_status'] = 'BUSY';
-            } elseif ($crew['pending_tasks_count'] > 0) {
-                $crew['computed_status'] = 'PENDING_ACCEPTANCE';
-            } else {
-                $crew['computed_status'] = 'AVAILABLE';
+                // Sync computed availability: Must have 0 in-progress AND 0 pending acceptance
+                if ($crew['active_tasks_count'] > 0) {
+                    $crew['computed_status'] = 'BUSY';
+                } elseif ($crew['pending_tasks_count'] > 0) {
+                    $crew['computed_status'] = 'PENDING_ACCEPTANCE';
+                } else {
+                    $crew['computed_status'] = 'AVAILABLE';
+                }
             }
-        }
 
-        return $crews;
+            return $crews;
+        });
     }
 
     /**
@@ -1171,6 +1172,13 @@ class TaskDAO
      */
     public function sweepExpiredPendingSlaTasks(): int
     {
+        // Throttle check to at most once every 60 seconds to avoid repeating query on every request
+        $lastSweep = \App\Utils\CacheUtil::get('last_sla_sweep');
+        if ($lastSweep !== null) {
+            return 0;
+        }
+        \App\Utils\CacheUtil::set('last_sla_sweep', time(), 60);
+
         try {
             // Find all expired pending tasks
             $sql = "SELECT t.task_id, t.report_id, t.assigned_crew_id

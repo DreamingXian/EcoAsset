@@ -32,7 +32,7 @@
     <aside class="admin-sidebar" id="adminSidebar"></aside>
 
     <!-- Main Container -->
-    <main class="admin-main">
+    <main class="admin-main" id="taskControlMain">
 
       <!-- Top Header Row -->
       <div class="task-control-header" style="margin-bottom: 20px;">
@@ -89,11 +89,11 @@
         </div>
       </section>
 
-      <!-- 8 Status KPI Metric Cards Grid -->
+<!-- 8 Status KPI Metric Cards Grid -->
       <section class="kpi-metrics-grid">
         <div class="kpi-card active" onclick="filterByStatus('ALL', this)">
           <div>
-            <div class="kpi-card-val" id="kpiAll">8</div>
+            <div class="kpi-card-val" id="kpiAll">—</div>
             <div class="kpi-card-lbl">All Tasks</div>
           </div>
           <span class="kpi-card-icon">📋</span>
@@ -101,7 +101,7 @@
 
         <div class="kpi-card kpi-open" onclick="filterByStatus('OPEN_FOR_CLAIM', this)">
           <div>
-            <div class="kpi-card-val" id="kpiOpen">2</div>
+            <div class="kpi-card-val" id="kpiOpen">—</div>
             <div class="kpi-card-lbl">Open for Claim</div>
           </div>
           <span class="kpi-card-icon">📦</span>
@@ -109,7 +109,7 @@
 
         <div class="kpi-card kpi-pending" onclick="filterByStatus('PENDING_ACCEPTANCE', this)">
           <div>
-            <div class="kpi-card-val" id="kpiPending">1</div>
+            <div class="kpi-card-val" id="kpiPending">—</div>
             <div class="kpi-card-lbl">Pending Review</div>
           </div>
           <span class="kpi-card-icon">🟡</span>
@@ -117,7 +117,7 @@
 
         <div class="kpi-card kpi-progress" onclick="filterByStatus('IN_PROGRESS', this)">
           <div>
-            <div class="kpi-card-val" id="kpiProgress">2</div>
+            <div class="kpi-card-val" id="kpiProgress">—</div>
             <div class="kpi-card-lbl">In Progress</div>
           </div>
           <span class="kpi-card-icon">🔧</span>
@@ -125,7 +125,7 @@
 
         <div class="kpi-card kpi-precomplete" onclick="filterByStatus('PRECOMPLETE', this)">
           <div>
-            <div class="kpi-card-val" id="kpiPrecomplete" style="color: #7c3aed;">1</div>
+            <div class="kpi-card-val" id="kpiPrecomplete" style="color: #7c3aed;">—</div>
             <div class="kpi-card-lbl">Pre-Complete</div>
           </div>
           <span class="kpi-card-icon">⚖️</span>
@@ -133,7 +133,7 @@
 
         <div class="kpi-card kpi-dropped" onclick="filterByStatus('DROPPED', this)">
           <div>
-            <div class="kpi-card-val" id="kpiDropped" style="color: #d97706;">1</div>
+            <div class="kpi-card-val" id="kpiDropped" style="color: #d97706;">—</div>
             <div class="kpi-card-lbl">Dropped</div>
           </div>
           <span class="kpi-card-icon">⚠️</span>
@@ -141,7 +141,7 @@
 
         <div class="kpi-card kpi-preinvalid" onclick="filterByStatus('PRE_INVALID', this)">
           <div>
-            <div class="kpi-card-val" id="kpiPreinvalid" style="color: #e11d48;">1</div>
+            <div class="kpi-card-val" id="kpiPreinvalid" style="color: #e11d48;">—</div>
             <div class="kpi-card-lbl">Pre-Invalid</div>
           </div>
           <span class="kpi-card-icon">🚩</span>
@@ -149,7 +149,7 @@
 
         <div class="kpi-card kpi-completed" onclick="filterByStatus('COMPLETED', this)">
           <div>
-            <div class="kpi-card-val" id="kpiCompleted" style="color: #059669;">1</div>
+            <div class="kpi-card-val" id="kpiCompleted" style="color: #059669;">—</div>
             <div class="kpi-card-lbl">Completed</div>
           </div>
           <span class="kpi-card-icon">✅</span>
@@ -187,22 +187,19 @@
 
         <!-- Status Categorization Filter Chips -->
         <div class="status-filter-chips">
-          <button class="filter-chip-btn active" data-status="ALL" onclick="filterByStatus('ALL', this)">All
-            (8)</button>
+          <button class="filter-chip-btn active" data-status="ALL" onclick="filterByStatus('ALL', this)">All (—)</button>
           <button class="filter-chip-btn" data-status="PRECOMPLETE" onclick="filterByStatus('PRECOMPLETE', this)"
-            style="border-color: #c4b5fd; color: #6d28d9;">⚖️ Pre-Complete (1)</button>
+            style="border-color: #c4b5fd; color: #6d28d9;">⚖️ Pre-Complete (—)</button>
           <button class="filter-chip-btn" data-status="DROPPED" onclick="filterByStatus('DROPPED', this)"
-            style="border-color: #fde68a; color: #b45309;">⚠️ Dropped (1)</button>
+            style="border-color: #fde68a; color: #b45309;">⚠️ Dropped (—)</button>
           <button class="filter-chip-btn" data-status="PRE_INVALID" onclick="filterByStatus('PRE_INVALID', this)"
-            style="border-color: #fecdd3; color: #be123c;">🚩 Pre-Invalid (1)</button>
+            style="border-color: #fecdd3; color: #be123c;">🚩 Pre-Invalid (—)</button>
           <button class="filter-chip-btn" data-status="OPEN_FOR_CLAIM"
-            onclick="filterByStatus('OPEN_FOR_CLAIM', this)">📦 Open Pool (2)</button>
+            onclick="filterByStatus('OPEN_FOR_CLAIM', this)">📦 Open Pool (—)</button>
           <button class="filter-chip-btn" data-status="PENDING_ACCEPTANCE"
-            onclick="filterByStatus('PENDING_ACCEPTANCE', this)">🟡 Pending (1)</button>
-          <button class="filter-chip-btn" data-status="IN_PROGRESS" onclick="filterByStatus('IN_PROGRESS', this)">🔧 In
-            Progress (2)</button>
-          <button class="filter-chip-btn" data-status="COMPLETED" onclick="filterByStatus('COMPLETED', this)">✅
-            Completed (1)</button>
+            onclick="filterByStatus('PENDING_ACCEPTANCE', this)">🟡 Pending (—)</button>
+          <button class="filter-chip-btn" data-status="IN_PROGRESS" onclick="filterByStatus('IN_PROGRESS', this)">🔧 In Progress (—)</button>
+          <button class="filter-chip-btn" data-status="COMPLETED" onclick="filterByStatus('COMPLETED', this)">✅ Completed (—)</button>
         </div>
       </div>
 
@@ -925,6 +922,25 @@
       const token = AuthGuard.getToken();
       if (!token) return;
 
+      // Stale-While-Revalidate: Instant render from cache if available (0ms!)
+      const isDefaultView = (currentStatusFilter === 'ALL' && currentCategoryFilter === 'ALL' && !currentSearchTerm);
+      if (liveTasks.length === 0 && isDefaultView) {
+        try {
+          const cachedStr = sessionStorage.getItem('ecoasset_admin_tasks_cache');
+          if (cachedStr) {
+            const cached = JSON.parse(cachedStr);
+            if (cached && cached.tasks) {
+              liveTasks = cached.tasks;
+              liveFleet = cached.fleet || [];
+              liveCounts = cached.counts || liveCounts;
+              updateKpiAndChipCounters();
+              renderTaskCards();
+              document.getElementById('taskControlMain').style.opacity = '1';
+            }
+          }
+        } catch (e) {}
+      }
+
       const container = document.getElementById('taskCardsContainer');
       if (container && liveTasks.length === 0) {
         container.innerHTML = `
@@ -955,14 +971,25 @@
           liveFleet = result.data.fleet || [];
           liveCounts = result.data.counts || liveCounts;
 
+          if (isDefaultView) {
+            try {
+              sessionStorage.setItem('ecoasset_admin_tasks_cache', JSON.stringify(result.data));
+            } catch (e) {}
+          }
+
           updateKpiAndChipCounters();
           renderTaskCards();
+
+          // Show dashboard now that data is loaded
+          document.getElementById('taskControlMain').style.opacity = '1';
         } else {
           showToast(result.error || 'Failed to load task roster.', true);
+          document.getElementById('taskControlMain').style.opacity = '1';
         }
       } catch (err) {
         console.error('Error fetching admin tasks:', err);
         showToast('Network error while retrieving tasks.', true);
+        document.getElementById('taskControlMain').style.opacity = '1';
       }
     }
 
