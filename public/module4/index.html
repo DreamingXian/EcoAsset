@@ -1318,7 +1318,18 @@
       }
     }
 
+    function clearAnalyticsSessionCache() {
+      try {
+        Object.keys(sessionStorage).forEach(k => {
+          if (k.startsWith('ecoasset_analytics_')) {
+            sessionStorage.removeItem(k);
+          }
+        });
+      } catch (e) {}
+    }
+
     function handleFilterChange() {
+      clearAnalyticsSessionCache();
       loadDashboardData();
     }
 
@@ -1375,7 +1386,7 @@
           startStr = today.getFullYear() + '-01-01';
           break;
         case 'all':
-          startStr = '2020-01-01';
+          startStr = window.ecoassetEarliestDate || '';
           break;
         case 'custom':
           // Don't change dates, let user pick manually
@@ -1400,6 +1411,7 @@
     }
 
     function applyCalendarFilter() {
+      clearAnalyticsSessionCache();
       // Update button label
       const label = document.getElementById('calendarBtnLabel');
       if (calendarPreset === 'custom' && calendarStartDate && calendarEndDate) {
@@ -1414,6 +1426,7 @@
     }
 
     function resetCalendar() {
+      clearAnalyticsSessionCache();
       calendarPreset = '30d';
       initCalendarDefaults();
 
