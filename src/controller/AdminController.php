@@ -656,14 +656,15 @@ class AdminController
                 $prioritizedQueue = $this->analyticsDAO->getPrioritizedQueue($district, 6);
                 $hotspots = $this->analyticsDAO->getHotspotFrequencyByDistrict($district, $timeframe, $startDate, $endDate);
                 $correlation = $this->analyticsDAO->getResolutionDelaysVsFootfall($district, $timeframe, $startDate, $endDate);
-                $crews = $this->analyticsDAO->getCrewWorkloadAndAvailability();
+                $earliestDate = $this->analyticsDAO->getEarliestReportDate($district);
 
                 return [
                     'kpis'              => $kpis,
                     'prioritized_queue' => $prioritizedQueue,
                     'hotspots'          => $hotspots,
                     'correlation'       => $correlation,
-                    'crew_workload'     => $crews
+                    'crew_workload'     => $crews,
+                    'earliest_date'     => $earliestDate
                 ];
             });
 

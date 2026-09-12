@@ -684,6 +684,15 @@
         const json = await res.json();
         const data = json.data || {};
 
+        if (data.earliest_date) {
+          window.ecoassetEarliestDate = data.earliest_date;
+          if (calendarPreset === 'all') {
+            calendarStartDate = data.earliest_date;
+            const startInput = document.getElementById('startDateInput');
+            if (startInput) startInput.value = data.earliest_date;
+          }
+        }
+
         try {
           sessionStorage.setItem(cacheKey, JSON.stringify(data));
         } catch (e) {}
@@ -833,16 +842,17 @@
       const ctx = document.getElementById('footfallChart').getContext('2d');
       if (footfallChartInst) footfallChartInst.destroy();
 
-      const labels = correlation.labels || ['No data'];
-      const delays = correlation.avg_delay_hrs || [0];
-      const footfall = correlation.footfall || [0];
+      const hasData = correlation.labels && correlation.labels.length > 0;
+      const labels = hasData ? correlation.labels : ['No data'];
+      const delays = (hasData && correlation.avg_delay_hrs) ? correlation.avg_delay_hrs : [0];
+      const footfall = (hasData && correlation.footfall) ? correlation.footfall : [0];
 
-      // Safe dynamic maximum calculation so points never clip over range (e.g. 28.6 in May)
-      const maxDelay = delays.length ? Math.max(...delays) : 28;
-      const suggestedDelayMax = Math.max(35, Math.ceil((maxDelay * 1.15) / 7) * 7);
+      // Safe dynamic maximum calculation so points never clip over range
+      const maxDelay = delays.length ? Math.max(...delays) : 0;
+      const suggestedDelayMax = Math.max(14, Math.ceil((Math.max(1, maxDelay) * 1.2) / 7) * 7);
 
-      const maxFootfall = footfall.length ? Math.max(...footfall) : 4000;
-      const suggestedFootfallMax = Math.max(4500, Math.ceil((maxFootfall * 1.15) / 500) * 500);
+      const maxFootfall = footfall.length ? Math.max(...footfall) : 0;
+      const suggestedFootfallMax = Math.max(1500, Math.ceil((Math.max(100, maxFootfall) * 1.2) / 500) * 500);
 
       footfallChartInst = new Chart(ctx, {
         type: 'line',
