@@ -771,15 +771,17 @@ class AnalyticsDAO
     {
         switch ($status) {
             case 'OPEN_FOR_CLAIM':
+                return 'Open Pool';
             case 'PENDING_ACCEPTANCE':
-                return 'Pending Validation';
+                return 'Pending Acceptance';
             case 'IN_PROGRESS':
+                return 'In Progress';
             case 'PRECOMPLETE':
-                return 'Verified / In Progress';
+                return 'Under Review';
             case 'COMPLETED':
                 return 'Completed';
             default:
-                return 'Pending Validation';
+                return 'Open Pool';
         }
     }
 

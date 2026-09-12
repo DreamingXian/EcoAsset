@@ -169,23 +169,6 @@
           </div>
         </div>
 
-        <!-- KPI Card 2: Active Maintenance Queue -->
-        <div class="kpi-card" onclick="openDrawer('drawerActiveQueue')">
-          <div>
-            <div class="kpi-card-header">
-              <div class="kpi-icon-wrap lightning">⚡</div>
-              <span class="kpi-clickable-tag">View Details ↗</span>
-            </div>
-            <div class="kpi-title">Active Maintenance Queue</div>
-            <div class="kpi-value" id="kpiActiveQueue">—</div>
-            <div class="kpi-desc">Verified maintenance requests currently awaiting crew completion.</div>
-          </div>
-          <div>
-            <div class="kpi-trend highlight-orange" id="kpiCriticalItems">Loading…</div>
-            <div class="kpi-src">src: maintenance request</div>
-          </div>
-        </div>
-
         <!-- KPI Card 3: Avg. Resolution Time -->
         <div class="kpi-card" onclick="openDrawer('drawerResolutionTime')">
           <div>
@@ -293,7 +276,6 @@
                 <th>P-SCORE</th>
                 <th>LOCATION</th>
                 <th>UPVOTES</th>
-                <th>STATUS</th>
                 <th style="text-align: right;">ACTION</th>
               </tr>
             </thead>
@@ -725,8 +707,10 @@
       document.getElementById('kpiTotalReported').textContent = Number(kpis.total_reported || 0).toLocaleString();
       document.getElementById('kpiReportedTrend').textContent = kpis.reported_trend || 'No trend data';
       
-      document.getElementById('kpiActiveQueue').textContent = `${kpis.active_queue || 0} Pending`;
-      document.getElementById('kpiCriticalItems').textContent = `${kpis.critical_items || 0} critical items`;
+      const kpiActiveEl = document.getElementById('kpiActiveQueue');
+      if (kpiActiveEl) kpiActiveEl.textContent = `${kpis.active_queue || 0} Pending`;
+      const kpiCritEl = document.getElementById('kpiCriticalItems');
+      if (kpiCritEl) kpiCritEl.textContent = `${kpis.critical_items || 0} critical items`;
       
       document.getElementById('kpiAvgResolution').textContent = `${kpis.avg_resolution_days || 0} Days`;
       document.getElementById('kpiResolutionTrend').textContent = kpis.resolution_trend || 'No trend data';
@@ -740,7 +724,7 @@
       tbody.innerHTML = '';
 
       if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: #94a3b8;">No maintenance items in queue.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: #94a3b8;">No maintenance items in queue.</td></tr>`;
         return;
       }
 
@@ -751,7 +735,6 @@
         
         const catClass = item.category_type || 'neutral';
         const pscoreClass = (item.p_score_num || 9.0) >= 8.5 ? 'pscore-pill' : 'pscore-pill pscore-orange';
-        const statusClass = (item.status || '').includes('Verified') ? 'status-text progress' : 'status-text pending';
 
         tr.innerHTML = `
           <td><span class="task-id-code">${item.task_id}</span></td>
@@ -759,7 +742,6 @@
           <td><span class="${pscoreClass}">${item.p_score}</span></td>
           <td style="color: #334155; font-weight: 500;">${item.location}</td>
           <td><span style="font-weight: 700; color: #475569;">👍 ${item.upvotes}</span></td>
-          <td><span class="${statusClass}">${item.status}</span></td>
           <td style="text-align: right;">
             <button type="button" class="btn-dispatch" onclick="handleDispatchClick('${item.task_id}')">Dispatch</button>
           </td>
