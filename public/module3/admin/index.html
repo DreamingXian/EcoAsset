@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,11 +9,14 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet">
+
   <!-- Admin Stylesheet -->
   <link rel="stylesheet" href="../../admin/admin.css?v=1.3">
 </head>
+
 <body>
 
   <!-- Toast Notification Banner -->
@@ -28,178 +32,183 @@
     <aside class="admin-sidebar" id="adminSidebar"></aside>
 
     <!-- Main Container -->
-    <main class="admin-main">
-    
-    <!-- Top Header Row -->
-    <div class="task-control-header" style="margin-bottom: 20px;">
-      <div>
-        <h1 class="page-title">Municipal Task Control Dashboard</h1>
-        <p class="page-subtitle">
-          Supervise active work order pipeline, trigger automated spatial dispatches, manually reassign technicians, and verify lifecycle completions.
-        </p>
-      </div>
-    </div>
+    <main class="admin-main" id="taskControlMain">
 
-    <!-- ======================================================================
-         TOP COUNTDOWN BANNER (Next Auto Batch Assign: Daily 8:00 AM & 1:00 PM)
-         ====================================================================== -->
-    <section class="batch-countdown-banner">
-      <div class="countdown-info-left">
-        <div class="countdown-icon-badge">⚡</div>
-        <div class="countdown-title-wrap">
-          <h2>
-            <span>Scheduled Batch Spatial Dispatch</span>
-            <span class="next-slot-pill" id="nextSlotBadge">Today at 1:00 PM</span>
-          </h2>
-          <p class="countdown-subtitle">
-            Automated engine allocates open tasks ($\le 30$km) to trade-matched available crews twice daily at <strong>8:00 AM</strong> & <strong>1:00 PM</strong>.
+      <!-- Top Header Row -->
+      <div class="task-control-header" style="margin-bottom: 20px;">
+        <div>
+          <h1 class="page-title">Municipal Task Control Dashboard</h1>
+          <p class="page-subtitle">
+            Supervise active work order pipeline, trigger automated spatial dispatches, manually reassign technicians,
+            and verify lifecycle completions.
           </p>
         </div>
       </div>
 
-      <div class="countdown-clock-wrapper">
-        <div class="countdown-digits-row">
-          <div class="countdown-digit-tile">
-            <div class="digit-value" id="cdHours">00</div>
-            <div class="digit-label">Hours</div>
+      <!-- ======================================================================
+         TOP COUNTDOWN BANNER (Next Auto Batch Assign: Daily 8:00 AM & 1:00 PM)
+         ====================================================================== -->
+      <section class="batch-countdown-banner">
+        <div class="countdown-info-left">
+          <div class="countdown-icon-badge">⚡</div>
+          <div class="countdown-title-wrap">
+            <h2>
+              <span>Scheduled Batch Spatial Dispatch</span>
+              <span class="next-slot-pill" id="nextSlotBadge">Today at 1:00 PM</span>
+            </h2>
+            <p class="countdown-subtitle">
+              Automated engine allocates open tasks (less than 30km) to trade-matched available crews twice daily at
+              <strong>8:00 AM</strong> & <strong>1:00 PM</strong>.
+            </p>
           </div>
-          <span class="digit-colon">:</span>
-          <div class="countdown-digit-tile">
-            <div class="digit-value" id="cdMinutes">00</div>
-            <div class="digit-label">Mins</div>
+        </div>
+
+        <div class="countdown-clock-wrapper">
+          <div class="countdown-digits-row">
+            <div class="countdown-digit-tile">
+              <div class="digit-value" id="cdHours">00</div>
+              <div class="digit-label">Hours</div>
+            </div>
+            <span class="digit-colon">:</span>
+            <div class="countdown-digit-tile">
+              <div class="digit-value" id="cdMinutes">00</div>
+              <div class="digit-label">Mins</div>
+            </div>
+            <span class="digit-colon">:</span>
+            <div class="countdown-digit-tile">
+              <div class="digit-value" id="cdSeconds" style="color: #34d399;">00</div>
+              <div class="digit-label">Secs</div>
+            </div>
           </div>
-          <span class="digit-colon">:</span>
-          <div class="countdown-digit-tile">
-            <div class="digit-value" id="cdSeconds" style="color: #34d399;">00</div>
-            <div class="digit-label">Secs</div>
+
+          <button class="btn-action btn-primary"
+            style="padding: 10px 18px; font-size: 12.5px; white-space: nowrap; background: #059669;"
+            onclick="openBatchDispatchConfirmModal()">
+            <span>⚡ Trigger Batch Now</span>
+          </button>
+        </div>
+      </section>
+
+<!-- 8 Status KPI Metric Cards Grid -->
+      <section class="kpi-metrics-grid">
+        <div class="kpi-card active" onclick="filterByStatus('ALL', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiAll">—</div>
+            <div class="kpi-card-lbl">All Tasks</div>
+          </div>
+          <span class="kpi-card-icon">📋</span>
+        </div>
+
+        <div class="kpi-card kpi-open" onclick="filterByStatus('OPEN_FOR_CLAIM', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiOpen">—</div>
+            <div class="kpi-card-lbl">Open for Claim</div>
+          </div>
+          <span class="kpi-card-icon">📦</span>
+        </div>
+
+        <div class="kpi-card kpi-pending" onclick="filterByStatus('PENDING_ACCEPTANCE', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiPending">—</div>
+            <div class="kpi-card-lbl">Pending Review</div>
+          </div>
+          <span class="kpi-card-icon">🟡</span>
+        </div>
+
+        <div class="kpi-card kpi-progress" onclick="filterByStatus('IN_PROGRESS', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiProgress">—</div>
+            <div class="kpi-card-lbl">In Progress</div>
+          </div>
+          <span class="kpi-card-icon">🔧</span>
+        </div>
+
+        <div class="kpi-card kpi-precomplete" onclick="filterByStatus('PRECOMPLETE', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiPrecomplete" style="color: #7c3aed;">—</div>
+            <div class="kpi-card-lbl">Pre-Complete</div>
+          </div>
+          <span class="kpi-card-icon">⚖️</span>
+        </div>
+
+        <div class="kpi-card kpi-dropped" onclick="filterByStatus('DROPPED', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiDropped" style="color: #d97706;">—</div>
+            <div class="kpi-card-lbl">Dropped</div>
+          </div>
+          <span class="kpi-card-icon">⚠️</span>
+        </div>
+
+        <div class="kpi-card kpi-preinvalid" onclick="filterByStatus('PRE_INVALID', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiPreinvalid" style="color: #e11d48;">—</div>
+            <div class="kpi-card-lbl">Pre-Invalid</div>
+          </div>
+          <span class="kpi-card-icon">🚩</span>
+        </div>
+
+        <div class="kpi-card kpi-completed" onclick="filterByStatus('COMPLETED', this)">
+          <div>
+            <div class="kpi-card-val" id="kpiCompleted" style="color: #059669;">—</div>
+            <div class="kpi-card-lbl">Completed</div>
+          </div>
+          <span class="kpi-card-icon">✅</span>
+        </div>
+      </section>
+
+      <!-- Toolbar: Search, Status Chips & Sorting -->
+      <div class="admin-toolbar">
+        <div class="toolbar-row-top">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input-field"
+              placeholder="Search tasks by ID, description, location, reporter name, or assigned crew..."
+              oninput="handleSearchFilter()">
+          </div>
+
+          <div class="toolbar-controls">
+            <select id="categoryFilter" class="control-select" onchange="handleCategoryFilter(this.value)">
+              <option value="ALL">All Categories</option>
+              <option value="STRUCTURAL">🏗️ Structural</option>
+              <option value="ELECTRICAL">⚡ Electrical</option>
+              <option value="SANITATION">🚰 Sanitation</option>
+              <option value="GENERAL_FACILITY">🪑 Facilities</option>
+              <option value="OTHER">🛠️ Other</option>
+            </select>
+
+            <select id="sortSelector" class="control-select" onchange="handleSortChange(this.value)">
+              <option value="priority_desc">🔥 Highest Priority (P-Score)</option>
+              <option value="created_asc">⏱️ Earliest Incomplete (Urgency)</option>
+              <option value="upvotes_desc">👍 Most Upvotes</option>
+              <option value="newest_desc">📅 Newest Created</option>
+            </select>
           </div>
         </div>
 
-        <button class="btn-action btn-primary" style="padding: 10px 18px; font-size: 12.5px; white-space: nowrap; background: #059669;" onclick="openBatchDispatchConfirmModal()">
-          <span>⚡ Trigger Batch Now</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- 8 Status KPI Metric Cards Grid -->
-    <section class="kpi-metrics-grid">
-      <div class="kpi-card active" onclick="filterByStatus('ALL', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiAll">8</div>
-          <div class="kpi-card-lbl">All Tasks</div>
-        </div>
-        <span class="kpi-card-icon">📋</span>
-      </div>
-
-      <div class="kpi-card kpi-open" onclick="filterByStatus('OPEN_FOR_CLAIM', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiOpen">2</div>
-          <div class="kpi-card-lbl">Open for Claim</div>
-        </div>
-        <span class="kpi-card-icon">📦</span>
-      </div>
-
-      <div class="kpi-card kpi-pending" onclick="filterByStatus('PENDING_ACCEPTANCE', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiPending">1</div>
-          <div class="kpi-card-lbl">Pending Review</div>
-        </div>
-        <span class="kpi-card-icon">🟡</span>
-      </div>
-
-      <div class="kpi-card kpi-progress" onclick="filterByStatus('IN_PROGRESS', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiProgress">2</div>
-          <div class="kpi-card-lbl">In Progress</div>
-        </div>
-        <span class="kpi-card-icon">🔧</span>
-      </div>
-
-      <div class="kpi-card kpi-precomplete" onclick="filterByStatus('PRECOMPLETE', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiPrecomplete" style="color: #7c3aed;">1</div>
-          <div class="kpi-card-lbl">Pre-Complete</div>
-        </div>
-        <span class="kpi-card-icon">⚖️</span>
-      </div>
-
-      <div class="kpi-card kpi-dropped" onclick="filterByStatus('DROPPED', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiDropped" style="color: #d97706;">1</div>
-          <div class="kpi-card-lbl">Dropped</div>
-        </div>
-        <span class="kpi-card-icon">⚠️</span>
-      </div>
-
-      <div class="kpi-card kpi-preinvalid" onclick="filterByStatus('PRE_INVALID', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiPreinvalid" style="color: #e11d48;">1</div>
-          <div class="kpi-card-lbl">Pre-Invalid</div>
-        </div>
-        <span class="kpi-card-icon">🚩</span>
-      </div>
-
-      <div class="kpi-card kpi-completed" onclick="filterByStatus('COMPLETED', this)">
-        <div>
-          <div class="kpi-card-val" id="kpiCompleted" style="color: #059669;">1</div>
-          <div class="kpi-card-lbl">Completed</div>
-        </div>
-        <span class="kpi-card-icon">✅</span>
-      </div>
-    </section>
-
-    <!-- Toolbar: Search, Status Chips & Sorting -->
-    <div class="admin-toolbar">
-      <div class="toolbar-row-top">
-        <div class="search-input-wrap">
-          <span class="search-icon">🔍</span>
-          <input 
-            type="text" 
-            id="searchInput" 
-            class="search-input-field" 
-            placeholder="Search tasks by ID, description, location, reporter name, or assigned crew..."
-            oninput="handleSearchFilter()"
-          >
-        </div>
-
-        <div class="toolbar-controls">
-          <select id="categoryFilter" class="control-select" onchange="handleCategoryFilter(this.value)">
-            <option value="ALL">All Categories</option>
-            <option value="STRUCTURAL">🏗️ Structural</option>
-            <option value="ELECTRICAL">⚡ Electrical</option>
-            <option value="SANITATION">🚰 Sanitation</option>
-            <option value="GENERAL_FACILITY">🪑 Facilities</option>
-            <option value="OTHER">🛠️ Other</option>
-          </select>
-
-          <select id="sortSelector" class="control-select" onchange="handleSortChange(this.value)">
-            <option value="priority_desc">🔥 Highest Priority (P-Score)</option>
-            <option value="created_asc">⏱️ Earliest Incomplete (Urgency)</option>
-            <option value="upvotes_desc">👍 Most Upvotes</option>
-            <option value="newest_desc">📅 Newest Created</option>
-          </select>
+        <!-- Status Categorization Filter Chips -->
+        <div class="status-filter-chips">
+          <button class="filter-chip-btn active" data-status="ALL" onclick="filterByStatus('ALL', this)">All (—)</button>
+          <button class="filter-chip-btn" data-status="PRECOMPLETE" onclick="filterByStatus('PRECOMPLETE', this)"
+            style="border-color: #c4b5fd; color: #6d28d9;">⚖️ Pre-Complete (—)</button>
+          <button class="filter-chip-btn" data-status="DROPPED" onclick="filterByStatus('DROPPED', this)"
+            style="border-color: #fde68a; color: #b45309;">⚠️ Dropped (—)</button>
+          <button class="filter-chip-btn" data-status="PRE_INVALID" onclick="filterByStatus('PRE_INVALID', this)"
+            style="border-color: #fecdd3; color: #be123c;">🚩 Pre-Invalid (—)</button>
+          <button class="filter-chip-btn" data-status="OPEN_FOR_CLAIM"
+            onclick="filterByStatus('OPEN_FOR_CLAIM', this)">📦 Open Pool (—)</button>
+          <button class="filter-chip-btn" data-status="PENDING_ACCEPTANCE"
+            onclick="filterByStatus('PENDING_ACCEPTANCE', this)">🟡 Pending (—)</button>
+          <button class="filter-chip-btn" data-status="IN_PROGRESS" onclick="filterByStatus('IN_PROGRESS', this)">🔧 In Progress (—)</button>
+          <button class="filter-chip-btn" data-status="COMPLETED" onclick="filterByStatus('COMPLETED', this)">✅ Completed (—)</button>
         </div>
       </div>
 
-      <!-- Status Categorization Filter Chips -->
-      <div class="status-filter-chips">
-        <button class="filter-chip-btn active" data-status="ALL" onclick="filterByStatus('ALL', this)">All (8)</button>
-        <button class="filter-chip-btn" data-status="PRECOMPLETE" onclick="filterByStatus('PRECOMPLETE', this)" style="border-color: #c4b5fd; color: #6d28d9;">⚖️ Pre-Complete (1)</button>
-        <button class="filter-chip-btn" data-status="DROPPED" onclick="filterByStatus('DROPPED', this)" style="border-color: #fde68a; color: #b45309;">⚠️ Dropped (1)</button>
-        <button class="filter-chip-btn" data-status="PRE_INVALID" onclick="filterByStatus('PRE_INVALID', this)" style="border-color: #fecdd3; color: #be123c;">🚩 Pre-Invalid (1)</button>
-        <button class="filter-chip-btn" data-status="OPEN_FOR_CLAIM" onclick="filterByStatus('OPEN_FOR_CLAIM', this)">📦 Open Pool (2)</button>
-        <button class="filter-chip-btn" data-status="PENDING_ACCEPTANCE" onclick="filterByStatus('PENDING_ACCEPTANCE', this)">🟡 Pending (1)</button>
-        <button class="filter-chip-btn" data-status="IN_PROGRESS" onclick="filterByStatus('IN_PROGRESS', this)">🔧 In Progress (2)</button>
-        <button class="filter-chip-btn" data-status="COMPLETED" onclick="filterByStatus('COMPLETED', this)">✅ Completed (1)</button>
-      </div>
-    </div>
+      <!-- Task Cards Grid -->
+      <section class="tasks-grid-container" id="taskCardsContainer">
+        <!-- Dynamically Rendered Sample Task Cards -->
+      </section>
 
-    <!-- Task Cards Grid -->
-    <section class="tasks-grid-container" id="taskCardsContainer">
-      <!-- Dynamically Rendered Sample Task Cards -->
-    </section>
-
-  </main>
+    </main>
   </div>
 
   <!-- ==========================================================================
@@ -212,12 +221,15 @@
         <button class="modal-close-btn" onclick="closeModal('batchDispatchConfirmModal')">✕</button>
       </div>
 
-      <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+      <div
+        style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
         <div style="font-size: 12px; font-weight: 800; color: #047857; text-transform: uppercase; margin-bottom: 4px;">
           Batch Dispatch Execution Scope
         </div>
         <p style="font-size: 13.5px; color: #065f46; line-height: 1.5;">
-          The system will scan all <strong id="batchOpenCountText">2 Open Work Orders</strong> and assign them to the nearest qualified crew within <strong>$\le 30$km</strong> who currently has <strong>0 in-progress and 0 pending</strong> jobs.
+          The system will scan all <strong id="batchOpenCountText">2 Open Work Orders</strong> and assign them to the
+          nearest qualified crew within <strongl>30km</strong> who currently has <strong>0 in-progress and 0
+              pending</strong> jobs.
         </p>
       </div>
 
@@ -272,11 +284,14 @@
         </div>
       </div>
 
-      <div style="max-height: 320px; overflow-y: auto; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;" id="batchMatchesContainer">
+      <div
+        style="max-height: 320px; overflow-y: auto; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;"
+        id="batchMatchesContainer">
         <!-- Injected dynamic match results -->
       </div>
 
-      <button class="btn-action btn-primary" style="width: 100%; padding: 12px;" onclick="closeModal('batchResultsModal')">
+      <button class="btn-action btn-primary" style="width: 100%; padding: 12px;"
+        onclick="closeModal('batchResultsModal')">
         <span>Done & Refresh Task Control Roster</span>
       </button>
     </div>
@@ -305,7 +320,8 @@
         <div class="algo-candidate-details">
           <div class="algo-crew-avatar" id="algoCrewAvatar">C3</div>
           <div style="flex: 1;">
-            <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: #0f172a;" id="algoCrewName">
+            <h4 style="font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: #0f172a;"
+              id="algoCrewName">
               Crew 3 (Kumar Raman)
             </h4>
             <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="algoCrewLocation">
@@ -335,7 +351,8 @@
       </div>
 
       <p style="font-size: 13px; color: #334155; margin-bottom: 18px;" id="algoConfirmPromptText">
-        Assign Task <strong id="algoTaskIdText">TASK-6201</strong> to this technician? The work order will transition to <strong>PENDING_ACCEPTANCE</strong> awaiting the crew's confirmation.
+        Assign Task <strong id="algoTaskIdText">TASK-6201</strong> to this technician? The work order will transition to
+        <strong>PENDING_ACCEPTANCE</strong> awaiting the crew's confirmation.
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -369,7 +386,8 @@
           Spatial Dispatch Result
         </div>
         <p style="font-size: 13.5px; color: #7f1d1d; line-height: 1.5;" id="algoNoMatchReasonText">
-          No available maintenance crew was found within the 30km perimeter, or all qualified crews currently have in-progress assignments.
+          No available maintenance crew was found within the 30km perimeter, or all qualified crews currently have
+          in-progress assignments.
         </p>
       </div>
 
@@ -401,12 +419,15 @@
       <!-- Target Task Context Strip -->
       <div class="crew-modal-task-strip" id="crewTaskContextStrip">
         <div>
-          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Target Work Order</div>
-          <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;" id="pickerTaskTitle">TASK-6201 • Fallen Tree on Pathway</div>
+          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Target Work Order
+          </div>
+          <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;" id="pickerTaskTitle">TASK-6201 • Fallen Tree
+            on Pathway</div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 11.5px; color: #64748b;" id="pickerTaskLocation">📍 KL Forest Eco Park</span>
-          <span class="badge-tag badge-aesthetic" id="pickerTaskSkillBadge" style="background:#0f172a; color:#fff;">Required: STRUCTURAL</span>
+          <span class="badge-tag badge-aesthetic" id="pickerTaskSkillBadge"
+            style="background:#0f172a; color:#fff;">Required: STRUCTURAL</span>
         </div>
       </div>
 
@@ -415,13 +436,9 @@
         <div class="crew-filter-row">
           <div class="search-input-wrap" style="flex: 1;">
             <span class="search-icon">🔍</span>
-            <input 
-              type="text" 
-              id="crewSearchInput" 
-              class="search-input-field" 
+            <input type="text" id="crewSearchInput" class="search-input-field"
               placeholder="Search technicians by name, crew ID, trade skills, or base station..."
-              oninput="filterAndRenderCrewRoster()"
-            >
+              oninput="filterAndRenderCrewRoster()">
           </div>
 
           <select id="crewSkillFitFilter" class="control-select" onchange="filterAndRenderCrewRoster()">
@@ -448,9 +465,11 @@
         <!-- Rendered via JS -->
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #e2e8f0;">
         <span style="font-size: 12px; color: #64748b;">
-          💡 <strong>Add-On Assignment:</strong> Tasks assigned to busy crews are queued as <strong>Add-On tasks</strong> for 24-hour acceptance in their terminal.
+          💡 <strong>Add-On Assignment:</strong> Tasks assigned to busy crews are queued as <strong>Add-On
+            tasks</strong> for 24-hour acceptance in their terminal.
         </span>
         <button class="btn-action btn-secondary" onclick="closeModal('manualCrewPickerModal')">
           <span>Cancel</span>
@@ -469,16 +488,19 @@
         <button class="modal-close-btn" onclick="closeModal('reassignConfirmModal')">✕</button>
       </div>
 
-      <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+      <div
+        style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
         <div style="font-size: 11px; font-weight: 800; color: #92400e; text-transform: uppercase; margin-bottom: 6px;">
           Reassignment Transition Notice
         </div>
         <p style="font-size: 13.5px; color: #78350f; line-height: 1.5; margin: 0;" id="reassignConfirmNoticeText">
-          Are you sure you want to reassign this work order? The existing assignment will be revoked and transferred to the new technician with a fresh 24-hour acceptance window.
+          Are you sure you want to reassign this work order? The existing assignment will be revoked and transferred to
+          the new technician with a fresh 24-hour acceptance window.
         </p>
       </div>
 
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;">
+      <div
+        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;">
         <div style="display: flex; justify-content: space-between; font-size: 13px;">
           <span style="color: #64748b; font-weight: 600;">Work Order:</span>
           <strong style="color: #0f172a;" id="reassignModalTaskId">TASK-6201</strong>
@@ -487,7 +509,8 @@
           <span style="color: #64748b; font-weight: 600;">Current Assignee:</span>
           <span style="color: #dc2626; font-weight: 700;" id="reassignModalCurrentCrew">Tech Ahmad</span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 15px; margin: -2px 0;">
+        <div
+          style="display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 15px; margin: -2px 0;">
           ⬇️ Transfer Work Order
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 13px;">
@@ -496,15 +519,70 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
           <span style="color: #64748b; font-weight: 600;">Assignment Type:</span>
-          <span id="reassignModalType" class="badge-tag badge-aesthetic" style="background:#0f172a; color:#fff;">Standard 24h SLA</span>
+          <span id="reassignModalType" class="badge-tag badge-aesthetic"
+            style="background:#0f172a; color:#fff;">Standard 24h SLA</span>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
-        <button class="btn-action btn-primary" id="btnConfirmReassignmentAction" style="background: #059669; padding: 12px;" onclick="executeConfirmedReassignment()">
+        <button class="btn-action btn-primary" id="btnConfirmReassignmentAction"
+          style="background: #059669; padding: 12px;" onclick="executeConfirmedReassignment()">
           <span>✅ Confirm Reassignment</span>
         </button>
         <button class="btn-action btn-secondary" onclick="closeModal('reassignConfirmModal')">
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4C: MANUAL ASSIGNMENT CONFIRMATION PROMPT
+       ========================================================================== -->
+  <div class="admin-modal-backdrop" id="manualAssignConfirmModal" style="z-index: 2500;">
+    <div class="admin-modal-box">
+      <div class="modal-head-row">
+        <h3 class="modal-head-title" id="manualAssignConfirmTitle">👤 Confirm Technician Assignment</h3>
+        <button class="modal-close-btn" onclick="closeModal('manualAssignConfirmModal')">✕</button>
+      </div>
+
+      <div id="manualAssignNoticeBox"
+        style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+        <div style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; margin-bottom: 6px;" id="manualAssignNoticeBadge">
+          Assignment Dispatch Notice
+        </div>
+        <p style="font-size: 13.5px; color: #065f46; line-height: 1.5; margin: 0;" id="manualAssignNoticeText">
+          Are you sure you want to assign this work order to this technician? The task will transition to <strong>PENDING_ACCEPTANCE</strong> awaiting crew confirmation within a 24-hour window.
+        </p>
+      </div>
+
+      <div
+        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Work Order:</span>
+          <strong style="color: #0f172a;" id="manualAssignModalTaskId">TSK-001</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Location:</span>
+          <span style="color: #0f172a; font-weight: 600;" id="manualAssignModalLocation">KL Forest Eco Park</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Selected Technician:</span>
+          <span style="color: #059669; font-weight: 700;" id="manualAssignModalCrew">Kumar Raman (0.8 km)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+          <span style="color: #64748b; font-weight: 600;">Assignment Type:</span>
+          <span id="manualAssignModalType" class="badge-tag badge-aesthetic"
+            style="background:#0f172a; color:#fff;">Standard 24h SLA</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+        <button class="btn-action btn-primary" id="btnConfirmManualAssignAction"
+          style="background: #059669; padding: 12px;" onclick="executeConfirmedManualAssign()">
+          <span>✅ Confirm Assignment</span>
+        </button>
+        <button class="btn-action btn-secondary" onclick="closeModal('manualAssignConfirmModal')">
           <span>Cancel</span>
         </button>
       </div>
@@ -517,12 +595,14 @@
   <div class="admin-modal-backdrop" id="adminConfirmationModal" style="z-index: 3500;">
     <div class="admin-modal-box" style="max-width: 490px; text-align: center; padding: 28px 24px; z-index: 3501;">
       <div id="adminConfirmIcon" style="font-size: 42px; margin-bottom: 12px;">⚖️</div>
-      <h3 class="modal-head-title" id="adminConfirmTitle" style="font-size: 18px; margin-bottom: 8px; justify-content: center;">Confirm Action</h3>
+      <h3 class="modal-head-title" id="adminConfirmTitle"
+        style="font-size: 18px; margin-bottom: 8px; justify-content: center;">Confirm Action</h3>
       <p style="font-size: 13.5px; color: #475569; line-height: 1.55; margin-bottom: 22px;" id="adminConfirmDesc">
         Are you sure you want to proceed with this administrative action?
       </p>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="btn-action btn-primary" id="adminConfirmSubmitBtn" style="padding: 12px;" onclick="executeAdminConfirmedAction()">
+        <button class="btn-action btn-primary" id="adminConfirmSubmitBtn" style="padding: 12px;"
+          onclick="executeAdminConfirmedAction()">
           <span>Yes, Confirm</span>
         </button>
         <button class="btn-action btn-secondary" onclick="closeModal('adminConfirmationModal')">
@@ -543,7 +623,8 @@
       </div>
 
       <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">
-        Compare the original reported damage with the technician's after-repair evidence photo and resolution notes before approving.
+        Compare the original reported damage with the technician's after-repair evidence photo and resolution notes
+        before approving.
       </p>
 
       <div class="photo-compare-grid">
@@ -560,13 +641,16 @@
       </div>
 
       <label class="form-label">Admin Return / Rejection Reason (Required only if rejecting)</label>
-      <textarea id="verifyRejectReason" class="form-textarea" rows="2" placeholder="e.g., Weld seam not smoothed; safety coating missing on bottom bracket..."></textarea>
+      <textarea id="verifyRejectReason" class="form-textarea" rows="2"
+        placeholder="e.g., Weld seam not smoothed; safety coating missing on bottom bracket..."></textarea>
 
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
-        <button class="btn-action btn-primary" style="background: #059669; padding: 12px;" onclick="handleApproveCompletion()">
+        <button class="btn-action btn-primary" style="background: #059669; padding: 12px;"
+          onclick="handleApproveCompletion()">
           <span>✅ Approve Completion (+5 Crew Points)</span>
         </button>
-        <button class="btn-action btn-secondary" style="color: #b91c1c; border-color: #fca5a5;" onclick="handleRejectCompletion()">
+        <button class="btn-action btn-secondary" style="color: #b91c1c; border-color: #fca5a5;"
+          onclick="handleRejectCompletion()">
           <span>↩️ Return to Crew</span>
         </button>
       </div>
@@ -583,7 +667,8 @@
         <button class="modal-close-btn" onclick="closeModal('rescheduleDroppedModal')">✕</button>
       </div>
 
-      <div style="background: #fffbeb; border: 1.5px solid #fde68a; padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 18px;">
+      <div
+        style="background: #fffbeb; border: 1.5px solid #fde68a; padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 18px;">
         <div style="font-size: 12px; font-weight: 800; color: #92400e; text-transform: uppercase; margin-bottom: 4px;">
           Technician Drop Reason
         </div>
@@ -600,7 +685,8 @@
         <button class="btn-action btn-primary" onclick="handleRescheduleAction('AUTO_DISPATCH')">
           <span>⚡ Run Automated Spatial Re-Dispatch</span>
         </button>
-        <button class="btn-action btn-secondary" onclick="closeModal('rescheduleDroppedModal'); openManualCrewPickerModal(activeActionTaskId, true)">
+        <button class="btn-action btn-secondary"
+          onclick="closeModal('rescheduleDroppedModal'); openManualCrewPickerModal(activeActionTaskId, true)">
           <span>👤 Manually Assign to Another Technician</span>
         </button>
         <button class="btn-action btn-secondary" onclick="handleRescheduleAction('RETURN_OPEN_POOL')">
@@ -624,23 +710,29 @@
         <div class="photo-compare-card">
           <div class="photo-compare-title">Original Citizen Report</div>
           <img id="modalInvalidReportImg" class="photo-compare-img" src="" alt="Reported Photo">
-          <div style="font-size: 12px; color: #334155; margin-top: 6px;" id="modalInvalidReportDesc">Report Description</div>
+          <div style="font-size: 12px; color: #334155; margin-top: 6px;" id="modalInvalidReportDesc">Report Description
+          </div>
         </div>
         <div class="photo-compare-card" style="border-color: #fecdd3; background: #fff1f2;">
           <div class="photo-compare-title" style="color: #be123c;">Technician Clear-Site Evidence</div>
           <img id="modalInvalidClearImg" class="photo-compare-img" src="" alt="Clear Site Proof">
-          <div style="font-size: 12px; color: #9f1239; margin-top: 6px;" id="modalInvalidNotes">Inspection Findings</div>
+          <div style="font-size: 12px; color: #9f1239; margin-top: 6px;" id="modalInvalidNotes">Inspection Findings
+          </div>
         </div>
       </div>
 
-      <label class="form-label" style="margin-top: 14px;">Admin Rejection Remarks / Return Notes (Compulsory only if returning to crew)</label>
-      <textarea id="invalidRejectReason" class="form-textarea" rows="2" placeholder="e.g., Checked wrong boundary line; please re-inspect near southern entrance gate..."></textarea>
+      <label class="form-label" style="margin-top: 14px;">Admin Rejection Remarks / Return Notes (Compulsory only if
+        returning to crew)</label>
+      <textarea id="invalidRejectReason" class="form-textarea" rows="2"
+        placeholder="e.g., Checked wrong boundary line; please re-inspect near southern entrance gate..."></textarea>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
-        <button class="btn-action" style="background: #e11d48; color: #ffffff; padding: 12px;" onclick="handleApproveInvalid()">
+        <button class="btn-action" style="background: #e11d48; color: #ffffff; padding: 12px;"
+          onclick="handleApproveInvalid()">
           <span>🚩 Confirm Invalid (-20 Citizen Penalty)</span>
         </button>
-        <button class="btn-action btn-secondary" style="color: #b91c1c; border-color: #fca5a5;" onclick="handleRejectInvalid()">
+        <button class="btn-action btn-secondary" style="color: #b91c1c; border-color: #fca5a5;"
+          onclick="handleRejectInvalid()">
           <span>↩️ Reject Flag & Return to Crew</span>
         </button>
       </div>
@@ -655,7 +747,8 @@
       <div class="modal-head-row">
         <div>
           <h3 class="modal-head-title" id="detailModalTitle">Task Work Order Inspection</h3>
-          <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="detailModalSubtitle">ID: TASK-XXXX • Detailed Operations Inspection</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 2px;" id="detailModalSubtitle">ID: TASK-XXXX •
+            Detailed Operations Inspection</div>
         </div>
         <button class="modal-close-btn" onclick="closeModal('taskDetailModal')">✕</button>
       </div>
@@ -666,17 +759,22 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 18px;">
         <!-- Left: Incident & Proof Photos -->
         <div>
-          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">
+          <div
+            style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">
             Incident Media Proof
           </div>
-          <img id="detailModalImg" src="" alt="Task Photo" style="width:100%; height:230px; object-fit:cover; border-radius:12px; border: 1.5px solid #e2e8f0; margin-bottom:10px;">
-          
+          <img id="detailModalImg" src="" alt="Task Photo"
+            style="width:100%; height:230px; object-fit:cover; border-radius:12px; border: 1.5px solid #e2e8f0; margin-bottom:10px;">
+
           <!-- Secondary Evidence Photo if available -->
           <div id="detailModalSecondaryPhotoWrap" style="display: none;">
-            <div style="font-size: 11px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 6px;" id="detailModalSecondaryTitle">
+            <div
+              style="font-size: 11px; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 6px;"
+              id="detailModalSecondaryTitle">
               Resolution / Evidence Photo Proof
             </div>
-            <img id="detailModalSecondaryImg" src="" alt="Evidence Photo" style="width:100%; height:160px; object-fit:cover; border-radius:12px; border: 1.5px solid #c4b5fd;">
+            <img id="detailModalSecondaryImg" src="" alt="Evidence Photo"
+              style="width:100%; height:160px; object-fit:cover; border-radius:12px; border: 1.5px solid #c4b5fd;">
           </div>
         </div>
 
@@ -684,7 +782,8 @@
         <div style="display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <label class="form-label">Incident Description</label>
-            <p id="detailModalDesc" style="font-size: 13px; color: #1e293b; line-height: 1.5; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px;">
+            <p id="detailModalDesc"
+              style="font-size: 13px; color: #1e293b; line-height: 1.5; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px;">
               Description text...
             </p>
 
@@ -722,7 +821,8 @@
       <div id="detailModalStateAlert" style="margin-bottom: 18px;"></div>
 
       <!-- Bottom Functions & Action Buttons Row (Matches Card View Functions) -->
-      <div style="display: flex; gap: 12px; padding-top: 16px; border-top: 1.5px solid #e2e8f0;" id="detailModalActionsRow">
+      <div style="display: flex; gap: 12px; padding-top: 16px; border-top: 1.5px solid #e2e8f0;"
+        id="detailModalActionsRow">
         <!-- Dynamically injected action buttons matching the task state -->
       </div>
     </div>
@@ -822,6 +922,25 @@
       const token = AuthGuard.getToken();
       if (!token) return;
 
+      // Stale-While-Revalidate: Instant render from cache if available (0ms!)
+      const isDefaultView = (currentStatusFilter === 'ALL' && currentCategoryFilter === 'ALL' && !currentSearchTerm);
+      if (liveTasks.length === 0 && isDefaultView) {
+        try {
+          const cachedStr = sessionStorage.getItem('ecoasset_admin_tasks_cache');
+          if (cachedStr) {
+            const cached = JSON.parse(cachedStr);
+            if (cached && cached.tasks) {
+              liveTasks = cached.tasks;
+              liveFleet = cached.fleet || [];
+              liveCounts = cached.counts || liveCounts;
+              updateKpiAndChipCounters();
+              renderTaskCards();
+              document.getElementById('taskControlMain').style.opacity = '1';
+            }
+          }
+        } catch (e) {}
+      }
+
       const container = document.getElementById('taskCardsContainer');
       if (container && liveTasks.length === 0) {
         container.innerHTML = `
@@ -852,14 +971,25 @@
           liveFleet = result.data.fleet || [];
           liveCounts = result.data.counts || liveCounts;
 
+          if (isDefaultView) {
+            try {
+              sessionStorage.setItem('ecoasset_admin_tasks_cache', JSON.stringify(result.data));
+            } catch (e) {}
+          }
+
           updateKpiAndChipCounters();
           renderTaskCards();
+
+          // Show dashboard now that data is loaded
+          document.getElementById('taskControlMain').style.opacity = '1';
         } else {
           showToast(result.error || 'Failed to load task roster.', true);
+          document.getElementById('taskControlMain').style.opacity = '1';
         }
       } catch (err) {
         console.error('Error fetching admin tasks:', err);
         showToast('Network error while retrieving tasks.', true);
+        document.getElementById('taskControlMain').style.opacity = '1';
       }
     }
 
@@ -896,14 +1026,14 @@
     // =========================================================================
     // OVERALL BATCH AUTO-DISPATCH
     // =========================================================================
-    window.openBatchDispatchConfirmModal = function() {
+    window.openBatchDispatchConfirmModal = function () {
       const openCount = liveCounts.open_pool;
       document.getElementById('batchOpenCountText').textContent = `${openCount} Open Work Orders`;
       document.getElementById('batchModalOpenTasks').textContent = `${openCount} Tasks Eligible`;
       openModal('batchDispatchConfirmModal');
     };
 
-    window.confirmBatchAutoDispatch = async function() {
+    window.confirmBatchAutoDispatch = async function () {
       const btn = document.getElementById('btnExecuteBatchDispatch');
       if (btn) {
         btn.disabled = true;
@@ -984,7 +1114,7 @@
     // =========================================================================
     // SINGLE TASK AUTO-DISPATCH ALGORITHM TRIGGER & RESULT PROMPT UX
     // =========================================================================
-    window.handleAutoDispatchSingle = async function(taskId) {
+    window.handleAutoDispatchSingle = async function (taskId) {
       activeActionTaskId = taskId;
       const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
@@ -1041,8 +1171,8 @@
             const reasonEl = document.getElementById('algoNoMatchReasonText');
             if (reasonEl) {
               const skillName = formatSkill(task.required_skill);
-              reasonEl.innerHTML = data.reason 
-                ? escapeHtml(data.reason) 
+              reasonEl.innerHTML = data.reason
+                ? escapeHtml(data.reason)
                 : `No available maintenance crew with matching trade capability (<strong>${escapeHtml(skillName)}</strong>) was found within the <strong>30km perimeter</strong>, or all qualified crews currently have in-progress assignments.`;
             }
             openModal('algoNoMatchModal');
@@ -1056,7 +1186,7 @@
       }
     };
 
-    window.confirmSingleAlgoAssignment = async function() {
+    window.confirmSingleAlgoAssignment = async function () {
       if (!activeActionTaskId || !currentMatchedCandidate) return;
       const token = AuthGuard.getToken();
 
@@ -1089,7 +1219,7 @@
       }
     };
 
-    window.switchToManualPickerFromAlgo = function() {
+    window.switchToManualPickerFromAlgo = function () {
       closeModal('algoMatchResultModal');
       closeModal('algoNoMatchModal');
       openManualCrewPickerModal(activeActionTaskId);
@@ -1098,21 +1228,21 @@
     // =========================================================================
     // ADVANCED MANUAL CREW PICKER & REASSIGNMENT UX (Search, Filter, Sort)
     // =========================================================================
-    window.openManualCrewPickerModal = async function(taskId, isReassign = false) {
+    window.openManualCrewPickerModal = async function (taskId, isReassign = false) {
       if (taskId) activeActionTaskId = taskId;
       isReassignMode = isReassign;
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       if (!task) return;
 
-      document.getElementById('manualPickerModalTitle').textContent = isReassign 
-        ? `👤 Reassign Technician for Work Order (${task.task_code || task.task_id})` 
+      document.getElementById('manualPickerModalTitle').textContent = isReassign
+        ? `👤 Reassign Technician for Work Order (${task.task_code || task.task_id})`
         : `👤 Select Technician for Manual Assignment (${task.task_code || task.task_id})`;
 
       document.getElementById('pickerTaskTitle').textContent = `${task.task_code || task.task_id} • ${(task.description || '').substring(0, 42)}...`;
       document.getElementById('pickerTaskLocation').textContent = `📍 ${task.district}`;
-      
-      const currentAssigneeSnippet = (isReassign && task.assigned_crew_name) 
-        ? ` • Current: <span style="color:#38bdf8; font-weight:700;">${escapeHtml(task.assigned_crew_name)}</span>` 
+
+      const currentAssigneeSnippet = (isReassign && task.assigned_crew_name)
+        ? ` • Current: <span style="color:#38bdf8; font-weight:700;">${escapeHtml(task.assigned_crew_name)}</span>`
         : '';
       document.getElementById('pickerTaskSkillBadge').innerHTML = `Required Trade: ${formatSkill(task.required_skill)}${currentAssigneeSnippet}`;
 
@@ -1249,12 +1379,12 @@
             </button>
           `;
         } else {
-          const buttonText = isReassignMode 
-            ? (isAvailable ? '👤 Reassign Crew' : '➕ Add-On Reassignment') 
+          const buttonText = isReassignMode
+            ? (isAvailable ? '👤 Reassign Crew' : '➕ Add-On Reassignment')
             : (isAvailable ? '👤 Assign Crew' : '➕ Add-On Assignment');
 
-          const buttonStyle = isAvailable 
-            ? 'btn-primary' 
+          const buttonStyle = isAvailable
+            ? 'btn-primary'
             : 'btn-secondary" style="border-color: #d97706; color: #b45309; background: #fffbeb;';
 
           actionButtonHtml = `
@@ -1299,8 +1429,9 @@
     }
 
     let pendingReassignCrewId = null;
+    let pendingManualAssignCrewId = null;
 
-    window.handleAssignCrewToTask = function(crewId) {
+    window.handleAssignCrewToTask = function (crewId) {
       if (!activeActionTaskId) return;
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       const crew = currentTaskCandidates.find(c => c.user_id === crewId);
@@ -1315,7 +1446,7 @@
         // Prompt Confirmation Modal for Reassignment
         pendingReassignCrewId = crewId;
         const isAddOn = crew.computed_status !== 'AVAILABLE';
-        
+
         const taskIdEl = document.getElementById('reassignModalTaskId');
         const currCrewEl = document.getElementById('reassignModalCurrentCrew');
         const newCrewEl = document.getElementById('reassignModalNewCrew');
@@ -1326,7 +1457,7 @@
         if (taskIdEl) taskIdEl.textContent = task ? (task.task_code || task.task_id) : activeActionTaskId;
         if (currCrewEl) currCrewEl.textContent = (task && task.assigned_crew_name) ? task.assigned_crew_name : 'Current Technician';
         if (newCrewEl) newCrewEl.innerHTML = `${escapeHtml(crew.full_name)} <span style="font-size:11.5px; color:#64748b; font-weight:normal;">(${crew.distance_km} km away)</span>`;
-        
+
         if (typeEl) {
           typeEl.textContent = isAddOn ? '➕ Add-On Reassignment' : 'Standard 24h SLA';
           typeEl.style.background = isAddOn ? '#fef3c7' : '#0f172a';
@@ -1346,15 +1477,96 @@
         return;
       }
 
-      // Direct assignment for open pool tasks
-      executeAssignmentDirect(crewId);
+      // Prompt Confirmation Modal for Manual Assignment (Open Pool / Dropped Tasks)
+      pendingManualAssignCrewId = crewId;
+      const isAddOn = crew.computed_status !== 'AVAILABLE';
+
+      const titleEl = document.getElementById('manualAssignConfirmTitle');
+      const noticeBox = document.getElementById('manualAssignNoticeBox');
+      const noticeBadge = document.getElementById('manualAssignNoticeBadge');
+      const noticeText = document.getElementById('manualAssignNoticeText');
+      const taskIdEl = document.getElementById('manualAssignModalTaskId');
+      const locEl = document.getElementById('manualAssignModalLocation');
+      const crewEl = document.getElementById('manualAssignModalCrew');
+      const typeEl = document.getElementById('manualAssignModalType');
+      const btnEl = document.getElementById('btnConfirmManualAssignAction');
+
+      if (taskIdEl) taskIdEl.textContent = task ? `${task.task_code || task.task_id} • ${(task.description || '').substring(0, 36)}...` : activeActionTaskId;
+      if (locEl) locEl.textContent = task && task.district ? `📍 ${task.district}` : '📍 Incident Site';
+      if (crewEl) crewEl.innerHTML = `${escapeHtml(crew.full_name)} <span style="font-size:11.5px; color:#64748b; font-weight:normal;">(${crew.distance_km} km away)</span>`;
+
+      if (isAddOn) {
+        if (titleEl) titleEl.textContent = '➕ Confirm Add-On Assignment';
+        if (noticeBox) {
+          noticeBox.style.background = '#fffbeb';
+          noticeBox.style.borderColor = '#fde68a';
+        }
+        if (noticeBadge) {
+          noticeBadge.textContent = 'Add-On Task Queue Notice';
+          noticeBadge.style.color = '#92400e';
+        }
+        if (noticeText) {
+          noticeText.style.color = '#78350f';
+          noticeText.innerHTML = `Technician <strong>${escapeHtml(crew.full_name)}</strong> is currently <strong>BUSY</strong> with active tasks. This work order will be dispatched as an <strong>Add-On Task</strong> with a 24-hour acceptance window in their terminal.`;
+        }
+        if (typeEl) {
+          typeEl.textContent = '➕ Add-On Task Assignment';
+          typeEl.style.background = '#fef3c7';
+          typeEl.style.color = '#92400e';
+        }
+        if (btnEl) {
+          btnEl.style.background = '#d97706';
+          btnEl.innerHTML = `<span>➕ Confirm Add-On Assignment to ${escapeHtml(crew.full_name)}</span>`;
+        }
+      } else {
+        if (titleEl) titleEl.textContent = '👤 Confirm Technician Assignment';
+        if (noticeBox) {
+          noticeBox.style.background = '#ecfdf5';
+          noticeBox.style.borderColor = '#a7f3d0';
+        }
+        if (noticeBadge) {
+          noticeBadge.textContent = 'Standard 24h SLA Dispatch Notice';
+          noticeBadge.style.color = '#047857';
+        }
+        if (noticeText) {
+          noticeText.style.color = '#065f46';
+          noticeText.innerHTML = `Assign this work order to <strong>${escapeHtml(crew.full_name)}</strong>? The task will transition to <strong>PENDING_ACCEPTANCE</strong> awaiting crew confirmation within 24 hours.`;
+        }
+        if (typeEl) {
+          typeEl.textContent = 'Standard 24h SLA';
+          typeEl.style.background = '#0f172a';
+          typeEl.style.color = '#fff';
+        }
+        if (btnEl) {
+          btnEl.style.background = '#059669';
+          btnEl.innerHTML = `<span>✅ Confirm Assignment to ${escapeHtml(crew.full_name)}</span>`;
+        }
+      }
+
+      openModal('manualAssignConfirmModal');
     };
 
-    window.executeConfirmedReassignment = async function() {
+    window.executeConfirmedReassignment = async function () {
       if (!pendingReassignCrewId || !activeActionTaskId) return;
       closeModal('reassignConfirmModal');
       await executeAssignmentDirect(pendingReassignCrewId);
       pendingReassignCrewId = null;
+    };
+
+    window.executeConfirmedManualAssign = async function () {
+      if (!pendingManualAssignCrewId || !activeActionTaskId) return;
+      const btn = document.getElementById('btnConfirmManualAssignAction');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Assigning Task...</span>`;
+      }
+      closeModal('manualAssignConfirmModal');
+      await executeAssignmentDirect(pendingManualAssignCrewId);
+      pendingManualAssignCrewId = null;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>✅ Confirm Assignment</span>`;
+      }
     };
 
     async function executeAssignmentDirect(crewId) {
@@ -1380,7 +1592,10 @@
         });
 
         const result = await response.json();
+        closeModal('manualAssignConfirmModal');
+        closeModal('reassignConfirmModal');
         closeModal('manualCrewPickerModal');
+        closeModal('taskDetailModal');
 
         if (result.status === 'success') {
           if (isReassignMode) {
@@ -1411,7 +1626,7 @@
     // =========================================================================
     let pendingAdminAction = null;
 
-    window.openVerifyCompleteModal = function(taskId) {
+    window.openVerifyCompleteModal = function (taskId) {
       activeActionTaskId = taskId;
       const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
@@ -1421,7 +1636,7 @@
 
       document.getElementById('modalBeforeImg').src = originalPhoto;
       document.getElementById('modalBeforeDesc').textContent = `${escapeHtml(task.district || 'Incident Site')} • ${escapeHtml(task.description || '')}`;
-      
+
       document.getElementById('modalAfterImg').src = afterPhoto;
       document.getElementById('modalAfterNotes').innerHTML = `
         <strong>Technician:</strong> ${escapeHtml(task.assigned_crew_name || 'Assigned Crew')}<br>
@@ -1437,7 +1652,7 @@
       openModal('verifyCompleteModal');
     };
 
-    window.handleApproveCompletion = function() {
+    window.handleApproveCompletion = function () {
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       const taskId = activeActionTaskId || (task ? task.task_id : null);
       if (!taskId) {
@@ -1458,7 +1673,7 @@
         Are you sure you want to approve the repair proof for <strong>${escapeHtml((task && task.district) || 'this site')}</strong>?<br><br>
         The task will be marked as <strong style="color:#059669;">COMPLETED</strong> and <strong style="color:#059669;">+5.0 performance points</strong> will be awarded to <strong>${escapeHtml((task && task.assigned_crew_name) || 'the technician')}</strong>.
       `;
-      
+
       const submitBtn = document.getElementById('adminConfirmSubmitBtn');
       if (submitBtn) {
         submitBtn.style.background = '#059669';
@@ -1468,7 +1683,7 @@
       openModal('adminConfirmationModal');
     };
 
-    window.handleRejectCompletion = function() {
+    window.handleRejectCompletion = function () {
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       const taskId = activeActionTaskId || (task ? task.task_id : null);
       if (!taskId) {
@@ -1515,7 +1730,7 @@
       openModal('adminConfirmationModal');
     };
 
-    window.executeAdminConfirmedAction = async function() {
+    window.executeAdminConfirmedAction = async function () {
       if (!pendingAdminAction) return;
 
       const action = pendingAdminAction;
@@ -1671,7 +1886,7 @@
     // =========================================================================
     function filterByStatus(status, el) {
       currentStatusFilter = status;
-      
+
       document.querySelectorAll('.filter-chip-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.status === status);
       });
@@ -1835,8 +2050,8 @@
         `;
       }
 
-      const assignedDisplay = task.assigned_crew_name 
-        ? escapeHtml(task.assigned_crew_name) 
+      const assignedDisplay = task.assigned_crew_name
+        ? escapeHtml(task.assigned_crew_name)
         : '<span style="color:#94a3b8;">Unassigned (Open Pool)</span>';
 
       let timingMetaHtml = '';
@@ -1897,7 +2112,7 @@
     // DROPPED & INVALID MODAL HANDLERS
     // =========================================================================
 
-    window.openRescheduleDroppedModal = function(taskId) {
+    window.openRescheduleDroppedModal = function (taskId) {
       activeActionTaskId = taskId;
       const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
@@ -1906,7 +2121,7 @@
       openModal('rescheduleDroppedModal');
     };
 
-    window.handleRescheduleAction = function(action) {
+    window.handleRescheduleAction = function (action) {
       if (action === 'AUTO_DISPATCH') {
         closeModal('rescheduleDroppedModal');
         handleAutoDispatchSingle(activeActionTaskId);
@@ -1942,7 +2157,7 @@
       }
     };
 
-    window.openVerifyInvalidModal = function(taskId) {
+    window.openVerifyInvalidModal = function (taskId) {
       activeActionTaskId = taskId;
       const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
@@ -1955,7 +2170,7 @@
         <strong>Reporter:</strong> ${escapeHtml(task.reporter_name || 'Citizen Reporter')}<br>
         <strong>Reported:</strong> ${escapeHtml(task.district || 'Incident Site')} • ${escapeHtml(task.description || '')}
       `;
-      
+
       document.getElementById('modalInvalidClearImg').src = clearPhoto;
       document.getElementById('modalInvalidNotes').innerHTML = `
         <strong>Technician:</strong> ${escapeHtml(task.assigned_crew_name || 'Assigned Crew')}<br>
@@ -1971,7 +2186,7 @@
       openModal('verifyInvalidModal');
     };
 
-    window.handleApproveInvalid = function() {
+    window.handleApproveInvalid = function () {
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       const taskId = activeActionTaskId || (task ? task.task_id : null);
       if (!taskId) {
@@ -2005,7 +2220,7 @@
       openModal('adminConfirmationModal');
     };
 
-    window.handleRejectInvalid = function() {
+    window.handleRejectInvalid = function () {
       const task = liveTasks.find(t => t.task_id === activeActionTaskId || t.report_id === activeActionTaskId);
       const taskId = activeActionTaskId || (task ? task.task_id : null);
       if (!taskId) {
@@ -2055,7 +2270,7 @@
     // =========================================================================
     // ENLARGED TASK DETAIL PANEL INSPECTION
     // =========================================================================
-    window.openTaskDetailModal = function(taskId) {
+    window.openTaskDetailModal = function (taskId) {
       activeActionTaskId = taskId;
       const task = liveTasks.find(t => t.task_id === taskId || t.report_id === taskId);
       if (!task) return;
@@ -2303,4 +2518,5 @@
     }
   </script>
 </body>
+
 </html>

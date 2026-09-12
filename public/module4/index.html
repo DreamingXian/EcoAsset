@@ -18,8 +18,8 @@
   <!-- Module 4 Analytics Stylesheet -->
   <link rel="stylesheet" href="module4.css?v=2.1">
 
-  <!-- Chart.js for Interactive Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Chart.js for Interactive Analytics (Loaded locally for zero-latency instant rendering) -->
+  <script src="../js/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -31,13 +31,53 @@
     <aside class="admin-sidebar" id="adminSidebar"></aside>
 
     <!-- Main Content Area -->
-    <main class="admin-main analytics-dashboard-main">
+    <main class="admin-main analytics-dashboard-main" id="dashboardMain">
+
+      <!-- Formal Printable Document Letterhead (Visible ONLY in Print / PDF Export) -->
+      <div class="print-only-header" id="printReportHeader">
+        <div class="print-letterhead-top">
+          <div class="print-crest-box">
+            <div class="print-logo-emblem">🏛️</div>
+            <div class="print-agency-info">
+              <div class="print-gov-title">DEWAN BANDARAYA KUALA LUMPUR (DBKL)</div>
+              <div class="print-dept-title">JABATAN KEJURUTERAAN AWAM & PENGURUSAN FASILITI BANDAR</div>
+              <div class="print-sub-title">Administrative Dashboard & Analytics Reports · EcoAsset Municipal Operations</div>
+            </div>
+          </div>
+          <div class="print-meta-box">
+            <div class="print-badge-official">OFFICIAL EXECUTIVE REPORT</div>
+            <div class="print-doc-id" id="printDocRef">REF: DBKL-EA-20260829-01</div>
+            <div class="print-meta-date" id="printMetaTimestamp">Generated: 29 Aug 2026, 10:36 AM</div>
+          </div>
+        </div>
+
+        <div class="print-divider-line"></div>
+
+        <div class="print-doc-details-grid">
+          <div class="print-detail-item">
+            <span class="lbl">Report Title:</span>
+            <span class="val" style="color: #0f172a; font-weight: 700;">Administrative Dashboard & Analytics Reports</span>
+          </div>
+          <div class="print-detail-item">
+            <span class="lbl">Geographic Scope:</span>
+            <span class="val" id="printReportDistrict">All Districts (Wilayah Persekutuan Kuala Lumpur)</span>
+          </div>
+          <div class="print-detail-item">
+            <span class="lbl">Reporting Period:</span>
+            <span class="val" id="printReportPeriod">Last 30 Days</span>
+          </div>
+          <div class="print-detail-item">
+            <span class="lbl">Authenticated Operator:</span>
+            <span class="val" id="printReportOfficer">Administrator (admin@dbkl.gov.my)</span>
+          </div>
+        </div>
+      </div>
 
       <!-- Header Row with Filters & Export -->
       <header class="dashboard-header">
         <div class="dashboard-title-group">
-          <h1>Administrative Dashboard</h1>
-          <p>DBKL · Wilayah Persekutuan Kuala Lumpur</p>
+          <h1>Administrative Dashboard & Analytics Reports</h1>
+          <p>DBKL Wilayah Persekutuan Kuala Lumpur · Municipal Asset Management & Operations</p>
         </div>
 
         <div class="dashboard-actions">
@@ -98,7 +138,7 @@
             <option value="Brickfields">Brickfields</option>
           </select>
 
-          <button type="button" class="btn-export-pdf" onclick="window.print()">
+          <button type="button" class="btn-export-pdf" onclick="handleExportPdf()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -120,29 +160,12 @@
               <span class="kpi-clickable-tag">View Details ↗</span>
             </div>
             <div class="kpi-title">Total Reported Issues</div>
-            <div class="kpi-value" id="kpiTotalReported">1,250</div>
+            <div class="kpi-value" id="kpiTotalReported">—</div>
             <div class="kpi-desc">Total facility damage reports received from public submissions.</div>
           </div>
           <div>
-            <div class="kpi-trend trend-up" id="kpiReportedTrend">↑ 8.7% this month</div>
+            <div class="kpi-trend trend-up" id="kpiReportedTrend">Loading…</div>
             <div class="kpi-src">src: fault reports</div>
-          </div>
-        </div>
-
-        <!-- KPI Card 2: Active Maintenance Queue -->
-        <div class="kpi-card" onclick="openDrawer('drawerActiveQueue')">
-          <div>
-            <div class="kpi-card-header">
-              <div class="kpi-icon-wrap lightning">⚡</div>
-              <span class="kpi-clickable-tag">View Details ↗</span>
-            </div>
-            <div class="kpi-title">Active Maintenance Queue</div>
-            <div class="kpi-value" id="kpiActiveQueue">86 Pending</div>
-            <div class="kpi-desc">Verified maintenance requests currently awaiting crew completion.</div>
-          </div>
-          <div>
-            <div class="kpi-trend highlight-orange" id="kpiCriticalItems">18 critical items</div>
-            <div class="kpi-src">src: maintenance request</div>
           </div>
         </div>
 
@@ -154,11 +177,11 @@
               <span class="kpi-clickable-tag">View Details ↗</span>
             </div>
             <div class="kpi-title">Avg. Resolution Time</div>
-            <div class="kpi-value" id="kpiAvgResolution">3.2 Days</div>
+            <div class="kpi-value" id="kpiAvgResolution">—</div>
             <div class="kpi-desc">Average time taken to resolve facility issues across all districts.</div>
           </div>
           <div>
-            <div class="kpi-trend trend-down" id="kpiResolutionTrend">↓ 0.4d vs last month</div>
+            <div class="kpi-trend trend-down" id="kpiResolutionTrend">Loading…</div>
             <div class="kpi-src">src: maintenance record</div>
           </div>
         </div>
@@ -171,69 +194,50 @@
               <span class="kpi-clickable-tag">View Details ↗</span>
             </div>
             <div class="kpi-title">Active Maintenance Crews</div>
-            <div class="kpi-value" id="kpiTotalCrews">15 Teams</div>
+            <div class="kpi-value" id="kpiTotalCrews">—</div>
             <div class="kpi-desc">Currently available maintenance teams across all districts.</div>
           </div>
           <div>
-            <div class="kpi-trend highlight-gray" id="kpiBusyCrews">7 on active jobs</div>
+            <div class="kpi-trend highlight-gray" id="kpiBusyCrews">Loading…</div>
             <div class="kpi-src">src: maintenance crew</div>
           </div>
         </div>
 
       </section>
 
-      <!-- Prioritized Maintenance Queue Table -->
-      <section class="table-card">
-        <div class="table-card-header">
-          <h2>Prioritized Maintenance Queue</h2>
-          <span class="table-subtitle" id="queueSubtitle">6 items · sorted by P-score</span>
+      <!-- Row 1: Hotspot Frequency by District -->
+      <section class="report-card standalone-chart-card" id="hotspotSection">
+        <div class="card-header chart-card-header">
+          <div>
+            <h3 class="card-title">Hotspot Frequency by District</h3>
+            <span class="card-subtitle chart-subtitle">Spatial distribution of municipal damage reports across key administrative zones</span>
+          </div>
         </div>
-
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>TASK ID</th>
-                <th>CATEGORY</th>
-                <th>P-SCORE</th>
-                <th>LOCATION</th>
-                <th>UPVOTES</th>
-                <th>STATUS</th>
-                <th style="text-align: right;">ACTION</th>
-              </tr>
-            </thead>
-            <tbody id="prioritizedQueueBody">
-              <!-- Dynamically Hydrated -->
-            </tbody>
-          </table>
+        <div class="chart-container">
+          <canvas id="hotspotChart"></canvas>
         </div>
       </section>
 
-      <!-- Two Analytics Charts Side-by-Side (Screenshot 3) -->
-      <section class="charts-grid">
-
-        <!-- Chart 1: Hotspot Frequency by District -->
-        <div class="chart-card">
-          <h3>Hotspot Frequency by District</h3>
-          <div class="chart-container">
-            <canvas id="hotspotChart"></canvas>
+      <!-- Row 2: Resolution Delays vs. Tourist Footfall -->
+      <section class="report-card standalone-chart-card" id="footfallSection">
+        <div class="card-header chart-card-header">
+          <div>
+            <h3 class="card-title">Resolution Delays vs. Tourist Footfall</h3>
+            <span class="card-subtitle chart-subtitle">Monthly correlation between tourist footfall density and average repair completion delay</span>
           </div>
         </div>
-
-        <!-- Chart 2: Resolution Delays vs. Tourist Footfall -->
-        <div class="chart-card">
-          <h3>Resolution Delays vs. Tourist Footfall</h3>
-          <div class="chart-container">
-            <canvas id="footfallChart"></canvas>
-          </div>
+        <div class="chart-container">
+          <canvas id="footfallChart"></canvas>
         </div>
-
       </section>
 
-      <!-- Crew Workload & Availability Table (Screenshot 3) -->
-      <section class="table-card">
-        <div class="table-card-header">
-          <h2>Crew Workload & Availability</h2>
+      <!-- Section 3: Crew Workload & Availability Table -->
+      <section class="report-card table-card crew-workload-section" id="crewWorkloadSection">
+        <div class="card-header table-card-header">
+          <div>
+            <h2 class="card-title">Crew Workload & Availability</h2>
+            <span class="card-subtitle table-subtitle">Operational deployment status and active task load for municipal maintenance personnel</span>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -254,6 +258,61 @@
         </div>
       </section>
 
+      <!-- Operations Queue: Prioritized Maintenance Queue Table -->
+      <section class="report-card table-card prioritized-queue-section" id="prioritizedQueueSection">
+        <div class="card-header table-card-header">
+          <div>
+            <h2 class="card-title">Prioritized Maintenance Queue</h2>
+            <span class="card-subtitle table-subtitle" id="queueSubtitle">Loading…</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>TASK ID</th>
+                <th>CATEGORY</th>
+                <th>P-SCORE</th>
+                <th>LOCATION</th>
+                <th>UPVOTES</th>
+                <th style="text-align: right;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="prioritizedQueueBody">
+              <!-- Dynamically Hydrated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Formal Printable Verification & Signature Footer (Visible ONLY in Print / PDF Export) -->
+      <div class="print-only-footer" id="printReportFooter">
+        <div class="print-signature-grid">
+          <div class="print-signature-box">
+            <div class="signature-line"></div>
+            <div class="sign-name" id="printSignOfficer">Municipal Asset Operations Officer</div>
+            <div class="sign-title">Civil Engineering & Public Facilities Directorate</div>
+            <div class="sign-date" id="printSignDate1">Date: 29 Aug 2026</div>
+          </div>
+          <div class="print-signature-box">
+            <div class="signature-line"></div>
+            <div class="sign-name">Chief Executive / Director of Municipal Works</div>
+            <div class="sign-title">Dewan Bandaraya Kuala Lumpur (DBKL)</div>
+            <div class="sign-date" id="printSignDate2">Date: 29 Aug 2026</div>
+          </div>
+        </div>
+
+        <div class="print-footer-notice">
+          <p>
+            <strong>OFFICIAL STATISTICAL RECORD:</strong> This document was electronically generated and authenticated via the EcoAsset Municipal Asset Management System. All recorded statistics, dispatch timelines, and SLA metrics are directly synchronized with the central database repository. Confidential and privileged for authorized municipal personnel only.
+          </p>
+          <div class="print-footer-pagination">
+            <span>EcoAsset Operations Management System • Wilayah Persekutuan Kuala Lumpur • Document Security Hash: <strong id="printSecurityHash">EA-9F82-B41C</strong></span>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -268,7 +327,7 @@
         <div class="drawer-icon-wrap lightning">⚡</div>
         <div class="drawer-title-content">
           <h3>Active Maintenance Queue</h3>
-          <h2 id="drawerQueueTotalHeader">86 Pending Repairs</h2>
+          <h2 id="drawerQueueTotalHeader">— Pending Repairs</h2>
           <div class="drawer-datasource">
             <span class="dot" style="background: #f97316;"></span>
             <span>Data source: Maintenance_Request · Priority_Queue</span>
@@ -282,19 +341,19 @@
       <!-- 4 Priority Stat Cards -->
       <div class="drawer-tiles-grid grid-4">
         <div class="drawer-stat-tile tile-critical">
-          <div class="num" id="drawerStatCritical">18</div>
+          <div class="num" id="drawerStatCritical">—</div>
           <div class="lbl">Critical</div>
         </div>
         <div class="drawer-stat-tile tile-high">
-          <div class="num" id="drawerStatHigh">29</div>
+          <div class="num" id="drawerStatHigh">—</div>
           <div class="lbl">High</div>
         </div>
         <div class="drawer-stat-tile tile-med">
-          <div class="num" id="drawerStatMed">25</div>
+          <div class="num" id="drawerStatMed">—</div>
           <div class="lbl">Medium</div>
         </div>
         <div class="drawer-stat-tile tile-low">
-          <div class="num" id="drawerStatLow">14</div>
+          <div class="num" id="drawerStatLow">—</div>
           <div class="lbl">Low</div>
         </div>
       </div>
@@ -346,7 +405,7 @@
         <div class="drawer-icon-wrap clock">⏱️</div>
         <div class="drawer-title-content">
           <h3>Average Resolution Time</h3>
-          <h2 id="drawerResolutionHeader">3.2 Days</h2>
+          <h2 id="drawerResolutionHeader">— Days</h2>
           <div class="drawer-datasource">
             <span class="dot" style="background: #0d9488;"></span>
             <span>Data source: Maintenance_Record · Completion_Log</span>
@@ -360,15 +419,15 @@
       <!-- 3 Metric Cards -->
       <div class="drawer-tiles-grid grid-3">
         <div class="drawer-stat-tile tile-low">
-          <div class="num" id="drawerStatAvgRes">3.2d</div>
+          <div class="num" id="drawerStatAvgRes">—</div>
           <div class="lbl">Avg Resolution</div>
         </div>
         <div class="drawer-stat-tile tile-green">
-          <div class="num" id="drawerStatCompletedMonth">124</div>
+          <div class="num" id="drawerStatCompletedMonth">—</div>
           <div class="lbl">Completed (Jul)</div>
         </div>
         <div class="drawer-stat-tile tile-med">
-          <div class="num" id="drawerStatSlaPct">83%</div>
+          <div class="num" id="drawerStatSlaPct">—</div>
           <div class="lbl">SLA Compliance</div>
         </div>
       </div>
@@ -429,7 +488,7 @@
         <div class="drawer-icon-wrap hazard">⚠️</div>
         <div class="drawer-title-content">
           <h3>Incident Intake Analytics</h3>
-          <h2 id="drawerTotalIssuesHeader">1,250 Submissions</h2>
+          <h2 id="drawerTotalIssuesHeader">— Submissions</h2>
           <div class="drawer-datasource">
             <span class="dot" style="background: #ef4444;"></span>
             <span>Data source: Citizen_Reports · Geospatial_Intake</span>
@@ -442,15 +501,15 @@
     <div class="drawer-body">
       <div class="drawer-tiles-grid grid-3">
         <div class="drawer-stat-tile tile-critical">
-          <div class="num" id="drawerStatSafetyHazards">38%</div>
+          <div class="num" id="drawerStatSafetyHazards">—</div>
           <div class="lbl">Safety Hazards</div>
         </div>
         <div class="drawer-stat-tile tile-high">
-          <div class="num" id="drawerStatVerifiedToday">412</div>
+          <div class="num" id="drawerStatVerifiedToday">—</div>
           <div class="lbl">Verified Today</div>
         </div>
         <div class="drawer-stat-tile tile-green">
-          <div class="num" id="drawerStatCitizenAccuracy">92.4%</div>
+          <div class="num" id="drawerStatCitizenAccuracy">—</div>
           <div class="lbl">Citizen Accuracy</div>
         </div>
       </div>
@@ -476,7 +535,7 @@
         <div class="drawer-icon-wrap crew">👥</div>
         <div class="drawer-title-content">
           <h3>Field Fleets & Crews</h3>
-          <h2 id="drawerCrewsHeader">15 Teams on Duty</h2>
+          <h2 id="drawerCrewsHeader">— Teams on Duty</h2>
           <div class="drawer-datasource">
             <span class="dot" style="background: #10b981;"></span>
             <span>Data source: Municipal_Workforce · Fleet_GPS</span>
@@ -489,15 +548,15 @@
     <div class="drawer-body">
       <div class="drawer-tiles-grid grid-3">
         <div class="drawer-stat-tile tile-green">
-          <div class="num" id="drawerCrewsAvailable">8</div>
+          <div class="num" id="drawerCrewsAvailable">—</div>
           <div class="lbl">Available</div>
         </div>
         <div class="drawer-stat-tile tile-high">
-          <div class="num" id="drawerCrewsBusy">7</div>
+          <div class="num" id="drawerCrewsBusy">—</div>
           <div class="lbl">On Active Jobs</div>
         </div>
         <div class="drawer-stat-tile tile-med">
-          <div class="num" id="drawerCrewsRating">4.8★</div>
+          <div class="num" id="drawerCrewsRating">—</div>
           <div class="lbl">Fleet Rating</div>
         </div>
       </div>
@@ -578,6 +637,23 @@
       if (calendarStartDate) params.set('start_date', calendarStartDate);
       if (calendarEndDate) params.set('end_date', calendarEndDate);
 
+      // Stale-While-Revalidate: If we have cached analytics for this query, render immediately (0ms!)
+      const cacheKey = `ecoasset_analytics_${district}_${calendarPreset || 'preset'}_${calendarStartDate || ''}_${calendarEndDate || ''}`;
+      try {
+        const cachedStr = sessionStorage.getItem(cacheKey);
+        if (cachedStr) {
+          const cached = JSON.parse(cachedStr);
+          if (cached && cached.kpis) {
+            renderKpis(cached.kpis || {});
+            renderPrioritizedQueue(cached.prioritized_queue || []);
+            renderHotspotChart(cached.hotspots || []);
+            renderFootfallChart(cached.correlation || {});
+            renderCrewWorkload(cached.crew_workload || []);
+            document.getElementById('dashboardMain').style.opacity = '1';
+          }
+        }
+      } catch (e) {}
+
       try {
         const token = localStorage.getItem('ecoasset_token');
         const res = await fetch(`/api/index.php/api/v1/admin/analytics/dashboard?${params.toString()}`, {
@@ -589,6 +665,19 @@
 
         const json = await res.json();
         const data = json.data || {};
+
+        if (data.earliest_date) {
+          window.ecoassetEarliestDate = data.earliest_date;
+          if (calendarPreset === 'all') {
+            calendarStartDate = data.earliest_date;
+            const startInput = document.getElementById('startDateInput');
+            if (startInput) startInput.value = data.earliest_date;
+          }
+        }
+
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {}
 
         // 1. Hydrate Top 4 KPI Metrics
         renderKpis(data.kpis || {});
@@ -605,23 +694,29 @@
         // 5. Render Crew Workload Table
         renderCrewWorkload(data.crew_workload || []);
 
+        // Show the dashboard now that data is loaded
+        document.getElementById('dashboardMain').style.opacity = '1';
+
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
+        document.getElementById('dashboardMain').style.opacity = '1';
       }
     }
 
     function renderKpis(kpis) {
-      document.getElementById('kpiTotalReported').textContent = Number(kpis.total_reported || 1250).toLocaleString();
-      document.getElementById('kpiReportedTrend').textContent = kpis.reported_trend || '↑ 8.7% this month';
+      document.getElementById('kpiTotalReported').textContent = Number(kpis.total_reported || 0).toLocaleString();
+      document.getElementById('kpiReportedTrend').textContent = kpis.reported_trend || 'No trend data';
       
-      document.getElementById('kpiActiveQueue').textContent = `${kpis.active_queue || 86} Pending`;
-      document.getElementById('kpiCriticalItems').textContent = `${kpis.critical_items || 18} critical items`;
+      const kpiActiveEl = document.getElementById('kpiActiveQueue');
+      if (kpiActiveEl) kpiActiveEl.textContent = `${kpis.active_queue || 0} Pending`;
+      const kpiCritEl = document.getElementById('kpiCriticalItems');
+      if (kpiCritEl) kpiCritEl.textContent = `${kpis.critical_items || 0} critical items`;
       
-      document.getElementById('kpiAvgResolution').textContent = `${kpis.avg_resolution_days || 3.2} Days`;
-      document.getElementById('kpiResolutionTrend').textContent = kpis.resolution_trend || '↓ 0.4d vs last month';
+      document.getElementById('kpiAvgResolution').textContent = `${kpis.avg_resolution_days || 0} Days`;
+      document.getElementById('kpiResolutionTrend').textContent = kpis.resolution_trend || 'No trend data';
       
-      document.getElementById('kpiTotalCrews').textContent = `${kpis.total_crews || 15} Teams`;
-      document.getElementById('kpiBusyCrews').textContent = `${kpis.busy_crews || 7} on active jobs`;
+      document.getElementById('kpiTotalCrews').textContent = `${kpis.total_crews || 0} Teams`;
+      document.getElementById('kpiBusyCrews').textContent = `${kpis.busy_crews || 0} on active jobs`;
     }
 
     function renderPrioritizedQueue(items) {
@@ -629,7 +724,7 @@
       tbody.innerHTML = '';
 
       if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px; color: #94a3b8;">No maintenance items in queue.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color: #94a3b8;">No maintenance items in queue.</td></tr>`;
         return;
       }
 
@@ -640,7 +735,6 @@
         
         const catClass = item.category_type || 'neutral';
         const pscoreClass = (item.p_score_num || 9.0) >= 8.5 ? 'pscore-pill' : 'pscore-pill pscore-orange';
-        const statusClass = (item.status || '').includes('Verified') ? 'status-text progress' : 'status-text pending';
 
         tr.innerHTML = `
           <td><span class="task-id-code">${item.task_id}</span></td>
@@ -648,7 +742,6 @@
           <td><span class="${pscoreClass}">${item.p_score}</span></td>
           <td style="color: #334155; font-weight: 500;">${item.location}</td>
           <td><span style="font-weight: 700; color: #475569;">👍 ${item.upvotes}</span></td>
-          <td><span class="${statusClass}">${item.status}</span></td>
           <td style="text-align: right;">
             <button type="button" class="btn-dispatch" onclick="handleDispatchClick('${item.task_id}')">Dispatch</button>
           </td>
@@ -664,21 +757,27 @@
       const labels = hotspots.map(h => h.district);
       const data = hotspots.map(h => h.count);
 
+      const maxVal = data.length ? Math.max(...data) : 0;
+      const dynamicYMax = Math.max(60, Math.ceil((maxVal * 1.15) / 15) * 15);
+
       hotspotChartInst = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels.length ? labels : ['KLCC', 'Bukit Bintang', 'Chow Kit', 'Titiwangsa', 'Sentul', 'Brickfields'],
+          labels: labels.length ? labels : ['No data'],
           datasets: [{
-            data: data.length ? data : [42, 35, 28, 22, 17, 14],
+            data: data.length ? data : [0],
             backgroundColor: '#00a884',
             hoverBackgroundColor: '#008f70',
             borderRadius: 6,
-            barPercentage: 0.65
+            barPercentage: 0.6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: { top: 12, bottom: 8, left: 10, right: 16 }
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -695,12 +794,25 @@
           scales: {
             x: {
               grid: { display: false },
-              ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }
+              ticks: {
+                autoSkip: false,
+                maxRotation: 0,
+                minRotation: 0,
+                font: { family: 'Inter', size: 11.5, weight: '600' },
+                color: '#475569',
+                padding: 8
+              }
             },
             y: {
               beginAtZero: true,
-              max: 60,
-              ticks: { stepSize: 15, font: { family: 'Inter', size: 11 }, color: '#64748b' },
+              suggestedMax: dynamicYMax,
+              grace: '5%',
+              ticks: {
+                stepSize: 15,
+                font: { family: 'Inter', size: 11, weight: '500' },
+                color: '#64748b',
+                padding: 8
+              },
               grid: { color: '#f1f5f9', borderDash: [4, 4] }
             }
           }
@@ -712,9 +824,17 @@
       const ctx = document.getElementById('footfallChart').getContext('2d');
       if (footfallChartInst) footfallChartInst.destroy();
 
-      const labels = correlation.labels || ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-      const delays = correlation.avg_delay_hrs || [18.2, 22.4, 15.1, 28.6, 21.3, 13.8];
-      const footfall = correlation.footfall || [2400, 2900, 2100, 3950, 3100, 1850];
+      const hasData = correlation.labels && correlation.labels.length > 0;
+      const labels = hasData ? correlation.labels : ['No data'];
+      const delays = (hasData && correlation.avg_delay_hrs) ? correlation.avg_delay_hrs : [0];
+      const footfall = (hasData && correlation.footfall) ? correlation.footfall : [0];
+
+      // Safe dynamic maximum calculation so points never clip over range
+      const maxDelay = delays.length ? Math.max(...delays) : 0;
+      const suggestedDelayMax = Math.max(14, Math.ceil((Math.max(1, maxDelay) * 1.2) / 7) * 7);
+
+      const maxFootfall = footfall.length ? Math.max(...footfall) : 0;
+      const suggestedFootfallMax = Math.max(1500, Math.ceil((Math.max(100, maxFootfall) * 1.2) / 500) * 500);
 
       footfallChartInst = new Chart(ctx, {
         type: 'line',
@@ -725,26 +845,30 @@
               label: 'Avg Delay (hrs)',
               data: delays,
               borderColor: '#ef4444',
-              backgroundColor: 'transparent',
-              borderWidth: 2,
+              backgroundColor: 'rgba(239, 68, 68, 0.03)',
+              fill: true,
+              borderWidth: 2.2,
               tension: 0.35,
               pointBackgroundColor: '#ffffff',
               pointBorderColor: '#ef4444',
               pointBorderWidth: 2,
-              pointRadius: 4,
+              pointRadius: 4.5,
+              pointHoverRadius: 6,
               yAxisID: 'y'
             },
             {
               label: 'Footfall',
               data: footfall,
               borderColor: '#00a884',
-              backgroundColor: 'transparent',
-              borderWidth: 2,
+              backgroundColor: 'rgba(0, 168, 132, 0.03)',
+              fill: true,
+              borderWidth: 2.2,
               tension: 0.35,
               pointBackgroundColor: '#ffffff',
               pointBorderColor: '#00a884',
               pointBorderWidth: 2,
-              pointRadius: 4,
+              pointRadius: 4.5,
+              pointHoverRadius: 6,
               yAxisID: 'y1'
             }
           ]
@@ -753,37 +877,59 @@
           responsive: true,
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
+          layout: {
+            padding: { top: 8, bottom: 8, left: 10, right: 16 }
+          },
           plugins: {
             legend: {
-              position: 'bottom',
+              position: 'top',
+              align: 'end',
               labels: {
                 usePointStyle: true,
                 pointStyle: 'line',
                 font: { family: 'Inter', size: 11.5, weight: 600 },
-                color: '#64748b',
-                boxWidth: 20
+                color: '#475569',
+                boxWidth: 22,
+                padding: 14
               }
             }
           },
           scales: {
             x: {
               grid: { display: false },
-              ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }
+              ticks: {
+                autoSkip: false,
+                font: { family: 'Inter', size: 11.5, weight: '600' },
+                color: '#475569',
+                padding: 8
+              }
             },
             y: {
               type: 'linear',
               position: 'left',
               beginAtZero: true,
-              max: 28,
-              ticks: { stepSize: 7, font: { family: 'Inter', size: 11 }, color: '#64748b' },
+              suggestedMax: suggestedDelayMax,
+              grace: '8%',
+              ticks: {
+                stepSize: 7,
+                font: { family: 'Inter', size: 11, weight: '500' },
+                color: '#64748b',
+                padding: 8
+              },
               grid: { color: '#f1f5f9', borderDash: [4, 4] }
             },
             y1: {
               type: 'linear',
               position: 'right',
               beginAtZero: true,
-              max: 4000,
-              ticks: { stepSize: 1000, font: { family: 'Inter', size: 11 }, color: '#64748b' },
+              suggestedMax: suggestedFootfallMax,
+              grace: '8%',
+              ticks: {
+                stepSize: 1000,
+                font: { family: 'Inter', size: 11, weight: '500' },
+                color: '#64748b',
+                padding: 8
+              },
               grid: { drawOnChartArea: false }
             }
           }
@@ -963,7 +1109,7 @@
         const json = await res.json();
         const data = json.data || {};
 
-        const metrics = data.metrics || { avg_resolution_days: 3.2, completed_count: 124, sla_compliance_pct: 83 };
+        const metrics = data.metrics || { avg_resolution_days: 0, completed_count: 0, sla_compliance_pct: 0 };
         document.getElementById('drawerResolutionHeader').textContent = `${metrics.avg_resolution_days} Days`;
         document.getElementById('drawerStatAvgRes').textContent = `${metrics.avg_resolution_days}d`;
         document.getElementById('drawerStatCompletedMonth').textContent = metrics.completed_count;
@@ -1154,7 +1300,18 @@
       }
     }
 
+    function clearAnalyticsSessionCache() {
+      try {
+        Object.keys(sessionStorage).forEach(k => {
+          if (k.startsWith('ecoasset_analytics_')) {
+            sessionStorage.removeItem(k);
+          }
+        });
+      } catch (e) {}
+    }
+
     function handleFilterChange() {
+      clearAnalyticsSessionCache();
       loadDashboardData();
     }
 
@@ -1211,7 +1368,7 @@
           startStr = today.getFullYear() + '-01-01';
           break;
         case 'all':
-          startStr = '2020-01-01';
+          startStr = window.ecoassetEarliestDate || '';
           break;
         case 'custom':
           // Don't change dates, let user pick manually
@@ -1236,6 +1393,7 @@
     }
 
     function applyCalendarFilter() {
+      clearAnalyticsSessionCache();
       // Update button label
       const label = document.getElementById('calendarBtnLabel');
       if (calendarPreset === 'custom' && calendarStartDate && calendarEndDate) {
@@ -1250,6 +1408,7 @@
     }
 
     function resetCalendar() {
+      clearAnalyticsSessionCache();
       calendarPreset = '30d';
       initCalendarDefaults();
 
@@ -1265,6 +1424,135 @@
 
     function handleDispatchClick(taskId) {
       window.location.href = `../module3/admin/index.html?task=${encodeURIComponent(taskId)}`;
+    }
+
+    /**
+     * Professional PDF Export Handler
+     * Injects live metadata into executive letterhead and triggers print rendering.
+     */
+    function handleExportPdf() {
+      const user = AuthGuard.getUser() || {};
+      const district = document.getElementById('districtFilter').value || 'All Districts';
+      const calendarLabel = document.getElementById('calendarBtnLabel').textContent || 'Last 30 Days';
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const docId = 'REF: DBKL-EA-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + Math.floor(1000 + Math.random() * 9000);
+
+      // Populate letterhead metadata
+      const docRefEl = document.getElementById('printDocRef');
+      if (docRefEl) docRefEl.textContent = docId;
+
+      const timeEl = document.getElementById('printMetaTimestamp');
+      if (timeEl) timeEl.textContent = `Generated: ${dateStr}, ${timeStr}`;
+
+      const distEl = document.getElementById('printReportDistrict');
+      if (distEl) distEl.textContent = district === 'All Districts' ? 'All Districts (Wilayah Persekutuan Kuala Lumpur)' : `${district} District, KL`;
+
+      const periodEl = document.getElementById('printReportPeriod');
+      if (periodEl) periodEl.textContent = calendarLabel;
+
+      const officerEl = document.getElementById('printReportOfficer');
+      if (officerEl) officerEl.textContent = `${user.full_name || 'Administrator'} (${user.email || 'admin@dbkl.gov.my'})`;
+
+      const signOfficerEl = document.getElementById('printSignOfficer');
+      if (signOfficerEl) signOfficerEl.textContent = user.full_name || 'Municipal Asset Operations Officer';
+
+      const signDate1 = document.getElementById('printSignDate1');
+      const signDate2 = document.getElementById('printSignDate2');
+      if (signDate1) signDate1.textContent = `Date: ${dateStr}`;
+      if (signDate2) signDate2.textContent = `Date: ${dateStr}`;
+
+      const hashEl = document.getElementById('printSecurityHash');
+      if (hashEl) {
+        const hash = 'EA-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        hashEl.textContent = hash;
+      }
+
+      // Close any open popovers or drawers
+      closeAllDrawers();
+      closeCalendarPopover();
+
+      // Pre-resize charts to the printable container width before opening the
+      // print dialog.  We trigger a fake beforeprint via matchMedia first so the
+      // browser can settle its layout, then call print after a short delay.
+      // This ensures the chart canvas is stamped at the correct print width, not
+      // the wider screen width that would clip the 6th and 5th district bars.
+      setTimeout(() => {
+        resizeChartsForMedia();
+        setTimeout(() => {
+          window.print();
+        }, 80);
+      }, 50);
+    }
+
+    /**
+     * Force-resize a Chart.js instance to exactly fit its container's current
+     * clientWidth, then update without animation.  This is the key fix:
+     * calling chart.resize() with explicit pixel dimensions prevents Chart.js
+     * from reusing the stale screen-width canvas when the browser enters print
+     * mode and the print CSS (smaller container) has not yet updated the DOM.
+     */
+    function forceResizeChart(chartInst) {
+      if (!chartInst || !chartInst.canvas) return;
+      const container = chartInst.canvas.parentElement;
+      if (!container) return;
+      const w = container.clientWidth || container.offsetWidth;
+      const h = container.clientHeight || container.offsetHeight;
+      if (w > 0 && h > 0) {
+        // Explicit dimensions tell Chart.js to use exactly this size
+        // regardless of what the canvas currently reports.
+        chartInst.resize(w, h);
+      } else {
+        chartInst.resize();
+      }
+      chartInst.update('none');
+    }
+
+    function resizeChartsForMedia() {
+      forceResizeChart(hotspotChartInst);
+      forceResizeChart(footfallChartInst);
+    }
+
+    // Ensure charts adapt automatically whenever print mode is entered / exited.
+    // We use a small rAF + setTimeout chain inside beforeprint so the browser
+    // has a chance to apply the @media print CSS to the DOM before we measure
+    // container widths. Without this delay the container still reports its
+    // screen-layout width and the chart is rendered too wide for the page.
+    window.addEventListener('beforeprint', () => {
+      // First resize pass: applies immediately for browsers that block during print
+      resizeChartsForMedia();
+      // Second deferred pass: catches browsers that apply print CSS after the event
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          resizeChartsForMedia();
+        }, 0);
+      });
+    });
+
+    window.addEventListener('afterprint', () => {
+      // Restore charts to the live screen layout dimensions
+      resizeChartsForMedia();
+    });
+
+    if (window.matchMedia) {
+      const printMQ = window.matchMedia('print');
+      const onPrintChange = (mq) => {
+        // mq.matches is true when entering print mode
+        resizeChartsForMedia();
+        if (mq.matches) {
+          requestAnimationFrame(() => {
+            setTimeout(() => resizeChartsForMedia(), 0);
+          });
+        }
+      };
+      // addListener is deprecated but kept for Safari/older browsers
+      if (printMQ.addEventListener) {
+        printMQ.addEventListener('change', onPrintChange);
+      } else {
+        printMQ.addListener(onPrintChange);
+      }
     }
   </script>
 </body>

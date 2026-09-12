@@ -8,6 +8,7 @@ use App\DAO\AuditLogDAO;
 use App\Utils\ResponseUtil;
 use App\Utils\JWTUtil;
 use App\Utils\StorageUtil;
+use App\Utils\CacheUtil;
 use Exception;
 
 class TaskController
@@ -77,6 +78,7 @@ class TaskController
                 // Non-blocking
             }
 
+            CacheUtil::flush();
             ResponseUtil::success($result, "Auto-dispatch engine executed: {$result['assigned_count']} jobs routed to maintenance crews.");
         } catch (Exception $e) {
             ResponseUtil::error('Auto-dispatch engine execution failed: ' . $e->getMessage(), 500);
@@ -131,6 +133,7 @@ class TaskController
             $ok = $this->taskDAO->acceptTask($taskId, $user['user_id']);
             if ($ok) {
                 $this->auditLogDAO->log($user['user_id'], 'TASK_ACCEPTED', "Crew accepted task {$taskId}");
+                CacheUtil::flush();
                 ResponseUtil::success(['task_id' => $taskId, 'status' => 'IN_PROGRESS'], 'Task accepted and moved to In Progress.');
             } else {
                 ResponseUtil::error('Failed to accept task. It may not be assigned to your crew.', 400);
@@ -158,6 +161,7 @@ class TaskController
             $ok = $this->taskDAO->declineTask($taskId, $user['user_id'], $reason);
             if ($ok) {
                 $this->auditLogDAO->log($user['user_id'], 'TASK_DECLINED', "Crew declined task {$taskId}: {$reason}");
+                CacheUtil::flush();
                 ResponseUtil::success(['task_id' => $taskId, 'status' => 'OPEN_FOR_CLAIM'], 'Task declined and returned to Open Pool.');
             } else {
                 ResponseUtil::error('Failed to decline task.', 400);
@@ -182,6 +186,7 @@ class TaskController
             $result = $this->taskDAO->claimTask($taskId, $user['user_id']);
             if ($result['success']) {
                 $this->auditLogDAO->log($user['user_id'], 'TASK_CLAIMED', "Crew claimed open task {$taskId}");
+                CacheUtil::flush();
                 ResponseUtil::success($result, 'Task successfully claimed.');
             } else {
                 ResponseUtil::error($result['error'] ?? 'Task could not be claimed.', 409);
@@ -232,6 +237,7 @@ class TaskController
             $ok = $this->taskDAO->completeTask($taskId, $photoUrl, $notes);
             if ($ok) {
                 $this->auditLogDAO->log($user['user_id'], 'TASK_PRECOMPLETE_SUBMITTED', "Crew submitted task {$taskId} for completion review.");
+                CacheUtil::flush();
                 ResponseUtil::success(['task_id' => $taskId, 'status' => 'PRECOMPLETE', 'photo_url' => $photoUrl], 'Task completion submitted for administrator validation.');
             } else {
                 ResponseUtil::error('Failed to submit completion.', 400);
@@ -259,6 +265,7 @@ class TaskController
             $ok = $this->taskDAO->dropTask($taskId, $user['user_id'], $reason, 10.0);
             if ($ok) {
                 $this->auditLogDAO->log($user['user_id'], 'TASK_DROPPED', "Crew dropped task {$taskId}: {$reason} (-10 pts)");
+                CacheUtil::flush();
                 ResponseUtil::success(['task_id' => $taskId, 'status' => 'DROPPED'], 'Task dropped. Performance score adjusted (-10 pts).');
             } else {
                 ResponseUtil::error('Failed to drop task.', 400);
@@ -303,6 +310,7 @@ class TaskController
             $ok = $this->taskDAO->flagInvalidTask($taskId, $user['user_id'], $photoUrl, $notes);
             if ($ok) {
                 $this->auditLogDAO->log($user['user_id'], 'TASK_FLAGGED_INVALID', "Crew flagged task {$taskId} as PRE_INVALID.");
+                CacheUtil::flush();
                 ResponseUtil::success(['task_id' => $taskId, 'status' => 'PRE_INVALID'], 'Report flagged as invalid. Awaiting administrator review.');
             } else {
                 ResponseUtil::error('Failed to flag task as invalid.', 400);

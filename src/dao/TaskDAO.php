@@ -830,48 +830,49 @@ class TaskDAO
      */
     public function getAllCrewsFleet(): array
     {
-        $sql = "SELECT u.user_id, u.full_name, u.email,
-                       mc.skill_tags, mc.availability_status, mc.performance_score,
-                       mc.current_latitude, mc.current_longitude, mc.station_region,
-                       (
-                           SELECT COUNT(*) 
-                           FROM maintenance_tasks t 
-                           JOIN damage_reports r ON t.report_id = r.report_id 
-                           WHERE t.assigned_crew_id = u.user_id AND r.status = 'IN_PROGRESS'
-                       ) as active_tasks_count,
-                       (
-                           SELECT COUNT(*) 
-                           FROM maintenance_tasks t 
-                           JOIN damage_reports r ON t.report_id = r.report_id 
-                           WHERE t.assigned_crew_id = u.user_id AND r.status = 'PENDING_ACCEPTANCE'
-                       ) as pending_tasks_count
-                FROM users u
-                JOIN maintenance_crews mc ON u.user_id = mc.crew_id
-                WHERE u.role = 'MAINTENANCE_CREW' AND u.is_active = TRUE
-                ORDER BY u.full_name ASC";
+        return \App\Utils\CacheUtil::remember('all_crews_fleet', 15, function() {
+            $sql = "SELECT u.user_id, u.full_name, u.email,
+                           mc.skill_tags, mc.availability_status, mc.performance_score,
+                           mc.current_latitude, mc.current_longitude, mc.station_region,
+                           COALESCE(tc.active_count, 0) as active_tasks_count,
+                           COALESCE(tc.pending_count, 0) as pending_tasks_count
+                    FROM users u
+                    JOIN maintenance_crews mc ON u.user_id = mc.crew_id
+                    LEFT JOIN (
+                        SELECT t.assigned_crew_id,
+                               SUM(CASE WHEN r.status = 'IN_PROGRESS' THEN 1 ELSE 0 END) as active_count,
+                               SUM(CASE WHEN r.status = 'PENDING_ACCEPTANCE' THEN 1 ELSE 0 END) as pending_count
+                        FROM maintenance_tasks t
+                        JOIN damage_reports r ON t.report_id = r.report_id
+                        WHERE r.status IN ('IN_PROGRESS', 'PENDING_ACCEPTANCE')
+                        GROUP BY t.assigned_crew_id
+                    ) tc ON u.user_id = tc.assigned_crew_id
+                    WHERE u.role = 'MAINTENANCE_CREW' AND u.is_active = TRUE
+                    ORDER BY u.full_name ASC";
 
-        $stmt = $this->db->query($sql);
-        $crews = $stmt->fetchAll();
+            $stmt = $this->db->query($sql);
+            $crews = $stmt->fetchAll();
 
-        foreach ($crews as &$crew) {
-            $crew['skill_tags'] = UserDAO::parsePgArray($crew['skill_tags']);
-            $crew['performance_score'] = (float)$crew['performance_score'];
-            $crew['current_latitude'] = (float)$crew['current_latitude'];
-            $crew['current_longitude'] = (float)$crew['current_longitude'];
-            $crew['active_tasks_count'] = (int)$crew['active_tasks_count'];
-            $crew['pending_tasks_count'] = (int)$crew['pending_tasks_count'];
+            foreach ($crews as &$crew) {
+                $crew['skill_tags'] = UserDAO::parsePgArray($crew['skill_tags']);
+                $crew['performance_score'] = (float)$crew['performance_score'];
+                $crew['current_latitude'] = (float)$crew['current_latitude'];
+                $crew['current_longitude'] = (float)$crew['current_longitude'];
+                $crew['active_tasks_count'] = (int)$crew['active_tasks_count'];
+                $crew['pending_tasks_count'] = (int)$crew['pending_tasks_count'];
 
-            // Sync computed availability: Must have 0 in-progress AND 0 pending acceptance
-            if ($crew['active_tasks_count'] > 0) {
-                $crew['computed_status'] = 'BUSY';
-            } elseif ($crew['pending_tasks_count'] > 0) {
-                $crew['computed_status'] = 'PENDING_ACCEPTANCE';
-            } else {
-                $crew['computed_status'] = 'AVAILABLE';
+                // Sync computed availability: Must have 0 in-progress AND 0 pending acceptance
+                if ($crew['active_tasks_count'] > 0) {
+                    $crew['computed_status'] = 'BUSY';
+                } elseif ($crew['pending_tasks_count'] > 0) {
+                    $crew['computed_status'] = 'PENDING_ACCEPTANCE';
+                } else {
+                    $crew['computed_status'] = 'AVAILABLE';
+                }
             }
-        }
 
-        return $crews;
+            return $crews;
+        });
     }
 
     /**
@@ -1025,11 +1026,159 @@ class TaskDAO
     }
 
     /**
+     * Run the automated spatial dispatch algorithm immediately for a single report (upon creation).
+     * If a qualified, AVAILABLE technician is found within 30km, automatically binds task to crew
+     * with a 24-hour SLA acceptance window and transitions report to PENDING_ACCEPTANCE.
+     * If no suitable available technician is found, task remains in OPEN_FOR_CLAIM (Open Pool).
+     */
+    public function autoDispatchSingleReport(string $reportId): array
+    {
+        // 1. Fetch the report record
+        $sql = "SELECT report_id, category, required_skill, priority_score, latitude, longitude, district, status
+                FROM damage_reports
+                WHERE report_id = :rep_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['rep_id' => $reportId]);
+        $report = $stmt->fetch();
+
+        if (!$report) {
+            return [
+                'dispatched' => false,
+                'status'     => 'NOT_FOUND',
+                'reason'     => 'Report record not found.'
+            ];
+        }
+
+        $repLat = (float)$report['latitude'];
+        $repLng = (float)$report['longitude'];
+        $requiredSkill = strtoupper($report['required_skill'] ?? 'OTHER');
+
+        // 2. Fetch all registered maintenance crews and compute their live status
+        $crews = $this->getAllCrewsFleet();
+
+        $bestCandidate = null;
+        $bestScore = -1.0;
+        $bestDistanceKm = 0.0;
+
+        foreach ($crews as $crew) {
+            // Must be AVAILABLE (0 in-progress AND 0 pending acceptance tasks)
+            if ($crew['computed_status'] !== 'AVAILABLE') {
+                continue;
+            }
+
+            // Must have matching trade skill (or general skill)
+            $hasSkill = in_array($requiredSkill, $crew['skill_tags']) 
+                     || in_array('OTHER', $crew['skill_tags']) 
+                     || empty($crew['skill_tags']);
+
+            if (!$hasSkill) {
+                continue;
+            }
+
+            // Compute Haversine distance in km
+            $crewLat = (float)$crew['current_latitude'];
+            $crewLng = (float)$crew['current_longitude'];
+            $distKm = \App\Utils\GeoUtil::haversineDistanceKm($crewLat, $crewLng, $repLat, $repLng);
+
+            // Maximum operating radius: 30 km
+            if ($distKm > 30.0) {
+                continue;
+            }
+
+            // Spatial Suitability Score: S = Performance / (Distance + 0.1)
+            $perfScore = (float)$crew['performance_score'];
+            $suitabilityScore = $perfScore / ($distKm + 0.1);
+
+            if ($suitabilityScore > $bestScore) {
+                $bestScore = $suitabilityScore;
+                $bestCandidate = $crew;
+                $bestDistanceKm = $distKm;
+            }
+        }
+
+        // 3. If optimal candidate found, bind task and update report status to PENDING_ACCEPTANCE
+        if ($bestCandidate !== null) {
+            try {
+                $this->db->beginTransaction();
+
+                $assignedCrewId = $bestCandidate['user_id'];
+
+                // Check or insert maintenance_tasks
+                $checkTask = "SELECT task_id FROM maintenance_tasks WHERE report_id = :rep_id";
+                $cStmt = $this->db->prepare($checkTask);
+                $cStmt->execute(['rep_id' => $reportId]);
+                $existingTask = $cStmt->fetch();
+
+                if ($existingTask) {
+                    $updateTask = "UPDATE maintenance_tasks 
+                                   SET assigned_crew_id = :crew_id,
+                                       assigned_at = CURRENT_TIMESTAMP,
+                                       sla_expires_at = CURRENT_TIMESTAMP + interval '24 hours'
+                                   WHERE task_id = :task_id";
+                    $uStmt = $this->db->prepare($updateTask);
+                    $uStmt->execute([
+                        'crew_id' => $assignedCrewId,
+                        'task_id' => $existingTask['task_id']
+                    ]);
+                    $taskId = $existingTask['task_id'];
+                } else {
+                    $insertTask = "INSERT INTO maintenance_tasks 
+                                   (report_id, assigned_crew_id, assigned_at, sla_expires_at) 
+                                   VALUES (:rep_id, :crew_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '24 hours')
+                                   RETURNING task_id";
+                    $iStmt = $this->db->prepare($insertTask);
+                    $iStmt->execute([
+                        'rep_id'  => $reportId,
+                        'crew_id' => $assignedCrewId
+                    ]);
+                    $taskId = $iStmt->fetch()['task_id'];
+                }
+
+                // Update damage_reports status to PENDING_ACCEPTANCE
+                $updateRep = "UPDATE damage_reports SET status = 'PENDING_ACCEPTANCE' WHERE report_id = :rep_id";
+                $rStmt = $this->db->prepare($updateRep);
+                $rStmt->execute(['rep_id' => $reportId]);
+
+                $this->db->commit();
+
+                return [
+                    'dispatched'         => true,
+                    'status'             => 'PENDING_ACCEPTANCE',
+                    'task_id'            => $taskId,
+                    'report_id'          => $reportId,
+                    'assigned_crew_id'   => $assignedCrewId,
+                    'assigned_crew_name' => $bestCandidate['full_name'],
+                    'distance_km'        => round($bestDistanceKm, 2),
+                    'suitability_score'  => round($bestScore, 1)
+                ];
+            } catch (Exception $e) {
+                $this->db->rollBack();
+                error_log("Auto-dispatch on creation error for report {$reportId}: " . $e->getMessage());
+            }
+        }
+
+        // 4. If no suitable crew found, keep in OPEN_FOR_CLAIM
+        return [
+            'dispatched' => false,
+            'status'     => 'OPEN_FOR_CLAIM',
+            'report_id'  => $reportId,
+            'reason'     => "No available maintenance crew with matching trade skill '{$requiredSkill}' within 30km. Placed in Open Pool."
+        ];
+    }
+
+    /**
      * Sweeps tasks in PENDING_ACCEPTANCE whose 24-hour SLA window has passed.
      * Automatically reverts them back to OPEN_FOR_CLAIM so they can be dispatched or claimed again.
      */
     public function sweepExpiredPendingSlaTasks(): int
     {
+        // Throttle check to at most once every 60 seconds to avoid repeating query on every request
+        $lastSweep = \App\Utils\CacheUtil::get('last_sla_sweep');
+        if ($lastSweep !== null) {
+            return 0;
+        }
+        \App\Utils\CacheUtil::set('last_sla_sweep', time(), 60);
+
         try {
             // Find all expired pending tasks
             $sql = "SELECT t.task_id, t.report_id, t.assigned_crew_id
@@ -1145,16 +1294,28 @@ class TaskDAO
             }
         }
 
-        // Category filtering
+        // Category & Skill filtering (Handles both issue_category and skill_category enums safely)
+        $validIssueCategories = ['CRITICAL_SAFETY', 'MAJOR_BLOCKAGE', 'MINOR_DEFECT', 'AESTHETIC', 'OPERATIONAL'];
+        $validSkillCategories = ['ELECTRICAL', 'STRUCTURAL', 'SANITATION', 'GENERAL_FACILITY', 'OTHER'];
+
         if (!empty($categoryFilter) && strtoupper($categoryFilter) !== 'ALL') {
-            $sql .= " AND r.category = :cat_filter";
-            $params['cat_filter'] = strtoupper($categoryFilter);
+            $catVal = strtoupper(trim($categoryFilter));
+            if (in_array($catVal, $validIssueCategories, true)) {
+                $sql .= " AND r.category = :cat_filter";
+                $params['cat_filter'] = $catVal;
+            } elseif (in_array($catVal, $validSkillCategories, true)) {
+                $sql .= " AND r.required_skill = :skill_cat_filter";
+                $params['skill_cat_filter'] = $catVal;
+            }
         }
 
         // Skill filtering
         if (!empty($skillFilter) && strtoupper($skillFilter) !== 'ALL') {
-            $sql .= " AND r.required_skill = :skill_filter";
-            $params['skill_filter'] = strtoupper($skillFilter);
+            $skillVal = strtoupper(trim($skillFilter));
+            if (in_array($skillVal, $validSkillCategories, true)) {
+                $sql .= " AND r.required_skill = :skill_filter";
+                $params['skill_filter'] = $skillVal;
+            }
         }
 
         // Text search filtering (description, district, reporter, crew, or task code)

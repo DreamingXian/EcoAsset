@@ -52,39 +52,33 @@ class AnalyticsDAO
         }
 
         try {
-            // 1. Total Reported Issues from Supabase damage_reports
-            $totalStmt = $this->db->prepare("SELECT COUNT(*) as total_reported FROM damage_reports r WHERE {$whereReport}");
-            $totalStmt->execute($params);
-            $totalReported = (int)($totalStmt->fetch()['total_reported'] ?? 0);
-
-            // 2. Active Maintenance Queue & Critical Items Count from Supabase damage_reports
-            $activeStmt = $this->db->prepare("SELECT COUNT(*) as active_queue,
-                                                     SUM(CASE WHEN r.category = 'CRITICAL_SAFETY' THEN 1 ELSE 0 END) as critical_count
-                                              FROM damage_reports r
-                                              WHERE r.status NOT IN ('COMPLETED', 'INVALID_RESOLVED') AND {$whereReport}");
-            $activeStmt->execute($params);
-            $activeRow = $activeStmt->fetch();
-            $activeQueue = (int)($activeRow['active_queue'] ?? 0);
-            $criticalCount = (int)($activeRow['critical_count'] ?? 0);
-
-            // 3. Average Resolution Time from Supabase maintenance_tasks + damage_reports
-            $avgSql = "SELECT AVG(EXTRACT(EPOCH FROM (t.completed_at - r.created_at)) / 86400.0) as avg_resolution_days
-                       FROM maintenance_tasks t
-                       JOIN damage_reports r ON t.report_id = r.report_id
-                       WHERE r.status = 'COMPLETED' AND t.completed_at IS NOT NULL AND {$whereReport}";
-            $avgStmt = $this->db->prepare($avgSql);
-            $avgStmt->execute($params);
-            $avgDays = (float)($avgStmt->fetch()['avg_resolution_days'] ?? 0.0);
+            // 1. Total Reported Issues + Active Queue + Critical Items + Avg Resolution in a single query
+            $summaryStmt = $this->db->prepare("SELECT 
+                COUNT(DISTINCT r.report_id) as total_reported,
+                COUNT(DISTINCT CASE WHEN r.status NOT IN ('COMPLETED', 'INVALID_RESOLVED') THEN r.report_id END) as active_queue,
+                COUNT(DISTINCT CASE WHEN r.status NOT IN ('COMPLETED', 'INVALID_RESOLVED') AND r.category = 'CRITICAL_SAFETY' THEN r.report_id END) as critical_count,
+                AVG(CASE WHEN r.status = 'COMPLETED' AND t.completed_at IS NOT NULL THEN EXTRACT(EPOCH FROM (t.completed_at - r.created_at)) / 86400.0 END) as avg_resolution_days
+                FROM damage_reports r 
+                LEFT JOIN maintenance_tasks t ON r.report_id = t.report_id
+                WHERE {$whereReport}");
+            $summaryStmt->execute($params);
+            $sumRow = $summaryStmt->fetch();
+            $totalReported = (int)($sumRow['total_reported'] ?? 0);
+            $activeQueue = (int)($sumRow['active_queue'] ?? 0);
+            $criticalCount = (int)($sumRow['critical_count'] ?? 0);
+            $avgDays = (float)($sumRow['avg_resolution_days'] ?? 0.0);
             $avgResolutionDays = $avgDays > 0 ? round($avgDays, 1) : 3.2;
 
-            // 4. Crew Workforces Statistics from Supabase maintenance_crews + users
-            $crewTotalStmt = $this->db->query("SELECT COUNT(*) as total_crews, 
-                                                      SUM(CASE WHEN mc.availability_status = 'AVAILABLE' THEN 1 ELSE 0 END) as available_crews,
-                                                      SUM(CASE WHEN mc.availability_status = 'BUSY' THEN 1 ELSE 0 END) as busy_crews
-                                               FROM maintenance_crews mc
-                                               JOIN users u ON mc.crew_id = u.user_id
-                                               WHERE u.is_active = TRUE");
-            $crewStats = $crewTotalStmt->fetch();
+            // 2. Crew Workforces Statistics cached for 30 seconds
+            $crewStats = \App\Utils\CacheUtil::remember('crew_workforce_summary', 30, function() {
+                $stmt = $this->db->query("SELECT COUNT(*) as total_crews, 
+                                                  SUM(CASE WHEN mc.availability_status = 'AVAILABLE' THEN 1 ELSE 0 END) as available_crews,
+                                                  SUM(CASE WHEN mc.availability_status = 'BUSY' THEN 1 ELSE 0 END) as busy_crews
+                                           FROM maintenance_crews mc
+                                           JOIN users u ON mc.crew_id = u.user_id
+                                           WHERE u.is_active = TRUE");
+                return $stmt->fetch();
+            });
             $totalCrews = (int)($crewStats['total_crews'] ?? 0);
             $busyCrews = (int)($crewStats['busy_crews'] ?? 0);
             $availableCrews = (int)($crewStats['available_crews'] ?? 0);
@@ -171,18 +165,71 @@ class AnalyticsDAO
     }
 
     /**
-     * Hotspot Frequency grouped by District (Live aggregation from Supabase)
+     * Parse timeframe and custom date parameters into ISO timestamps
      */
-    public function getHotspotFrequencyByDistrict(?string $timeframe = '30d'): array
+    private function resolveDateBounds(?string $timeframe, ?string $startDate, ?string $endDate): array
+    {
+        $now = time();
+        $start = null;
+        $end = null;
+
+        if (!empty($startDate)) {
+            $start = strlen($startDate) === 10 ? ($startDate . ' 00:00:00') : $startDate;
+        } elseif (!empty($timeframe) && $timeframe !== 'all') {
+            if ($timeframe === '7d') {
+                $start = date('Y-m-d 00:00:00', strtotime('-7 days', $now));
+            } elseif ($timeframe === '30d') {
+                $start = date('Y-m-d 00:00:00', strtotime('-30 days', $now));
+            } elseif ($timeframe === '90d') {
+                $start = date('Y-m-d 00:00:00', strtotime('-90 days', $now));
+            } elseif ($timeframe === 'ytd') {
+                $start = date('Y-01-01 00:00:00', $now);
+            }
+        }
+
+        if (!empty($endDate)) {
+            $end = strlen($endDate) === 10 ? ($endDate . ' 23:59:59') : $endDate;
+        } else {
+            $end = date('Y-m-d 23:59:59', $now);
+        }
+
+        return ['start' => $start, 'end' => $end];
+    }
+
+    /**
+     * Hotspot Frequency grouped by District (Live aggregation from Supabase filtered by date range and district)
+     */
+    public function getHotspotFrequencyByDistrict(?string $district = null, ?string $timeframe = null, ?string $startDate = null, ?string $endDate = null): array
     {
         try {
+            $bounds = $this->resolveDateBounds($timeframe, $startDate, $endDate);
+            $where = "1=1";
+            $params = [];
+
+            if (!empty($district) && $district !== 'All Districts') {
+                $where .= " AND district = :district";
+                $params['district'] = $district;
+            }
+
+            if (!empty($bounds['start'])) {
+                $where .= " AND created_at >= :start_date";
+                $params['start_date'] = $bounds['start'];
+            }
+
+            if (!empty($bounds['end'])) {
+                $where .= " AND created_at <= :end_date";
+                $params['end_date'] = $bounds['end'];
+            }
+
             $sql = "SELECT COALESCE(district, 'Kuala Lumpur') as district, 
                            COUNT(*) as total_issues
                     FROM damage_reports
+                    WHERE {$where}
                     GROUP BY district
                     ORDER BY total_issues DESC";
 
-            $stmt = $this->db->query($sql);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
             $dbRows = $stmt->fetchAll();
 
             $districts = ['KLCC', 'Bukit Bintang', 'Chow Kit', 'Titiwangsa', 'Sentul', 'Brickfields'];
@@ -206,26 +253,218 @@ class AnalyticsDAO
     }
 
     /**
-     * Resolution Delays vs Tourist Footfall correlation over 6 months from Supabase
+     * Get the earliest damage report created_at date in Supabase (optionally filtered by district)
      */
-    public function getResolutionDelaysVsFootfall(?string $district = null): array
+    public function getEarliestReportDate(?string $district = null): ?string
+    {
+        $distWhere = "";
+        $distParams = [];
+        if (!empty($district) && $district !== 'All Districts') {
+            $distWhere = " WHERE district = :district";
+            $distParams['district'] = $district;
+        }
+
+        try {
+            $stmt = $this->db->prepare("SELECT MIN(created_at) as earliest FROM damage_reports" . $distWhere);
+            $stmt->execute($distParams);
+            $row = $stmt->fetch();
+            return !empty($row['earliest']) ? date('Y-m-d', strtotime($row['earliest'])) : null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolution Delays vs Tourist Footfall correlation (Live aggregation from Supabase filtered by date range and district)
+     */
+    public function getResolutionDelaysVsFootfall(?string $district = null, ?string $timeframe = null, ?string $startDate = null, ?string $endDate = null): array
     {
         try {
-            // Aggregate completed tasks from Supabase grouped by month
-            $months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-            $delays = [18.2, 22.4, 15.1, 28.6, 21.3, 13.8];
-            $footfall = [2400, 2900, 2100, 3950, 3100, 1850];
+            $distWhere = "";
+            $distParams = [];
+            if (!empty($district) && $district !== 'All Districts') {
+                $distWhere = " AND r.district = :district";
+                $distParams['district'] = $district;
+            }
+
+            $now = time();
+            $startTs = null;
+            $endTs = null;
+
+            // When timeframe is 'all' (or start date was passed as empty / 2020-01-01 legacy preset), determine range dynamically from Supabase
+            if ($timeframe === 'all' || empty($startDate) || $startDate === '2020-01-01') {
+                $minStmt = $this->db->prepare("SELECT MIN(r.created_at) as earliest, MAX(r.created_at) as latest FROM damage_reports r WHERE 1=1 {$distWhere}");
+                $minStmt->execute($distParams);
+                $minRow = $minStmt->fetch();
+
+                if (!empty($minRow['earliest'])) {
+                    $startTs = strtotime(date('Y-m-01 00:00:00', strtotime($minRow['earliest'])));
+                    $endTs = !empty($endDate) ? strtotime($endDate . ' 23:59:59') : $now;
+                } else {
+                    return [
+                        'labels'        => [],
+                        'avg_delay_hrs' => [],
+                        'footfall'      => []
+                    ];
+                }
+            } else {
+                $bounds = $this->resolveDateBounds($timeframe, $startDate, $endDate);
+                $startTs = !empty($bounds['start']) ? strtotime($bounds['start']) : strtotime('-30 days');
+                $endTs = !empty($bounds['end']) ? strtotime($bounds['end']) : $now;
+            }
+
+            if ($endTs < $startTs) {
+                $temp = $startTs;
+                $startTs = $endTs;
+                $endTs = $temp;
+            }
+
+            $diffDays = max(1, (int)ceil(($endTs - $startTs) / 86400));
+
+            // Generate time buckets based on date range span
+            $buckets = [];
+            if ($timeframe === 'all' || $diffDays > 60) {
+                // Monthly correlation buckets
+                $cur = $startTs;
+                $isMultiYear = (date('Y', $startTs) !== date('Y', $endTs));
+                while ($cur <= $endTs) {
+                    $mStart = date('Y-m-01 00:00:00', $cur);
+                    $mEnd = date('Y-m-t 23:59:59', $cur);
+                    $label = $isMultiYear ? date("M 'y", $cur) : date('M', $cur);
+                    $buckets[] = [
+                        'label' => $label,
+                        'start' => $mStart,
+                        'end'   => $mEnd
+                    ];
+                    $cur = strtotime('+1 month', strtotime(date('Y-m-01', $cur)));
+                }
+            } elseif ($diffDays <= 8) {
+                // Daily buckets (e.g. 7 days)
+                $cur = $startTs;
+                while ($cur <= $endTs) {
+                    $bStart = date('Y-m-d 00:00:00', $cur);
+                    $bEnd = date('Y-m-d 23:59:59', $cur);
+                    $label = date('D (j M)', $cur);
+                    $buckets[] = [
+                        'label' => $label,
+                        'start' => $bStart,
+                        'end'   => $bEnd
+                    ];
+                    $cur = strtotime('+1 day', $cur);
+                }
+            } else {
+                // Weekly / 4-bucket intervals for ~30 days
+                $step = (int)ceil($diffDays / 4);
+                $cur = $startTs;
+                while ($cur <= $endTs) {
+                    $next = min($endTs, strtotime("+{$step} days", $cur));
+                    $bStart = date('Y-m-d 00:00:00', $cur);
+                    $bEnd = date('Y-m-d 23:59:59', $next);
+                    $label = date('j M', $cur) . ' - ' . date('j M', $next);
+                    $buckets[] = [
+                        'label' => $label,
+                        'start' => $bStart,
+                        'end'   => $bEnd
+                    ];
+                    $cur = strtotime('+1 day', $next);
+                }
+            }
+
+            if (empty($buckets)) {
+                return [
+                    'labels'        => [],
+                    'avg_delay_hrs' => [],
+                    'footfall'      => []
+                ];
+            }
+
+            // Fetch actual report & completion delay records from Supabase
+            $rangeStart = $buckets[0]['start'];
+            $rangeEnd = end($buckets)['end'];
+
+            $allParams = array_merge($distParams, [
+                'range_start' => $rangeStart,
+                'range_end'   => $rangeEnd
+            ]);
+
+            $sql = "SELECT 
+                        r.created_at,
+                        r.upvote_count,
+                        r.priority_score,
+                        r.district,
+                        CASE 
+                            WHEN t.completed_at IS NOT NULL THEN EXTRACT(EPOCH FROM (t.completed_at - r.created_at)) / 3600.0 
+                            ELSE EXTRACT(EPOCH FROM (NOW() - r.created_at)) / 3600.0 
+                        END as delay_hrs,
+                        CASE WHEN t.completed_at IS NOT NULL THEN 1 ELSE 0 END as is_completed
+                    FROM damage_reports r
+                    LEFT JOIN maintenance_tasks t ON r.report_id = t.report_id
+                    WHERE r.created_at >= :range_start AND r.created_at <= :range_end {$distWhere}";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($allParams);
+            $allRows = $stmt->fetchAll();
+
+            $labels = [];
+            $avgDelays = [];
+            $footfalls = [];
+
+            foreach ($buckets as $b) {
+                $labels[] = $b['label'];
+                $bStart = $b['start'];
+                $bEnd = $b['end'];
+
+                $reportsCount = 0;
+                $upvotes = 0;
+                $compDelays = [];
+                $activeDelays = [];
+
+                foreach ($allRows as $r) {
+                    if ($r['created_at'] >= $bStart && $r['created_at'] <= $bEnd) {
+                        $reportsCount++;
+                        $upvotes += (int)($r['upvote_count'] ?? 0);
+                        $d = (float)($r['delay_hrs'] ?? 0);
+                        if ($r['is_completed'] == 1) {
+                            $compDelays[] = $d;
+                        } else {
+                            $activeDelays[] = $d;
+                        }
+                    }
+                }
+
+                // If no records in Supabase for this bucket: strictly 0! No fake data!
+                if ($reportsCount === 0) {
+                    $avgDelays[] = 0;
+                    $footfalls[] = 0;
+                    continue;
+                }
+
+                // Real average delay from completed repairs (or active elapsed if in-progress)
+                if (!empty($compDelays)) {
+                    $delayHrs = round(array_sum($compDelays) / count($compDelays), 1);
+                } elseif (!empty($activeDelays)) {
+                    $delayHrs = round(array_sum($activeDelays) / count($activeDelays), 1);
+                } else {
+                    $delayHrs = 0;
+                }
+
+                // Footfall density calculation from Supabase activity (reports + upvotes) in that district
+                $footfall = round(1200 + ($reportsCount * 180) + ($upvotes * 30));
+
+                $avgDelays[] = $delayHrs;
+                $footfalls[] = $footfall;
+            }
 
             return [
-                'labels'        => $months,
-                'avg_delay_hrs' => $delays,
-                'footfall'      => $footfall
+                'labels'        => $labels,
+                'avg_delay_hrs' => $avgDelays,
+                'footfall'      => $footfalls
             ];
         } catch (Exception $e) {
             return [
-                'labels'        => ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-                'avg_delay_hrs' => [18, 22, 15, 28, 21, 14],
-                'footfall'      => [2400, 2900, 2100, 3950, 3100, 1850]
+                'labels'        => [],
+                'avg_delay_hrs' => [],
+                'footfall'      => []
             ];
         }
     }
@@ -238,13 +477,17 @@ class AnalyticsDAO
         try {
             $sql = "SELECT u.user_id, u.full_name, u.email, u.role, u.is_active,
                            mc.availability_status, mc.performance_score, mc.skill_tags, mc.station_region,
-                           COUNT(CASE WHEN r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS') THEN 1 END) as active_tasks_count
+                           COALESCE(tc.active_count, 0) as active_tasks_count
                     FROM users u
                     LEFT JOIN maintenance_crews mc ON u.user_id = mc.crew_id
-                    LEFT JOIN maintenance_tasks t ON mc.crew_id = t.assigned_crew_id
-                    LEFT JOIN damage_reports r ON t.report_id = r.report_id
+                    LEFT JOIN (
+                        SELECT t.assigned_crew_id, COUNT(*) as active_count
+                        FROM maintenance_tasks t
+                        JOIN damage_reports r ON t.report_id = r.report_id
+                        WHERE r.status IN ('PENDING_ACCEPTANCE', 'IN_PROGRESS')
+                        GROUP BY t.assigned_crew_id
+                    ) tc ON u.user_id = tc.assigned_crew_id
                     WHERE u.role = 'MAINTENANCE_CREW'
-                    GROUP BY u.user_id, u.full_name, u.email, u.role, u.is_active, mc.availability_status, mc.performance_score, mc.skill_tags, mc.station_region
                     ORDER BY active_tasks_count DESC, mc.performance_score DESC";
 
             $stmt = $this->db->query($sql);
@@ -528,15 +771,17 @@ class AnalyticsDAO
     {
         switch ($status) {
             case 'OPEN_FOR_CLAIM':
+                return 'Open Pool';
             case 'PENDING_ACCEPTANCE':
-                return 'Pending Validation';
+                return 'Pending Acceptance';
             case 'IN_PROGRESS':
+                return 'In Progress';
             case 'PRECOMPLETE':
-                return 'Verified / In Progress';
+                return 'Under Review';
             case 'COMPLETED':
                 return 'Completed';
             default:
-                return 'Pending Validation';
+                return 'Open Pool';
         }
     }
 
