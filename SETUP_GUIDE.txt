@@ -1,0 +1,158 @@
+================================================================================
+          EcoAsset - Step-by-Step System Setup & Execution Guide
+================================================================================
+
+This guide provides complete instructions for setting up and running the
+EcoAsset platform locally from the submitted project zip package.
+
+The Supabase PostgreSQL cloud database, media storage, and environment settings
+are already pre-configured inside this folder. No manual database creation or
+.env file modification is required.
+
+================================================================================
+1. SYSTEM PREREQUISITES & PHP CONFIGURATION
+================================================================================
+
+Before starting, ensure your system has PHP 8.1 or higher installed with the
+PostgreSQL database extension enabled.
+
+--- STEP A: Verify Your PHP Version ---
+1. Open Command Prompt (CMD) or PowerShell.
+2. Run the command:
+      php -v
+3. If you see PHP 8.1, 8.2, or 8.3, your PHP installation is ready.
+
+--- STEP B: If PHP is Not Installed or Older than 8.1 ---
+Option 1 (Official PHP Windows Binaries):
+  - Download PHP 8.2 VS16 x64 Non Thread Safe (or Thread Safe) Zip from:
+    https://windows.php.net/download/
+  - Extract the folder to: C:\php
+  - Add C:\php to your System Environment Variables (PATH).
+
+Option 2 (XAMPP for Windows):
+  - Download XAMPP for Windows (with PHP 8.2) from:
+    https://www.apachefriends.org/download.html
+  - PHP will be located at: C:\xampp\php
+
+--- STEP C: Enable the PostgreSQL Extension (pdo_pgsql) in php.ini ---
+PHP requires the PostgreSQL driver enabled to communicate with Supabase:
+
+1. Locate your "php.ini" file:
+   - For standalone PHP: Open C:\php\php.ini (or rename php.ini-development to php.ini)
+   - For XAMPP: Open C:\xampp\php\php.ini
+2. Open "php.ini" using Notepad or any text editor.
+3. Search (Ctrl + F) for: pdo_pgsql
+4. Remove the semicolon (;) at the beginning of the line to uncomment it:
+      BEFORE:  ;extension=pdo_pgsql
+      AFTER:   extension=pdo_pgsql
+
+      BEFORE:  ;extension=pgsql
+      AFTER:   extension=pgsql
+5. Save the file (Ctrl + S).
+6. Verify the extension is loaded by running:
+      php -m
+   (Ensure "pdo_pgsql" and "pgsql" appear in the list).
+
+================================================================================
+2. QUICKSTART STEP-BY-STEP SETUP
+================================================================================
+
+Step 1: Extract the Submitted Zip File
+--------------------------------------
+Extract the "EcoAsset.zip" package to your preferred local folder:
+(e.g., C:\Projects\EcoAsset or D:\EcoAsset)
+
+
+Step 2: Open Terminal in the Project Root Directory
+---------------------------------------------------
+1. Open PowerShell, Command Prompt, or Terminal.
+2. Navigate (cd) into the extracted EcoAsset project root folder:
+      cd "path\to\extracted\EcoAsset"
+
+   *(Ensure you are in the folder containing router.php, database.sql, and public)*
+
+
+Step 3: Start the Local PHP Development Server
+-----------------------------------------------
+Execute the following command to start the built-in development server:
+
+      php -S localhost:8000 router.php
+
+[!] IMPORTANT: Keep this terminal window open and running in the background.
+    If the terminal is closed or stopped with Ctrl+C, the server will stop.
+
+
+Step 4: Access the Application in Your Web Browser
+--------------------------------------------------
+Open Google Chrome, Microsoft Edge, Firefox, or Safari, and go to:
+
+      http://localhost:8000
+
+(The server will automatically load the EcoAsset Login Portal at:
+ http://localhost:8000/public/module5/login.php)
+
+================================================================================
+3. VERIFIED DEMO LOGIN ACCOUNTS (Password for ALL: Pass1234!)
+================================================================================
+
+All accounts below are pre-seeded in the Supabase PostgreSQL database and
+fully verified:
+
+--------------------------------------------------------------------------------
+ROLE                     | EMAIL ADDRESS          | PASSWORD   | ACCESS SCOPE
+--------------------------------------------------------------------------------
+Municipal Administrator  | admin@ecoasset.my      | Pass1234!  | Task Control,
+                         | admin@dbkl.gov.my      | Pass1234!  | Analytics, Roster
+--------------------------------------------------------------------------------
+Maintenance Crew         | crew@ecoasset.my       | Pass1234!  | My Tasks (24h SLA),
+(Structural Specialist)  | boonhuat@contractor.my | Pass1234!  | Open Pool, Repairs
+--------------------------------------------------------------------------------
+Maintenance Crew         | selvam@contractor.my   | Pass1234!  | Mobile Terminal,
+(Electrical Specialist)  |                        |            | In-Progress Tasks
+--------------------------------------------------------------------------------
+Maintenance Crew         | kaiming@contractor.my  | Pass1234!  | Mobile Terminal,
+(Sanitation Specialist)  |                        |            | Sanitation Pool
+--------------------------------------------------------------------------------
+Tourist / Public User    | tourist@ecoasset.my    | Pass1234!  | Interactive Map,
+(Verified Citizen)       |                        |            | Report & Upvoting
+--------------------------------------------------------------------------------
+
+================================================================================
+4. DIRECT MODULE URLS (For Instant Evaluation)
+================================================================================
+
+Once the server is running on localhost:8000, you can access specific modules:
+
+* Main Login & Authentication Portal:
+  http://localhost:8000/public/module5/login.php
+
+* Module 1 & 2: Public Map & Crowdsourced Reporting Portal:
+  http://localhost:8000/public/module1/index.html
+
+* Module 3: Maintenance Crew Terminal (Field Worker View):
+  http://localhost:8000/public/module3/index.html
+
+* Module 3: Admin Task Control Center (Dispatch & Dispute Review):
+  http://localhost:8000/public/module3/admin/index.html
+
+* Module 4: Facility Lifecycle Analytics Dashboard:
+  http://localhost:8000/public/module4/index.html
+
+================================================================================
+5. TROUBLESHOOTING & FAQ
+================================================================================
+
+Q1: "Failed to listen on localhost:8000 (reason: Address already in use)"
+    Solution: Another process is using port 8000. Start on port 8080:
+      php -S localhost:8080 router.php
+    Then open: http://localhost:8080
+
+Q2: "Database connection failed / could not find driver"
+    Solution: Open php.ini, ensure "extension=pdo_pgsql" has no semicolon (;)
+    in front, save the file, and restart the PHP server.
+
+Q3: How to view the Mobile Layout for Crew Terminal or Tourist Map?
+    Solution: In Chrome/Edge, press F12 to open Developer Tools, then press
+    Ctrl + Shift + M (Toggle Device Toolbar) and choose a mobile screen
+    (e.g., iPhone 14 Pro or Galaxy S20).
+================================================================================
